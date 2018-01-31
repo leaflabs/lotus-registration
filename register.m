@@ -1,4 +1,7 @@
-%parpool(4);
+% poolobj = gcp('nocreate'); % If no pool, do not create new one.
+% if isempty(poolobj)
+%     parpool(4);
+% end
 tic
 
 %% load parameters
@@ -81,10 +84,10 @@ pos2 = init_pos(param.index2,side2,param);
 
 %% coarse alignment of side2 to side1
 param.centroid = calc_centroid(side2,param);
-[canonical,param] = translate (pos2, -param.centroid, param);
-[rotated,param] = rotate (canonical,param.rot+param.angle, param);
+canonical = translate (pos2, -param.centroid);
+rotated = rotate (canonical,param.rot+param.angle);
 param.rot = param.rot + param.angle;
-[new,param] = translate (rotated, param.centroid+param.offset, param);
+new = translate (rotated, param.centroid+param.offset);
 param.trans = param.centroid + param.offset;
 
 
@@ -244,9 +247,9 @@ for i = 1:M
     disp('Translate');
     [tmp,param] = translate (final_pos2, -param.centroid, param);
     disp('Rotate');
-    [tmp,param] = rotate (tmp, param.rot, param); % CHECK
+    tmp = rotate (tmp, param.rot); % CHECK
     disp('Translate');
-    [final_pos2,param] = translate (tmp, param.trans, param); 
+    final_pos2 = translate (tmp, param.trans); 
     % for each voxel in side1, find positions in final_pos2 and combine and normalize
     disp('combine');
     out(linind(1):linind(2)) = combine (side1, side2, final_pos2, zind, linind, param);
@@ -386,9 +389,10 @@ nullMIvec = [];
 gain = 5;
 tmp = param.rot_amp;
 param.rot_amp = param.rot_amp * 20;
+N = param.N;
 %profile on;
 disp(sprintf('\nCount    Offset                            Rotation                          Mutual_Information'));
-for i=1:param.N
+parfor i=1:N
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
@@ -397,10 +401,10 @@ for i=1:param.N
     % apply transformation
     % rotate an amount r PLUS param.rot
     % thus param.rot tracks the current rotation
-    [rotated,param] = rotate (canonical,r, param);
+    rotated = rotate (canonical,r);
     % translate rotated by an amount param.trans+d
     % thus param.trans tracks the current position
-    [new,param] = translate (rotated, param.centroid+d, param);
+    new = translate (rotated, param.centroid+d);
     str1 = print_param(param);
     % measure mutual_information
     if strcmp(param.myfunc_MI,'multiply')
@@ -435,7 +439,7 @@ for i=1:length(h_MI)
 end
 
 % add to existing null distribution if any
-nullf = [param.savePath 'null.mat'];
+nullf = [param.savePath param.inputFileName{1}(1:end-4) '_null.mat'];
 if exist(nullf,'file') == 2
     tmp = nullMIvec;
     load(nullf,'nullMIvec');
@@ -493,7 +497,7 @@ end
 function [new, param] = simulated_annealing (pos1, index1, side1, new, side2, canonical, param)
 %print_param(param);
 if strcmp(param.myfunc_MI,'multiply')
-    MI = mutual_information (pos1, index1, side1, new, side2, param, 0);
+    MI = par_mutual_information (pos1, index1, side1, new, side2, param, 0);
 elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     MI = mutual_information_sqrt (pos1, index1, side1, new, side2, param, 0);
 else
@@ -504,15 +508,15 @@ last_MI = MI;
 param = setT0 (MI,param);
 param.MIvec = [MI];
 % for plotting only
-if strcmp(param.myfunc_MI,'multiply')
-    MIt = mutual_information (pos1, index1, side1, new, side2, param, param.threshold_plot);
-elseif strcmp(param.myfunc_MI,'multiply_sqrt')
-    MIt = mutual_information_sqrt (pos1, index1, side1, new, side2, param, param.threshold_plot);
-else
-    disp('WTF!');
-    keyboard;
-end
-param.MItvec = [MIt];
+% if strcmp(param.myfunc_MI,'multiply')
+%     MIt = par_mutual_information (pos1, index1, side1, new, side2, param, param.threshold_plot);
+% elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+%     MIt = mutual_information_sqrt (pos1, index1, side1, new, side2, param, param.threshold_plot);
+% else
+%     disp('WTF!');
+%     keyboard;
+% end
+% param.MItvec = [MIt];
 % set initial T. Start with T sufficiently high to "melt" the system
 T = param.T0;
 p = param.init_p;
@@ -541,20 +545,20 @@ while Tchanges > 0
         % apply transformation
         % rotate an amount r PLUS param.rot
         % thus param.rot tracks the current rotation
-        [rotated,param] = rotate (canonical,param.rot+r, param);
+        rotated = rotate (canonical,param.rot+r);
         param.rot = param.rot + r;
         % translate rotated by an amount param.trans+d
         % thus param.trans tracks the current position
-        [new,param] = translate (rotated, param.trans+d, param);
+        new = translate (rotated, param.trans+d);
         param.trans = param.trans + d;
         str1 = print_param(param);
         % measure mutual_information
         if strcmp(param.myfunc_MI,'multiply')
-            MI = mutual_information (pos1, index1, side1, new, side2, param, 0);
-            MIt = mutual_information (pos1, index1, side1, new, side2, param, param.threshold_plot);
+            MI = par_mutual_information (pos1, index1, side1, new, side2, param, 0);
+            %MIt = par_mutual_information (pos1, index1, side1, new, side2, param, param.threshold_plot);
         elseif strcmp(param.myfunc_MI,'multiply_sqrt')
             MI = mutual_information_sqrt (pos1, index1, side1, new, side2, param, 0);
-            MIt = mutual_information_sqrt (pos1, index1, side1, new, side2, param, param.threshold_plot);
+            %MIt = mutual_information_sqrt (pos1, index1, side1, new, side2, param, param.threshold_plot);
         else
             disp('WTF!');
             keyboard;
@@ -565,7 +569,7 @@ while Tchanges > 0
             % keep
             str3 = 'Accept - MI increased';
             param.MIvec = [param.MIvec MI];
-            param.MItvec = [param.MItvec MIt];
+            %param.MItvec = [param.MItvec MIt];
             last_MI = MI;
         else
             %         # else accept D with probability P = exp(-E/kBT)
@@ -577,7 +581,7 @@ while Tchanges > 0
                 % accept decrease in MI mutual information
                 str3 = sprintf('Accept %.3g < %.3g',rnd,p);
                 param.MIvec = [param.MIvec MI];
-                param.MItvec = [param.MItvec MIt];
+                %param.MItvec = [param.MItvec MIt];
                 last_MI = MI;
             else
                 % reject move
@@ -586,8 +590,8 @@ while Tchanges > 0
                 param.trans = param.trans - d;
                 tmp = param.MIvec(end);
                 param.MIvec = [param.MIvec tmp];
-                tmpt = param.MItvec(end);
-                param.MItvec = [param.MItvec tmpt];
+                %tmpt = param.MItvec(end);
+                %param.MItvec = [param.MItvec tmpt];
                 
             end
         end
@@ -627,8 +631,8 @@ while Tchanges > 0
     Tchanges = Tchanges-1;
     p = p * param.prate;
 end
-[rotated,param] = rotate (canonical,param.rot, param);
-[new,param] = translate (rotated, param.trans, param);
+rotated = rotate (canonical,param.rot);
+new = translate (rotated, param.trans);
 end
 
 function save_plot (h, param,f)
@@ -756,6 +760,32 @@ s = size(side1);
 scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
 tmp = ceil(new*scale);
 for i=1:length(tmp)
+    % convert position to a,b,c
+    a = tmp(i,1);
+    b = tmp(i,2);
+    c = tmp(i,3);
+    % check
+    if a>s(1) || b>s(2) || c>s(3) || a<1 || b<1 || c<1
+        continue;
+    else
+        i1 = side1(a,b,c);
+        i2 = side2(param.index2(i));
+        if threshold
+            if i1<threshold && i2<threshold
+                continue;
+            end
+        end
+        mi = mi + double(double(i1)*double(i2));
+    end
+end
+end
+
+function mi = par_mutual_information (pos1, index1, side1, new, side2, param, threshold)
+mi = 0;
+s = size(side1);
+scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
+tmp = ceil(new*scale);
+parfor i=1:length(tmp)
     % convert position to a,b,c
     a = tmp(i,1);
     b = tmp(i,2);
@@ -946,18 +976,18 @@ end
 end
 
 
-function [out,param] = rotate (pos, angle, param)
+function [out] = rotate (pos, angle)
 rot = single( rotation_matrix (angle) );
 out = pos*rot;
 end
 
 
-function [out,param] = translate (pos, delta, param)
+function [out] = translate (pos, delta)
 D = ones(size(pos),'single').*delta;
 out = pos + D;
 end
 
-function p = calc_boltzman_p (MI, T, param)
+function p = calc_boltzman_p (T, param)
 val = -param.scale/T;
 if val > 0.0
     p = 1.0;

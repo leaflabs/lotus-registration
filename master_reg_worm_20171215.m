@@ -45,8 +45,6 @@ offset  = [-5 -5 0];
 inputFileName = {'Recon3D_solver_1_FrameNumber_0002.mat'};
 register
 
-keyboard
-
 close all;
 clearvars -except angle inputFilePath2  myfunc ppath scale_rot voxel_x ...
     voxel_z clip inputFilePath1 ipath opath savePath scale_trans voxel_y;
