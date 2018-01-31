@@ -206,7 +206,10 @@ q = find(cdf_side2>param.contour_thresh,1); % keep only first instance
 str = [sprintf('brightest %2.0f%% of voxel population\n',100*(1-param.pop_thresh))...
     'has an intensity larger than'...
     sprintf('\n%3.0f for side1\n',centers(i))...
-    sprintf('%3.0f for side2',centers(j))];
+    sprintf('%3.0f for side2\n\n\n',centers(j))...
+    sprintf('side 1 has %d voxels\n',numel(side1))...
+    sprintf('side 2 has %d voxels\n',numel(side2))...
+    ];
 a = xlim;
 b=ylim;
 text(a(2)/3,b(2)/2,str,'FontSize',8,'Color',[0 0 0]);
@@ -1326,22 +1329,25 @@ pos2_d2 = squeeze(max(onetwo,[],1));
 pos2_d3 = squeeze(max(twothree,[],1));
 
 if 0 < 1
-    T = ' (scaled by total intensity in sample)';
+    T = '      (scaled by total intensity in sample)';
     scale_d1 = [sum(pos1_d1) sum(pos2_d1) sum(side1_d1) sum(side2_d1) sum(new_d1)];
     scale_d2 = [sum(pos1_d2) sum(pos2_d2) sum(side1_d2) sum(side2_d2) sum(new_d2)];
     scale_d3 = [sum(pos1_d3) sum(pos2_d3) sum(side1_d3) sum(side2_d3) sum(new_d3)];
+    yl = 'normalized intensity';
     %disp(T);
 elseif 0 < 1
-    T = ' (scaled by max intensity in each projected volume)';
+    T = '      (scaled by max intensity in each projected volume)';
     scale_d1 = single([max(pos1_d1) max(pos2_d1) max(side1_d1) max(side2_d1) max(new_d1)]);
     scale_d2 = single([max(pos1_d2) max(pos2_d2) max(side1_d2) max(side2_d2) max(new_d2)]);
     scale_d3 = single([max(pos1_d3) max(pos2_d3) max(side1_d3) max(side2_d3) max(new_d3)]);
+    yl = 'normalized intensity';
     %disp(T);
 else
-    T = ' (not scaled)';
+    T = '      (not scaled)';
     scale_d1 = [1 1 1 1 1];
     scale_d2 = [1 1 1 1 1];
     scale_d3 = [1 1 1 1 1];
+    yl = 'intensity';
     %disp(T);
 end
 
@@ -1355,7 +1361,7 @@ semilogy(side2_d1/scale_d1(4),'.','Color',colors{2});
 %semilogy(pos2_d1/scale_d1(2),'o','Color',colors{2});
 semilogy(new_d1/scale_d1(5),'-','Color',colors{4});
 xlabel('first dimension [pixels]');
-ylabel('intensity');
+ylabel(yl);
 hold off;
 %legend('side1','side2','pos1','pos2','new');
 %legend('pos1','pos2','new');
@@ -1371,7 +1377,7 @@ semilogy(side2_d2/scale_d2(4),'.','Color',colors{2});
 %semilogy(pos2_d2/scale_d2(2),'o','Color',colors{2});
 semilogy(new_d2/scale_d2(5),'-','Color',colors{4});
 xlabel('second dimension [pixels]');
-ylabel('intensity');
+ylabel(yl);
 hold off;
 %legend('side1','side2','pos1','pos2','new');
 %legend('pos1','pos2','new');
@@ -1387,7 +1393,7 @@ semilogy(side2_d3/scale_d3(4),'.','Color',colors{2});
 %semilogy(pos2_d3/scale_d3(2),'o','Color',colors{2});
 semilogy(new_d3/scale_d3(5),'-','Color',colors{4});
 xlabel('third dimension [pixels]');
-ylabel('intensity');
+ylabel(yl);
 hold off;
 %legend('side1','side2','pos1','pos2','new');
 %legend('pos1','pos2','new');
@@ -1515,16 +1521,8 @@ for i=1:length(pos2)
     end
 end
 
-% onetwo_new = flipud(onetwo_new);
-% onetwo_pos1 = flipud(onetwo_pos1);
-% onetwo_pos2 = flipud(onetwo_pos2);
-% onethree_new = flipud(onethree_new);
-% onethree_pos1 = flipud(onethree_pos1);
-% onethree_pos2 = flipud(onethree_pos2);
-
 f = figure('units','normalized','outerposition',[0 0 1 1]);
 
-%clevel = [5 10 20 40]*2^8;
 subplot(2,2,1);
 hold on;
 a = size(onethree_new);
@@ -1582,7 +1580,6 @@ ylabel('dim one [pixels]');
 daspect([1,1,1]);
 hold off;
 set(gca,'Ydir','reverse');
-title(str,'Interpreter','none');
 
 subplot(2,2,4);
 hold on;
@@ -1613,9 +1610,12 @@ daspect([1,1,1]);
 hold off;
 set(gca,'Ydir','reverse');
 
-text(-800,400,'LFM1','FontSize',12,'Color',colors{3});
-text(-800,300,'LFM2','FontSize',12,'Color',colors{2});
-text(-800,200,'LFM2 coarse reg','FontSize',12,'Color',colors{1});
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+text(0.25,0.4,'LFM1','FontSize',12,'Color',colors{3},'Interpreter','none');
+text(0.25,0.35,'LFM2','FontSize',12,'Color',colors{2},'Interpreter','none');
+text(0.25,0.3,'LFM2 coarse reg','FontSize',12,'Color',colors{1},'Interpreter','none');
+text(0.5,0.92,str,'FontSize',12,'Color',[0 0 0] ,'Interpreter','none');
 
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
 ff=getframe(f);
@@ -1780,11 +1780,6 @@ title('LFM1');
 colorbar();
 daspect([1,1,1]);
 
-ax1 = axes('Position',[0 0 1 1],'Visible','off');
-axes(ax1);
-text(0.15,0.95,[param.inputFilePath1 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
-text(0.4,0.95,[param.inputFilePath2 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
-
 yz = squeeze(max(side2,[],2));
 subplot(2,6,3);
 dr = ceil(log2(single(max(max(yz)))));
@@ -1863,6 +1858,15 @@ end
 %     subplot(2,6,j);
 %     caxis(m);
 % end
+
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+text(0.15,0.97,[param.inputFilePath1 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(0.4,0.97,[param.inputFilePath2 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+if flag
+    text(0.65,0.97,[param.savePath param.timestamp str],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+end
+drawnow
 
 % save figure
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp, str);
@@ -1952,6 +1956,15 @@ if flag
     ylabel('pixels');
     daspect([1,1,1]);
 end
+
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+text(0.15,0.97,[param.inputFilePath1 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(0.4,0.97,[param.inputFilePath2 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+if flag
+    text(0.65,0.97,[param.savePath param.timestamp str],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+end
+drawnow
 
 % save figure
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp, str);
