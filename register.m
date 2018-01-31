@@ -274,14 +274,14 @@ if exist(f,'file') == 2
             XguessSAVE1 = Xvolume;
         else
             disp('Warning input data is not 16 bit.');
-            exit
+            keyboard
         end
         clear Xvolume;
     elseif exist('XguessSAVE1','var')
         disp('XguessSAVE1 found.');
         if ~strcmp(class(XguessSAVE1),'uint16')
             disp('Warning input data is not 16 bit.');
-            exit
+            keyboard
             %disp('Data will be analyzed as 8 bit.');
             %XguessSAVE1 = cast(XguessSAVE1, 'uint16');
         end
@@ -289,12 +289,12 @@ if exist(f,'file') == 2
         %disp('WTF?! Unknown data name.');
         disp(sprintf('No data was recognized:\n'));
 	whos
-        exit;
+        keyboard;
     end
     out = interpolate (XguessSAVE1,param);
 else
     disp(sprintf('File not found:\n%s\n',f));
-    exit;
+    keyboard;
 end 
 end
 
@@ -375,7 +375,7 @@ elseif strcmp(param.myfunc_combine,'min')
     out = uint16( min(i1,i2));
 else
     disp('WTF?!');
-    exit
+    keyboard
 end
 %max(max(max(out)))
 end
@@ -409,7 +409,7 @@ for i=1:param.N
         MI = mutual_information_sqrt (pos1, index1, side1, new, side2, param, 0);
     else
         disp('WTF!');
-        exit;
+        keyboard;
     end
     nullMIvec = [nullMIvec MI];
     disp(sprintf('%75s, MI = %f',str0,MI));
@@ -454,7 +454,7 @@ elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     xlabel('mutual information = sum(sqrt(side1*side2))');
 else
     disp('WTF!');
-    exit;
+    keyboard;
 end
 ylabel('count');
 title(['null distribution (bootstrapped from'...
@@ -474,7 +474,7 @@ elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     xlabel('mutual information = sum(sqrt(side1*side2))');
 else
     disp('WTF!');
-    exit;
+    keyboard;
 end
 ylabel('normalized cumulative density function');
 ylim([0 1]);
@@ -498,7 +498,7 @@ elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     MI = mutual_information_sqrt (pos1, index1, side1, new, side2, param, 0);
 else
     disp('WTF!');
-    exit;
+    keyboard;
 end
 last_MI = MI;
 param = setT0 (MI,param);
@@ -510,7 +510,7 @@ elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     MIt = mutual_information_sqrt (pos1, index1, side1, new, side2, param, param.threshold_plot);
 else
     disp('WTF!');
-    exit;
+    keyboard;
 end
 param.MItvec = [MIt];
 % set initial T. Start with T sufficiently high to "melt" the system
@@ -557,7 +557,7 @@ while Tchanges > 0
             MIt = mutual_information_sqrt (pos1, index1, side1, new, side2, param, param.threshold_plot);
         else
             disp('WTF!');
-            exit;
+            keyboard;
         end            
         delmi = MI - param.MIvec(end);
         str2 = sprintf('test MI = %7.3g, delmi = %7.3g',MI,delmi);
@@ -599,7 +599,7 @@ while Tchanges > 0
         str7 = sprintf('final offset = [%6.6g0 %6.6g0 %6.6g0]',val7(1),val7(2),val7(3));
         w = find(param.centers>last_MI,1); % keep only first instance
         if ~isempty(w)
-            str8 = sprintf('MI frac = %.3g,',param.cdf(w));
+            str8 = sprintf('MI frac = %.5g,',param.cdf(w));
             param.cdfvec = [param.cdfvec param.cdf(w)];
         else
             str8 = 'MI frac = 1.0';
@@ -609,9 +609,9 @@ while Tchanges > 0
         % last_MI > max(param.nullMIvec) =>dif>0
         % last_MI < max(param.nullMIvec) =>dif<0
         if dif > 0
-            str9 = sprintf('siman exceeds null by %.3f',dif);
+            str9 = sprintf('siman exceeds null by %.0f',dif);
         else
-            str9 = sprintf('null exceeds siman by %.3f',-dif);
+            str9 = sprintf('null exceeds siman by %.0f',-dif);
         end
         disp(sprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9));
         param.Pvec = [param.Pvec p];
@@ -619,10 +619,10 @@ while Tchanges > 0
         param.rotvec = [param.rotvec; param.rot];
 %         profile off
 %         profile viewer
-%         exit
+%         keyboard
     end
     %profile viewer;
-    %exit
+    %keyboard
     T = lowerT(T,param);
     Tchanges = Tchanges-1;
     p = p * param.prate;
@@ -941,7 +941,7 @@ function i = intensity (index, side)
 i = double(side(a,b,c));
 if i==0
     disp('WTF!');
-    exit;
+    keyboard;
 end
 end
 
@@ -966,7 +966,7 @@ else
 end
 if p<0.0 || p>1.0
     disp('WTF?');
-    exit
+    keyboard
 end
 end
 
@@ -1605,6 +1605,8 @@ ylabel('dim one [pixels]');
 daspect([1,1,1]);
 hold off;
 set(gca,'Ydir','reverse');
+set(gca,'XDir','reverse');
+
 
 subplot(2,2,2);
 hold on;
@@ -1817,6 +1819,7 @@ ylabel('one [pixels]');
 title('LFM1');
 %colorbar();
 daspect([1,1,1]);
+set(gca,'XDir','reverse');
 
 xy = squeeze(max(side1,[],3));
 subplot(2,6,2);
@@ -1847,6 +1850,8 @@ ylabel('one [pixels]');
 title('LFM2');
 %colorbar();
 daspect([1,1,1]);
+set(gca,'XDir','reverse');
+
 
 xy = squeeze(max(side2,[],3));
 subplot(2,6,4);
@@ -1878,6 +1883,7 @@ if flag
     title('DLFM');
     %colorbar();
     daspect([1,1,1]);
+    set(gca,'XDir','reverse');
     
     xy = squeeze(max(new,[],3));
     subplot(2,6,6);
@@ -1949,7 +1955,7 @@ imagesc(zeros(big_image));
 a = size(yz);
 x = [1 a(2)];
 y = [1 a(1)];
-imagesc('XData',x,'YData',y,'CData',yz);
+imagesc('XData',x,'YData',y,'CData',fliplr(yz));
 b = size(xy);
 x = [a(2)+1 b(2)+a(2)];
 y = [1 b(1)];
@@ -1974,7 +1980,7 @@ imagesc(zeros(big_image));
 a = size(yz);
 x = [1 a(2)];
 y = [1 a(1)];
-imagesc('XData',x,'YData',y,'CData',yz);
+imagesc('XData',x,'YData',y,'CData',fliplr(yz));
 b = size(xy);
 x = [a(2)+1 b(2)+a(2)];
 y = [1 b(1)];
@@ -2000,7 +2006,7 @@ if flag
     a = size(yz);
     x = [1 a(2)];
     y = [1 a(1)];
-    imagesc('XData',x,'YData',y,'CData',yz);
+    imagesc('XData',x,'YData',y,'CData',fliplr(yz));
     b = size(xy);
     x = [a(2)+1 b(2)+a(2)];
     y = [1 b(1)];
