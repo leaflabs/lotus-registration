@@ -112,6 +112,28 @@ param.N = 2000;
 param.cdf = cdf;
 param.centers = centers;
 param.nullMIvec = nullMIvec;
+% print MI of volumes pre-coarse registration
+r = -param.angle;
+rotated = rotate (canonical,r);
+% translate rotated by an amount param.trans+d
+% thus param.trans tracks the current position
+new = translate (rotated, param.centroid);
+% measure mutual_information
+if strcmp(param.myfunc_MI,'multiply')
+    MI = mutual_information (pos1, param.index1, side1, new, side2, param, 0);
+elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+    MI = mutual_information_sqrt (pos1, param.index1, side1, new, side2, param, 0);
+else
+    disp('WTF!');
+    keyboard;
+end
+w = find(param.centers>MI,1); % keep only first instance
+if ~isempty(w)
+    disp(sprintf('\npre-coarse MI frac = %.5g\n',param.cdf(w)));
+else
+    disp(sprintf('\npre-coarse MI frac = 1.0\n'));
+end
+
 
 %% simulated annealing
 [new, param] = simulated_annealing (pos1, param.index1, side1, new, side2, canonical, param);
@@ -451,7 +473,7 @@ save(nullf,'nullMIvec');
 
 % plot PDF and CDF
 f = figure;
-histogram(nullMIvec);
+histogram(nullMIvec,50);
 if strcmp(param.myfunc_MI,'multiply')
     xlabel('mutual information = sum(side1*side2)');
 elseif strcmp(param.myfunc_MI,'multiply_sqrt')
@@ -497,7 +519,7 @@ end
 function [new, param] = simulated_annealing (pos1, index1, side1, new, side2, canonical, param)
 %print_param(param);
 if strcmp(param.myfunc_MI,'multiply')
-    MI = par_mutual_information (pos1, index1, side1, new, side2, param, 0);
+    MI = mutual_information (pos1, index1, side1, new, side2, param, 0);
 elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     MI = mutual_information_sqrt (pos1, index1, side1, new, side2, param, 0);
 else
@@ -524,7 +546,7 @@ param.Pvec = [p];
 % set max number of temperature changes and mean changes
 Tchanges = param.TC0;
 % while system not frozen and more temperature changes are allowed
-%profile on;
+% profile on;
 param.transvec = [param.trans];
 param.rotvec = [param.rot];
 % CDF
@@ -554,7 +576,7 @@ while Tchanges > 0
         str1 = print_param(param);
         % measure mutual_information
         if strcmp(param.myfunc_MI,'multiply')
-            MI = par_mutual_information (pos1, index1, side1, new, side2, param, 0);
+            MI = mutual_information (pos1, index1, side1, new, side2, param, 0);
             %MIt = par_mutual_information (pos1, index1, side1, new, side2, param, param.threshold_plot);
         elseif strcmp(param.myfunc_MI,'multiply_sqrt')
             MI = mutual_information_sqrt (pos1, index1, side1, new, side2, param, 0);
@@ -622,8 +644,8 @@ while Tchanges > 0
         param.transvec = [param.transvec; param.trans];
         param.rotvec = [param.rotvec; param.rot];
 %         profile off
-%         profile viewer
-%         keyboard
+%          profile viewer
+%          keyboard
     end
     %profile viewer;
     %keyboard
@@ -752,32 +774,64 @@ a=param.trans;
 b=param.rot;
 out = sprintf('trans = [%6.6g0 %6.6g0 %6.6g0], rot = [%7.6g0 %7.6g0 %7.6g0]',a(1),a(2),a(3),b(1),b(2),b(3));
 end
-
+% 
+% function mi = mutual_information (pos1, index1, side1, new, side2, param, threshold)
+% mi = 0;
+% s = size(side1);
+% scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
+% tmp = ceil(new*scale);
+% for i=1:length(tmp)
+%     % convert position to a,b,c
+%     a = tmp(i,1);
+%     b = tmp(i,2);
+%     c = tmp(i,3);
+%     % check
+%     if a>s(1) || b>s(2) || c>s(3) || a<1 || b<1 || c<1
+%         keyboard
+%         continue;
+%     else
+%         i1 = side1(a,b,c);
+%         i2 = side2(param.index2(i));
+%         if threshold
+%             if i1<threshold && i2<threshold
+%                 continue;
+%             end
+%         end
+%         mi = mi + double(double(i1)*double(i2));
+%     end
+% end
+% end
 
 function mi = mutual_information (pos1, index1, side1, new, side2, param, threshold)
-mi = 0;
 s = size(side1);
 scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
 tmp = ceil(new*scale);
-for i=1:length(tmp)
-    % convert position to a,b,c
-    a = tmp(i,1);
-    b = tmp(i,2);
-    c = tmp(i,3);
-    % check
-    if a>s(1) || b>s(2) || c>s(3) || a<1 || b<1 || c<1
-        continue;
-    else
-        i1 = side1(a,b,c);
-        i2 = side2(param.index2(i));
-        if threshold
-            if i1<threshold && i2<threshold
-                continue;
-            end
-        end
-        mi = mi + double(double(i1)*double(i2));
-    end
-end
+index = find( tmp(:,1)<=s(1) & tmp(:,2)<=s(2) & tmp(:,3)<=s(3) ...
+    & tmp(:,1)>0 & tmp(:,2)>0 & tmp(:,3)>0 );
+i1 = side1(tmp(index));
+i2 = side2(param.index2(index));
+mi = sum(double(i1).*double(i2));
+
+% for i=1:length(tmp)
+%     % convert position to a,b,c
+%     a = tmp(i,1);
+%     b = tmp(i,2);
+%     c = tmp(i,3);
+%     % check
+%     if a>s(1) || b>s(2) || c>s(3) || a<1 || b<1 || c<1
+%         keyboard
+%         continue;
+%     else
+%         i1 = side1(a,b,c);
+%         i2 = side2(param.index2(i));
+%         if threshold
+%             if i1<threshold && i2<threshold
+%                 continue;
+%             end
+%         end
+%         mi = mi + double(double(i1)*double(i2));
+%     end
+% end
 end
 
 function mi = par_mutual_information (pos1, index1, side1, new, side2, param, threshold)
