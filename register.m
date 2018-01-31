@@ -49,6 +49,7 @@ a = size(side1);
 if ~isempty(find(param.clip>0))
     disp('Clipping pixels from periphery:');
     disp(sprintf('%d ',param.clip));
+    disp(sprintf('\n'));
     side1 = side1( 1+param.clip(1):a(1)-param.clip(2),...
         1+param.clip(3):a(2)-param.clip(4),...
         1+param.clip(5):a(3)-param.clip(6));
@@ -65,7 +66,7 @@ param.N = 10000;
 param.xlim_thresh = 0.999; %HARDCODED
 param.contour_thresh = 0.99;
 param.pop_thresh = 0.95; %HARDCODED
-param = calculate_thresholds (side1, side2, param)
+param = calculate_thresholds (side1, side2, param,'cdf_voxel_intensities');
 
 %% voxel positions
 param.index1 = find(side1>param.threshold1);
@@ -89,11 +90,11 @@ param.trans = param.centroid + param.offset;
 %% plot data
 if param.plot
     save_1d_max_projections(side1, side2, pos1, pos2, new, param,...
-        'max_intensity_projection_presim');
+        '1d_max_projections_presim');
     save_2d_max_projections(side1, side2, new, param, 0,...
-        'summed_intensity_projections_presim');
+        '2d_max_projections_presim');
     save_2d_max_projections_compact(side1, side2, new, param, 0,...
-        'summed_intensity_projections_presim');
+        '2d_max_projections_compact_presim');
     save_2d_contour_plots(side1, side2, pos1, pos2, new, param,...
         'contour_plots_presim');
     drawnow
@@ -102,29 +103,11 @@ end
 %% null distribution
 % for random rotations and offsets (within some range)
 % calculate mutual information, MI
-param.N = 1000;
+param.N = 2000;
 [cdf,centers,nullMIvec] = null_distribution (pos1, param.index1, side1, new, side2, canonical, param);
 param.cdf = cdf;
 param.centers = centers;
 param.nullMIvec = nullMIvec;
-nullf = [param.savePath 'null.mat'];
-if exist(nullf,'file') == 2
-    tmp = nullMIvec;
-    load(nullf,'nullMIvec');
-    disp(sprintf('nullMIvec was N = %d',length(nullMIvec)));
-    nullMIvec = [nullMIvec tmp];
-    disp(sprintf('nullMIvec is now N = %d',length(nullMIvec)));
-    save(nullf,'nullMIvec');
-else
-    save(nullf,'nullMIvec');
-end
-
-figure;
-histogram(param.nullMIvec);
-xlabel('mutual information');
-ylabel('count');
-title(['null distribution = mutual information for'...
-    sprintf(' %d random registrations',length(param.nullMIvec))]);
 
 %% simulated annealing
 [new, param] = simulated_annealing (pos1, param.index1, side1, new, side2, canonical, param);
@@ -140,13 +123,14 @@ if param.savevol
     % but doing so would jack up the next few plots.
     comb = combineVols (side1, side2, param);
 end
+
 if param.plot
     save_1d_max_projections(side1, side2, pos1, pos2, new, param,...
-        'max_intensity_projection_postsim');
+        '1d_max_projections_postsim');
     save_2d_max_projections(side1, side2, comb, param, 1, ...
-        'summed_intensity_projections_postsim');
+        '2d_max_projections_postsim');
     save_2d_max_projections_compact(side1, side2, comb, param, 1, ...
-        'summed_intensity_projections_postsim');
+        '2d_max_projections_compact_postsim');
     save_2d_contour_plots(side1, side2, pos1, pos2, new, param, ...
         'contour_plots_postsim');
     drawnow
@@ -162,7 +146,7 @@ diary off;
 
 %% functions
 
-function param = calculate_thresholds (side1, side2, param)
+function param = calculate_thresholds (side1, side2, param, str)
 % assume 16 bit
 edges = linspace(0,2^16,param.N);
 centers = (edges(1:end-1)+edges(2:end))/2;
@@ -187,13 +171,14 @@ for i=1:length(h_side2)
     cdf_side2 = [cdf_side2 total];
 end
 
-figure;
+f = figure;
 
 plot(centers,cdf_side1);
 hold on;
 plot(centers,cdf_side2);
 xlabel('Intensity of voxel [uint16]');
 ylabel('normalized cumulative density function');
+title([num2str(param.N) ' bins in distribution']);
 legend('side1','side2');
 hold off;
 i = find(cdf_side1>param.xlim_thresh,1); % keep only first instance
@@ -203,7 +188,7 @@ i = find(cdf_side1>param.pop_thresh,1); % keep only first instance
 j = find(cdf_side2>param.pop_thresh,1); % keep only first instance
 p = find(cdf_side1>param.contour_thresh,1); % keep only first instance
 q = find(cdf_side2>param.contour_thresh,1); % keep only first instance
-str = [sprintf('brightest %2.0f%% of voxel population\n',100*(1-param.pop_thresh))...
+mystr = [sprintf('brightest %2.0f%% of voxel population\n',100*(1-param.pop_thresh))...
     'has an intensity larger than'...
     sprintf('\n%3.0f for side1\n',centers(i))...
     sprintf('%3.0f for side2\n\n\n',centers(j))...
@@ -212,7 +197,12 @@ str = [sprintf('brightest %2.0f%% of voxel population\n',100*(1-param.pop_thresh
     ];
 a = xlim;
 b=ylim;
-text(a(2)/3,b(2)/2,str,'FontSize',8,'Color',[0 0 0]);
+text(a(2)/3,b(2)/2,mystr,'FontSize',8,'Color',[0 0 0]);
+
+str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
+ff=getframe(f);
+[X, map] = frame2im(ff);
+imwrite(X, str);
 
 param.threshold1 = centers(i);
 param.threshold2 = centers(j);
@@ -383,13 +373,13 @@ end
 end
 
 
-function [cdf,centers,MIvec] = null_distribution (pos1, index1, side1, new, side2, canonical, param)
-MIvec = [];
+function [cdf,centers,nullMIvec] = null_distribution (pos1, index1, side1, new, side2, canonical, param)
+nullMIvec = [];
 gain = 5;
 tmp = param.rot_amp;
 param.rot_amp = param.rot_amp * 20;
 %profile on;
-disp('Count      Perturbation     Transformation      Overlap     Probability,Decision   ');
+disp(sprintf('\nCount    Offset                            Rotation                          Mutual_Information'));
 for i=1:param.N
     % perturb pos
     % randomly pick a translation vector and rotation vector
@@ -413,7 +403,7 @@ for i=1:param.N
         disp('WTF!');
         keyboard;
     end
-    MIvec = [MIvec MI];
+    nullMIvec = [nullMIvec MI];
     disp(sprintf('%75s, MI = %f',str0,MI));
     %         profile off
     %         profile viewer
@@ -422,10 +412,10 @@ param.rot_amp = tmp;
 %profile viewer;
 
 % CDF
-edges = linspace(0,max(MIvec),param.N);
+edges = linspace(0,max(nullMIvec),param.N);
 centers = (edges(1:end-1)+edges(2:end))/2;
 % this works. to check: sum(h_side1) == numel(side1)
-h_MI = histcounts(MIvec,edges);
+h_MI = histcounts(nullMIvec,edges);
 % normalize cdf to 1
 h_MI = h_MI / sum(h_MI);
 
@@ -436,11 +426,57 @@ for i=1:length(h_MI)
     cdf = [cdf total];
 end
 
-figure;
-plot(centers,cdf);
-xlabel('MI');
-ylabel('normalized cumulative density function');
+% add to existing null distribution if any
+nullf = [param.savePath 'null.mat'];
+if exist(nullf,'file') == 2
+    tmp = nullMIvec;
+    load(nullf,'nullMIvec');
+    disp(sprintf('nullMIvec was N = %d',length(nullMIvec)));
+    nullMIvec = [nullMIvec tmp];
+    disp(sprintf('nullMIvec is now N = %d',length(nullMIvec))); 
+end
+save(nullf,'nullMIvec');
 
+% plot PDF and CDF
+f = figure;
+histogram(nullMIvec);
+if strcmp(param.myfunc_MI,'multiply')
+    xlabel('mutual information = sum(side1*side2)');
+elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+    xlabel('mutual information = sum(sqrt(side1*side2))');
+else
+    disp('WTF!');
+    keyboard;
+end
+ylabel('count');
+title(['null distribution (bootstrapped from'...
+    sprintf(' %d random registrations)',length(nullMIvec))]);
+
+str=sprintf('%s%s_null_distribution.png',param.savePath,param.timestamp);
+ff=getframe(f);
+[X, map] = frame2im(ff);
+imwrite(X, str);
+
+
+f = figure;
+plot(centers,cdf);
+if strcmp(param.myfunc_MI,'multiply')
+    xlabel('mutual information = sum(side1*side2)');
+elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+    xlabel('mutual information = sum(sqrt(side1*side2))');
+else
+    disp('WTF!');
+    keyboard;
+end
+ylabel('normalized cumulative density function');
+ylim([0 1]);
+title(['null distribution (bootstrapped from'...
+    sprintf(' %d random registrations)',length(nullMIvec))]);
+
+str=sprintf('%s%s_null_cdf.png',param.savePath,param.timestamp);
+ff=getframe(f);
+[X, map] = frame2im(ff);
+imwrite(X, str);
 end
 
 
@@ -479,6 +515,12 @@ Tchanges = param.TC0;
 %profile on;
 param.transvec = [param.trans];
 param.rotvec = [param.rot];
+% CDF
+param.cdfvec = [];
+w = find(param.centers>last_MI,1); % keep only first instance
+if ~isempty(w)
+    param.cdfvec = [param.cdfvec param.cdf(w)];
+end
 disp('Count      Perturbation     Transformation      Overlap     Probability,Decision   ');
 while Tchanges > 0
     pos_changes = param.MC0;
@@ -550,8 +592,10 @@ while Tchanges > 0
         w = find(param.centers>last_MI,1); % keep only first instance
         if ~isempty(w)
             str8 = sprintf('MI frac = %.3g,',param.cdf(w));
+            param.cdfvec = [param.cdfvec param.cdf(w)];
         else
             str8 = 'MI frac = 1.0';
+            param.cdfvec = [param.cdfvec 1];
         end
         dif = last_MI - max(param.nullMIvec);
         % last_MI > max(param.nullMIvec) =>dif>0
@@ -593,7 +637,8 @@ prefix = sprintf('%s%s_',param.savePath,param.timestamp);
 h = figure;
 plot([1:numel(param.Pvec)],param.Pvec);
 xlabel('iteration');
-ylabel('probability of decreasing the fit');
+ylabel('probability of allowing a decrease in MI');
+title('simulated annealing schedule');
 if 0>1
     fname = sprintf('%s_p.fig',prefix)
     savefig(h,fname);
@@ -607,8 +652,8 @@ end
 h = figure;
 plot([1:numel(param.MIvec)],log10(param.MIvec));
 xlabel('iteration');
-ylabel('log summed product of intensity');
-title(sprintf('Intensity > %d or %d',param.threshold1,param.threshold2));
+ylabel('log (mutual information)');
+title('evolution of mutual information during simulated annealing');
 if 0>1
     fname = sprintf('%s_MI.fig',prefix)
     savefig(h,fname);
@@ -619,36 +664,36 @@ else
     imwrite(X, str);
 end
 
-h = figure;
-plot([1:numel(param.MItvec)],log10(param.MItvec));
+f = figure;
+plot([1:numel(param.cdfvec)],param.cdfvec);
 xlabel('iteration');
-ylabel('log summed product of intensity');
-title(sprintf('Intensity > %d',param.threshold_plot));
+ylabel('fraction of null distribution');
+title('fraction of null distribution less than current mutual informaton');
 if 0>1
-    fname = sprintf('%s_MIt.fig',prefix)
+    fname = sprintf('%s_frac_null.fig',prefix)
     savefig(h,fname);
 else
-    str=sprintf('%s_MIt.png',prefix);
-    f=getframe(gcf);
-    [X, map] = frame2im(f);
+    str=sprintf('%s_frac_null.png',prefix);
+    ff=getframe(f);
+    [X, map] = frame2im(ff);
     imwrite(X, str);
 end
-
 
 h = figure;
 a = size(param.transvec);
 subplot(1,3,1);
 plot([1:a(1)],param.transvec(:,1));
 xlabel('iteration');
-ylabel('translation distance [um]- dim 1');
+ylabel('translation in dim 1 (um)');
 subplot(1,3,2);
 plot([1:a(1)],param.transvec(:,2));
 xlabel('iteration');
-ylabel('translation distance [um]- dim 2');
+ylabel('translation in dim 2 (um)');
+title('trajectory of simulated annealing');
 subplot(1,3,3);
 plot([1:a(1)],param.transvec(:,3));
 xlabel('iteration');
-ylabel('translation distance [um]- dim 3');
+ylabel('translation in dim 3 (um)');
 if 0>1
     fname = sprintf('%s_trans.fig',prefix)
     savefig(h,fname);
@@ -665,15 +710,16 @@ a = size(param.rotvec);
 subplot(1,3,1);
 plot([1:a(1)],param.rotvec(:,1));
 xlabel('iteration');
-ylabel('rotation amount - dim 1');
+ylabel('rotation around dim 1 (radians)');
 subplot(1,3,2);
 plot([1:a(1)],param.rotvec(:,2));
 xlabel('iteration');
-ylabel('rotation amount - dim 2');
+ylabel('rotation around dim 2 (radians)');
+title('trajectory of simulated annealing');
 subplot(1,3,3);
 plot([1:a(1)],param.rotvec(:,3));
 xlabel('iteration');
-ylabel('rotation amount - dim 3');
+ylabel('rotation around dim 3 (radians)');
 if 0>1
     fname = sprintf('%s_rot.fig',prefix)
     savefig(h,fname);
@@ -1617,6 +1663,10 @@ text(0.25,0.35,'LFM2','FontSize',12,'Color',colors{2},'Interpreter','none');
 text(0.25,0.3,'LFM2 coarse reg','FontSize',12,'Color',colors{1},'Interpreter','none');
 text(0.5,0.92,str,'FontSize',12,'Color',[0 0 0] ,'Interpreter','none');
 
+text(0.5,0.8,sprintf('contour at intensity level %4.0f',param.contour_int1),'FontSize',12,'Color',colors{3},'Interpreter','none');
+text(0.5,0.75,sprintf('contour at intensity level %4.0f',param.contour_int2),'FontSize',12,'Color',colors{2},'Interpreter','none');
+text(0.5,0.7,sprintf('contour at intensity level %4.0f',param.contour_int2),'FontSize',12,'Color',colors{1},'Interpreter','none');
+
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
 ff=getframe(f);
 [X, map] = frame2im(ff);
@@ -1830,7 +1880,7 @@ if flag
     title('DLFM');
     %colorbar();
     daspect([1,1,1]);
-    a=get(gca,'Position')
+    
     xz = squeeze(max(new,[],1))';
     subplot(2,6,12);
     dr = ceil(log2(single(max(max(xz)))));
@@ -1864,8 +1914,9 @@ axes(ax1);
 text(0.15,0.97,[param.inputFilePath1 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 text(0.4,0.97,[param.inputFilePath2 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 if flag
-    text(0.65,0.97,[param.savePath param.timestamp str],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+    text(0.65,0.97,[param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 end
+text(0.4,0.2,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 drawnow
 
 % save figure
@@ -1962,8 +2013,9 @@ axes(ax1);
 text(0.15,0.97,[param.inputFilePath1 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 text(0.4,0.97,[param.inputFilePath2 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 if flag
-    text(0.65,0.97,[param.savePath param.timestamp str],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+    text(0.65,0.97,[param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 end
+text(0.4,0.2,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 drawnow
 
 % save figure

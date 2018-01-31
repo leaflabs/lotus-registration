@@ -39,12 +39,13 @@ myfunc_MI  = 'multiply';
 scale_trans = 40;
 scale_rot   = 20;
 
-plot = true;
 
 %%
 offset  = [-5 -5 0];
 inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
 register
+
+keyboard
 
 close all;
 clearvars -except angle inputFilePath2  myfunc ppath scale_rot voxel_x ...
