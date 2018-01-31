@@ -267,7 +267,7 @@ for i = 1:M
     final_pos2 = init_pos([linind(1):linind(2)]', side2, param);
     % for each position in final_pos2, apply rot and translation
     disp('Translate');
-    [tmp,param] = translate (final_pos2, -param.centroid, param);
+    tmp = translate (final_pos2, -param.centroid);
     disp('Rotate');
     tmp = rotate (tmp, param.rot); % CHECK
     disp('Translate');
