@@ -8,19 +8,19 @@ hostname = strtrim(hostname);
 if strcmp(hostname,'Justins-Mac.local')
 
 	ppath = '/Users/justin/Desktop/DLFM'
-	addpath(ppath);
+	addpath([ppath '/lotus-registration']);
 	ipath = [ppath '/worm/20171215']
 	opath = ipath
 
 elseif strcmp(hostname,'willis')
 
 	ppath = '/home/jkinney/Desktop/DLFM'
-	addpath(ppath);
+	addpath([ppath '/lotus-registration']);
 	ipath = [ppath '/worm/20171215']
 	opath = ipath
 else
 	ppath = '/om/user/jkinney/DLFM'
-	addpath(ppath);
+	aaddpath([ppath '/lotus-registration']);
 	ipath = '/om/user/ehoseini/MyData/DuallensLightField/7_20_17/video_1'
 	opath = [ppath '/worm/20171215']
 end
