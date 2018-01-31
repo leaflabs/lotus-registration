@@ -19,10 +19,11 @@ diary(fname)
 
 
 %% load volumes
-disp(sprintf('\nLoading volume %s\n',param.inputFileName{1}));
-f = [param.inputFilePath1 param.inputFileName{1}];
+f = [param.inputFilePath1 param.inputFileName{1}]
+disp(sprintf('\nLoading volume %s\n',f));
 side1 = loadData(f, param);
 f = [param.inputFilePath2 param.inputFileName{1}];
+disp(sprintf('\nLoading volume %s\n',f));
 side2 = loadData(f, param);
 param.voxel_z = param.voxel_z / param.interp;
 
@@ -266,28 +267,35 @@ save(outFile,'XguessSAVE1','-v7.3');
 end
 
 function out = loadData (f, param)
-load(f);
-if exist('Xvolume','var')
-    if strcmp(class(Xvolume),'uint16')
-        XguessSAVE1 = Xvolume;
+if exist(f,'file') == 2
+    load(f);
+    if exist('Xvolume','var')
+        if strcmp(class(Xvolume),'uint16')
+            XguessSAVE1 = Xvolume;
+        else
+            disp('Warning input data is not 16 bit.');
+            exit
+        end
+        clear Xvolume;
+    elseif exist('XguessSAVE1','var')
+        disp('XguessSAVE1 found.');
+        if ~strcmp(class(XguessSAVE1),'uint16')
+            disp('Warning input data is not 16 bit.');
+            exit
+            %disp('Data will be analyzed as 8 bit.');
+            %XguessSAVE1 = cast(XguessSAVE1, 'uint16');
+        end
     else
-        disp('Warning input data is not 16 bit.');
-        keyboard
+        %disp('WTF?! Unknown data name.');
+        disp(sprintf('No data was recognized:\n'));
+	whos
+        exit;
     end
-    clear Xvolume;
-elseif exist('XguessSAVE1','var')
-    disp('XguessSAVE1 found.');
-    if ~strcmp(class(XguessSAVE1),'uint16')
-        disp('Warning input data is not 16 bit.');
-        keyboard
-        %disp('Data will be analyzed as 8 bit.');
-        %XguessSAVE1 = cast(XguessSAVE1, 'uint16');
-    end
+    out = interpolate (XguessSAVE1,param);
 else
-    disp('WTF?! Unknown data name.');
-    return;
-end
-out = interpolate (XguessSAVE1,param);
+    disp(sprintf('File not found:\n%s\n',f));
+    exit;
+end 
 end
 
 function out = interpolate (side, param)
@@ -367,7 +375,7 @@ elseif strcmp(param.myfunc_combine,'min')
     out = uint16( min(i1,i2));
 else
     disp('WTF?!');
-    keyboard
+    exit
 end
 %max(max(max(out)))
 end
@@ -401,7 +409,7 @@ for i=1:param.N
         MI = mutual_information_sqrt (pos1, index1, side1, new, side2, param, 0);
     else
         disp('WTF!');
-        keyboard;
+        exit;
     end
     nullMIvec = [nullMIvec MI];
     disp(sprintf('%75s, MI = %f',str0,MI));
@@ -446,7 +454,7 @@ elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     xlabel('mutual information = sum(sqrt(side1*side2))');
 else
     disp('WTF!');
-    keyboard;
+    exit;
 end
 ylabel('count');
 title(['null distribution (bootstrapped from'...
@@ -466,7 +474,7 @@ elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     xlabel('mutual information = sum(sqrt(side1*side2))');
 else
     disp('WTF!');
-    keyboard;
+    exit;
 end
 ylabel('normalized cumulative density function');
 ylim([0 1]);
@@ -490,7 +498,7 @@ elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     MI = mutual_information_sqrt (pos1, index1, side1, new, side2, param, 0);
 else
     disp('WTF!');
-    keyboard;
+    exit;
 end
 last_MI = MI;
 param = setT0 (MI,param);
@@ -502,7 +510,7 @@ elseif strcmp(param.myfunc_MI,'multiply_sqrt')
     MIt = mutual_information_sqrt (pos1, index1, side1, new, side2, param, param.threshold_plot);
 else
     disp('WTF!');
-    keyboard;
+    exit;
 end
 param.MItvec = [MIt];
 % set initial T. Start with T sufficiently high to "melt" the system
@@ -549,7 +557,7 @@ while Tchanges > 0
             MIt = mutual_information_sqrt (pos1, index1, side1, new, side2, param, param.threshold_plot);
         else
             disp('WTF!');
-            keyboard;
+            exit;
         end            
         delmi = MI - param.MIvec(end);
         str2 = sprintf('test MI = %7.3g, delmi = %7.3g',MI,delmi);
@@ -611,10 +619,10 @@ while Tchanges > 0
         param.rotvec = [param.rotvec; param.rot];
 %         profile off
 %         profile viewer
-%         keyboard
+%         exit
     end
     %profile viewer;
-    %keyboard
+    %exit
     T = lowerT(T,param);
     Tchanges = Tchanges-1;
     p = p * param.prate;
@@ -933,7 +941,7 @@ function i = intensity (index, side)
 i = double(side(a,b,c));
 if i==0
     disp('WTF!');
-    keyboard;
+    exit;
 end
 end
 
@@ -958,7 +966,7 @@ else
 end
 if p<0.0 || p>1.0
     disp('WTF?');
-    keyboard
+    exit
 end
 end
 

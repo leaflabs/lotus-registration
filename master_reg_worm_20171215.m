@@ -20,7 +20,7 @@ elseif strcmp(hostname,'willis')
 	opath = ipath
 else
 	ppath = '/om/user/jkinney/DLFM'
-	aaddpath([ppath '/lotus-registration']);
+	addpath([ppath '/lotus-registration']);
 	ipath = '/om/user/ehoseini/MyData/DuallensLightField/7_20_17/video_1'
 	opath = [ppath '/worm/20171215']
 end
@@ -42,7 +42,7 @@ scale_rot   = 20;
 
 %%
 offset  = [-5 -5 0];
-inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
+inputFileName = {'Recon3D_solver_1_FrameNumber_0002.mat'};
 register
 
 keyboard
