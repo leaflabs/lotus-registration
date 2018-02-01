@@ -22,7 +22,7 @@ diary(fname)
 
 
 %% load volumes
-f = [param.inputFilePath1 param.inputFileName{1}]
+f = [param.inputFilePath1 param.inputFileName{1}];
 disp(sprintf('\nLoading volume %s\n',f));
 side1 = loadData(f, param);
 f = [param.inputFilePath2 param.inputFileName{1}];
@@ -107,7 +107,6 @@ end
 %% null distribution
 % for random rotations and offsets (within some range)
 % calculate mutual information, MI
-param.N = 2000;
 [cdf,centers,nullMIvec] = null_distribution (pos1, param.index1, side1, new, side2, canonical, param);
 param.cdf = cdf;
 param.centers = centers;
@@ -197,43 +196,44 @@ for i=1:length(h_side2)
     cdf_side2 = [cdf_side2 total];
 end
 
-f = figure;
-
-plot(centers,cdf_side1);
-hold on;
-plot(centers,cdf_side2);
-xlabel('Intensity of voxel [uint16]');
-ylabel('normalized cumulative density function');
-title([num2str(param.N) ' bins in distribution']);
-legend('side1','side2');
-hold off;
-i = find(cdf_side1>param.xlim_thresh,1); % keep only first instance
-xlim([0 centers(i)]);
-
 i = find(cdf_side1>param.pop_thresh,1); % keep only first instance
 j = find(cdf_side2>param.pop_thresh,1); % keep only first instance
 p = find(cdf_side1>param.contour_thresh,1); % keep only first instance
 q = find(cdf_side2>param.contour_thresh,1); % keep only first instance
-mystr = [sprintf('brightest %2.0f%% of voxel population\n',100*(1-param.pop_thresh))...
-    'has an intensity larger than'...
-    sprintf('\n%3.0f for side1\n',centers(i))...
-    sprintf('%3.0f for side2\n\n\n',centers(j))...
-    sprintf('side 1 has %d voxels\n',numel(side1))...
-    sprintf('side 2 has %d voxels\n',numel(side2))...
-    ];
-a = xlim;
-b=ylim;
-text(a(2)/3,b(2)/2,mystr,'FontSize',8,'Color',[0 0 0]);
-
-str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
-ff=getframe(f);
-[X, map] = frame2im(ff);
-imwrite(X, str);
-
 param.threshold1 = centers(i);
 param.threshold2 = centers(j);
 param.contour_int1 = centers(p);
 param.contour_int2 = centers(q);
+
+if param.plot
+    f = figure;
+    plot(centers,cdf_side1);
+    hold on;
+    plot(centers,cdf_side2);
+    xlabel('Intensity of voxel [uint16]');
+    ylabel('normalized cumulative density function');
+    title([num2str(param.N) ' bins in distribution']);
+    legend('side1','side2');
+    hold off;
+    i = find(cdf_side1>param.xlim_thresh,1); % keep only first instance
+    xlim([0 centers(i)]);
+    mystr = [sprintf('brightest %2.0f%% of voxel population\n',...
+        100*(1-param.pop_thresh))...
+        'has an intensity larger than'...
+        sprintf('\n%3.0f for side1\n',param.threshold1)...
+        sprintf('%3.0f for side2\n\n\n',param.threshold2)...
+        sprintf('side 1 has %d voxels\n',numel(side1))...
+        sprintf('side 2 has %d voxels\n',numel(side2))...
+        ];
+    a = xlim;
+    b=ylim;
+    text(a(2)/3,b(2)/2,mystr,'FontSize',8,'Color',[0 0 0]);
+    
+    str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
+    ff=getframe(f);
+    [X, map] = frame2im(ff);
+    imwrite(X, str);
+end
 end
 
 
@@ -408,18 +408,21 @@ end
 
 function [cdf,centers,nullMIvec] = null_distribution (pos1, index1, side1, new, side2, canonical, param)
 nullMIvec = [];
-gain = 5;
+% determine gain so offset limit = half or quarter of volume limits
+% and so that rotation limit = pi
+a = max ([ size(side1) size(side2)]);
+offset_limit = 0.25 * a * param.voxel_y;
+gain = offset_limit / param.trans_amp;
 tmp = param.rot_amp;
-param.rot_amp = param.rot_amp * 20;
-N = param.N;
+param.rot_amp = pi / gain;
+%N = param.Nnull;
 %profile on;
-disp(sprintf('\nCount    Offset                            Rotation                          Mutual_Information'));
-parfor i=1:N
+disp(sprintf('\nCount    Mutual_Information                Offset [um]                        Rotation [radians]'));
+parfor i=1:param.Nnull
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
     [d,r] = perturb(param,gain);
-    str0 = sprintf('i = %d, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,d(1),d(2),d(3),r(1),r(2),r(3));
     % apply transformation
     % rotate an amount r PLUS param.rot
     % thus param.rot tracks the current rotation
@@ -427,7 +430,6 @@ parfor i=1:N
     % translate rotated by an amount param.trans+d
     % thus param.trans tracks the current position
     new = translate (rotated, param.centroid+d);
-    str1 = print_param(param);
     % measure mutual_information
     if strcmp(param.myfunc_MI,'multiply')
         MI = mutual_information (pos1, index1, side1, new, side2, param, 0);
@@ -438,7 +440,8 @@ parfor i=1:N
         keyboard;
     end
     nullMIvec = [nullMIvec MI];
-    disp(sprintf('%75s, MI = %f',str0,MI));
+    str = sprintf('i = %4d, MI = %16.0f, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,MI,d(1),d(2),d(3),r(1),r(2),r(3));
+    disp(str);
     %         profile off
     %         profile viewer
 end
@@ -446,7 +449,7 @@ param.rot_amp = tmp;
 %profile viewer;
 
 % CDF
-edges = linspace(0,max(nullMIvec),param.N);
+edges = linspace(0,max(nullMIvec),param.Nnull);
 centers = (edges(1:end-1)+edges(2:end))/2;
 % this works. to check: sum(h_side1) == numel(side1)
 h_MI = histcounts(nullMIvec,edges);
@@ -548,6 +551,7 @@ Tchanges = param.TC0;
 % while system not frozen and more temperature changes are allowed
 % profile on;
 param.transvec = [param.trans];
+param.offsetvec = [param.offset];
 param.rotvec = [param.rot];
 % CDF
 param.cdfvec = [];
@@ -642,6 +646,7 @@ while Tchanges > 0
         disp(sprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9));
         param.Pvec = [param.Pvec p];
         param.transvec = [param.transvec; param.trans];
+        param.offsetvec = [param.offsetvec; d];
         param.rotvec = [param.rotvec; param.rot];
 %         profile off
 %          profile viewer
@@ -713,31 +718,86 @@ else
     imwrite(X, str);
 end
 
+% h = figure;
+% a = size(param.transvec);
+% subplot(1,3,1);
+% plot([1:a(1)],param.transvec(:,1));
+% xlabel('iteration');
+% ylabel('translation in dim 1 (um)');
+% hold on;
+% plot(1,param.transvec(end,1),'ro');
+% hold off;
+% 
+% subplot(1,3,2);
+% plot([1:a(1)],param.transvec(:,2));
+% xlabel('iteration');
+% ylabel('translation in dim 2 (um)');
+% title('trajectory of simulated annealing');
+% hold on;
+% plot(1,param.transvec(end,2),'ro');
+% hold off;
+% 
+% subplot(1,3,3);
+% plot([1:a(1)],param.transvec(:,3));
+% xlabel('iteration');
+% ylabel('translation in dim 3 (um)');
+% hold on;
+% plot(1,param.transvec(end,3),'ro');
+% hold off;
+% 
+% if 0>1
+%     fname = sprintf('%s_trans.fig',prefix)
+%     savefig(h,fname);
+% else
+%     %fname = sprintf('%s%s_p.fig',param.savePath,param.timestamp)
+%     str=sprintf('%s_trans.png',prefix);
+%     f=getframe(gcf);
+%     [X, map] = frame2im(f);
+%     imwrite(X, str);
+% end
+
 h = figure;
-a = size(param.transvec);
+a = size(param.offsetvec);
 subplot(1,3,1);
-plot([1:a(1)],param.transvec(:,1));
+plot([1:a(1)],param.offsetvec(:,1));
 xlabel('iteration');
-ylabel('translation in dim 1 (um)');
+ylabel('offset in dim 1 (um)');
+hold on;
+plot(1,param.offsetvec(end,1),'ro');
+hold off;
+xlim([1 a(1)]);
+
 subplot(1,3,2);
-plot([1:a(1)],param.transvec(:,2));
+plot([1:a(1)],param.offsetvec(:,2));
 xlabel('iteration');
-ylabel('translation in dim 2 (um)');
+ylabel('offset in dim 2 (um)');
 title('trajectory of simulated annealing');
+hold on;
+plot(1,param.offsetvec(end,2),'ro');
+hold off;
+xlim([1 a(1)]);
+
 subplot(1,3,3);
-plot([1:a(1)],param.transvec(:,3));
+plot([1:a(1)],param.offsetvec(:,3));
 xlabel('iteration');
-ylabel('translation in dim 3 (um)');
+ylabel('offset in dim 3 (um)');
+hold on;
+plot(1,param.offsetvec(end,3),'ro');
+hold off;
+xlim([1 a(1)]);
+
 if 0>1
-    fname = sprintf('%s_trans.fig',prefix)
+    fname = sprintf('%s_offset.fig',prefix)
     savefig(h,fname);
 else
     %fname = sprintf('%s%s_p.fig',param.savePath,param.timestamp)
-    str=sprintf('%s_trans.png',prefix);
+    str=sprintf('%s_offset.png',prefix);
     f=getframe(gcf);
     [X, map] = frame2im(f);
     imwrite(X, str);
 end
+
+
 
 h = figure;
 a = size(param.rotvec);
@@ -745,15 +805,30 @@ subplot(1,3,1);
 plot([1:a(1)],param.rotvec(:,1));
 xlabel('iteration');
 ylabel('rotation around dim 1 (radians)');
+hold on;
+plot([1 a(1)],[1 1]*param.angle(1),'r--');
+hold off;
+xlim([1 a(1)]);
+
 subplot(1,3,2);
 plot([1:a(1)],param.rotvec(:,2));
 xlabel('iteration');
 ylabel('rotation around dim 2 (radians)');
 title('trajectory of simulated annealing');
+hold on;
+plot(1,param.rotvec(end,2),'ro');
+hold off;
+xlim([1 a(1)]);
+
 subplot(1,3,3);
 plot([1:a(1)],param.rotvec(:,3));
 xlabel('iteration');
 ylabel('rotation around dim 3 (radians)');
+hold on;
+plot(1,param.rotvec(end,3),'ro');
+hold off;
+xlim([1 a(1)]);
+
 if 0>1
     fname = sprintf('%s_rot.fig',prefix)
     savefig(h,fname);
@@ -1128,67 +1203,7 @@ param.T0 = -1/log(param.init_p);
 param.prate = 10^( ( log10(param.final_p)-log10(param.init_p) ) / param.TC0);
 end
 
-function param = reeset (param)
-param.voxel_x = 0.323; % um
-param.voxel_y = 0.323; % um
-param.voxel_z = 4.0; % um
-param.interp = 8;
-param.myfunc_combine = 'multiply_sqrt';
-param.myfunc_MI = 'multiply_sqrt';
 
-param.prate = -1;
-param.Trate = 1e-1;
-param.final_p = 1e-2;
-param.init_p = 0.3;
-param.scale_trans = 1;
-param.scale_rot = 1;
-param.trans_amp = param.scale_trans * param.voxel_x; % um
-param.rot_amp = param.scale_rot * pi/800; % radians
-%param.trans_amp = 1.0; % um
-%param.rot_amp = pi/80; % radians
-
-% amount to clip from periphery in pixels
-% dim1 min, dim1 max, dim2 min, dim2 max, dim3 min, dim3 max,
-param.clip = [0,0,0,0,0,0];
-
-param.power = 1;
-param.T0 = -1;
-param.TC0 = 30;
-param.MC0 = 30;
-%param.TC0 = 1;
-%param.MC0 = 900;
-
-param.psf   = [-1.0 -1.0 -1.0]; %um
-%param.offset = [-8 -30 0];
-param.offset = [-5 0 -60];
-param.trans = [0 0 0]; % um
-%param.angle   = [-1.2*pi/2 0 0]; % radians
-param.angle   = [-1.0*pi/2 0 0]; % radians
-param.rot   = [0 0 0]; % radians
-
-param.lfdisplay = false;
-
-%param.centroid = [169.8834 184.3252 129.1565];
-param.centroid = [-1 -1 -1];
-
-% indices of side2 that are being tracked
-%param.threshold = 20;
-param.threshold1 = 40;
-param.threshold2 = 40;
-param.threshold_plot = 40;
-param.index2 = [];
-
-param.rapid = false;
-param.savevol = true;
-param.plot = true;
-%param.savePath      = '/Users/justin/Desktop/LFM volume registration/';
-param.savePath      = '/home/jkinney/Desktop/LFM volume registration/registration/param_sweep/';
-%param.savePath      = '/tmp/';
-param.inputFilePath = '/home/jkinney/Desktop/LFM volume registration/from_nikita/';
-param.inputFileName = {
-    'raw_side1.mat',
-    'raw_side2.mat'};
-end
 
 
 function print_fraction (index, side, str)
@@ -2123,6 +2138,69 @@ ff=getframe(f);
 imwrite(X, str);
 end
 
+
+function param = reeset (param)
+param.voxel_x = 0.323; % um
+param.voxel_y = 0.323; % um
+param.voxel_z = 4.0; % um
+param.interp = 8;
+param.myfunc_combine = 'multiply_sqrt';
+param.myfunc_MI = 'multiply_sqrt';
+
+param.prate = -1;
+param.Trate = 1e-1;
+param.final_p = 1e-2;
+param.init_p = 0.3;
+param.scale_trans = 1;
+param.scale_rot = 1;
+param.trans_amp = param.scale_trans * param.voxel_x; % um
+param.rot_amp = param.scale_rot * pi/800; % radians
+%param.trans_amp = 1.0; % um
+%param.rot_amp = pi/80; % radians
+
+% amount to clip from periphery in pixels
+% dim1 min, dim1 max, dim2 min, dim2 max, dim3 min, dim3 max,
+param.clip = [0,0,0,0,0,0];
+
+param.power = 1;
+param.T0 = -1;
+param.TC0 = 30;
+param.MC0 = 30;
+%param.TC0 = 1;
+%param.MC0 = 900;
+param.Nnull = 2000;
+
+param.psf   = [-1.0 -1.0 -1.0]; %um
+%param.offset = [-8 -30 0];
+param.offset = [-5 0 -60];
+param.trans = [0 0 0]; % um
+%param.angle   = [-1.2*pi/2 0 0]; % radians
+param.angle   = [-1.0*pi/2 0 0]; % radians
+param.rot   = [0 0 0]; % radians
+
+param.lfdisplay = false;
+
+%param.centroid = [169.8834 184.3252 129.1565];
+param.centroid = [-1 -1 -1];
+
+% indices of side2 that are being tracked
+%param.threshold = 20;
+param.threshold1 = 40;
+param.threshold2 = 40;
+param.threshold_plot = 40;
+param.index2 = [];
+
+param.rapid = false;
+param.savevol = true;
+param.plot = true;
+%param.savePath      = '/Users/justin/Desktop/LFM volume registration/';
+param.savePath      = '/home/jkinney/Desktop/LFM volume registration/registration/param_sweep/';
+%param.savePath      = '/tmp/';
+param.inputFilePath = '/home/jkinney/Desktop/LFM volume registration/from_nikita/';
+param.inputFileName = {
+    'raw_side1.mat',
+    'raw_side2.mat'};
+end
 
 
 %% PARKING LOT
