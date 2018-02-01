@@ -21,7 +21,7 @@ elseif strcmp(hostname,'willis')
 else
 	ppath = '/om/user/jkinney/DLFM'
 	addpath([ppath '/lotus-registration']);
-	ipath = '/om/user/ehoseini/MyData/DuallensLightField/7_20_17/video_1'
+    ipath = '/om/project/boyden/DualLensLightField/12_15_17_40X_worm/video 1'
 	opath = [ppath '/worm/20171215']
 end
 inputFilePath1 = [ipath '/horizontal/Reconstructed/'];
@@ -37,7 +37,7 @@ clip    = [450,250,150,350,0,0];
 %
 scale_trans = 40;
 scale_rot   = 20;
-inputFileName = {'Recon3D_solver_1_FrameNumber_0002.mat'};
+inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
 register
 
 close all;
@@ -50,7 +50,7 @@ clearvars -except ppath ipath opath...
 
 scale_trans = 4;
 scale_rot   = 2;
-inputFileName = {'Recon3D_solver_1_FrameNumber_0002.mat'};
+inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
 register
 
 % close all;
@@ -77,7 +77,7 @@ register
 % scale_rot   = 2;
 % scale_trans = 4;
 % offset  = [0 0 0];
-% inputFileName = {'Recon3D_solver_1_FrameNumber_0002.mat'};
+% inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
 % register
 
 
