@@ -32,23 +32,54 @@ savePath = [opath '/interpolate/'];
 voxel_x = 0.323/2; % um
 voxel_y = 0.323/2; % um
 voxel_z = 2.0; % um
-angle   = [-1.0*pi/2 0 0];
 clip    = [450,250,150,350,0,0];
-myfunc_combine  = 'multiply_sqrt';
-myfunc_MI  = 'multiply';
+
+%
 scale_trans = 40;
 scale_rot   = 20;
-
-%%
-offset  = [0 0 0];
 inputFileName = {'Recon3D_solver_1_FrameNumber_0002.mat'};
 register
-keyboard
 
 close all;
-clearvars -except angle inputFilePath2  myfunc ppath scale_rot voxel_x ...
-    voxel_z clip inputFilePath1 ipath opath savePath scale_trans voxel_y;
+clearvars -except ppath ipath opath...
+   inputFilePath1 inputFilePath2 savePath...
+   voxel_x voxel_y voxel_z...
+   angle clip scale_trans...
+   myfunc_combine myfunc_MI...
+   ;
 
-offset  = [0 0 0];
-inputFileName = {'Recon3D_solver_1_FrameNumber_1000.mat'};
+scale_trans = 4;
+scale_rot   = 2;
+inputFileName = {'Recon3D_solver_1_FrameNumber_0002.mat'};
 register
+
+% close all;
+% clearvars -except ppath ipath opath...
+%     inputFilePath1 inputFilePath2 savePath...
+%     voxel_x voxel_y voxel_z...
+%     angle clip scale_trans...
+%     myfunc_combine myfunc_MI...
+%     ;
+% 
+% scale_rot   = 20;
+% offset  = [0 0 0];
+% inputFileName = {'Recon3D_solver_1_FrameNumber_1000.mat'};
+% register
+% 
+% close all;
+% clearvars -except ppath ipath opath...
+%     inputFilePath1 inputFilePath2 savePath...
+%     voxel_x voxel_y voxel_z...
+%     angle clip scale_trans...
+%     myfunc_combine myfunc_MI...
+%     ;
+% 
+% scale_rot   = 2;
+% scale_trans = 4;
+% offset  = [0 0 0];
+% inputFileName = {'Recon3D_solver_1_FrameNumber_0002.mat'};
+% register
+
+
+
+
