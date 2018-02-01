@@ -639,14 +639,14 @@ while Tchanges > 0
         % last_MI > max(param.nullMIvec) =>dif>0
         % last_MI < max(param.nullMIvec) =>dif<0
         if dif > 0
-            str9 = sprintf('siman exceeds null by %.0f',dif);
+            str9 = sprintf('siman exceeds null by %3.2f%%',abs(dif)/max(param.nullMIvec));
         else
-            str9 = sprintf('null exceeds siman by %.0f',-dif);
+            str9 = sprintf('null exceeds siman by %3.2f%%',abs(dif) / last_MI);
         end
         disp(sprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9));
         param.Pvec = [param.Pvec p];
         param.transvec = [param.transvec; param.trans];
-        param.offsetvec = [param.offsetvec; d];
+        param.offsetvec = [param.offsetvec; val7];
         param.rotvec = [param.rotvec; param.rot];
 %         profile off
 %          profile viewer
@@ -2029,7 +2029,7 @@ text(0.4,0.97,[param.inputFilePath2 param.inputFileName],'FontSize',8,'Color',[0
 if flag
     text(0.65,0.97,[param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 end
-text(0.4,0.2,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(0.4,0.1,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 drawnow
 
 % save figure
@@ -2128,7 +2128,7 @@ text(0.4,0.97,[param.inputFilePath2 param.inputFileName],'FontSize',8,'Color',[0
 if flag
     text(0.65,0.97,[param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 end
-text(0.4,0.2,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(0.4,0.1,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 drawnow
 
 % save figure
