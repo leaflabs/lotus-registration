@@ -35,9 +35,35 @@ voxel_z = 2.0; % um
 clip    = [450,250,150,350,0,0];
 
 %
+% scale_trans = 40;
+% scale_rot   = 20;
+% inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
+% register
+% 
+% close all;
+% clearvars -except ppath ipath opath...
+%    inputFilePath1 inputFilePath2 savePath...
+%    voxel_x voxel_y voxel_z...
+%    angle clip scale_trans...
+%    myfunc_combine myfunc_MI...
+%    ;
+% 
+% scale_trans = 4;
+% scale_rot   = 2;
+% inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
+% register
+% 
+% close all;
+% clearvars -except ppath ipath opath...
+%     inputFilePath1 inputFilePath2 savePath...
+%     voxel_x voxel_y voxel_z...
+%     angle clip scale_trans...
+%     myfunc_combine myfunc_MI...
+%     ;
+
 scale_trans = 40;
 scale_rot   = 20;
-inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
+inputFileName = {'Recon3D_solver_1_FrameNumber_1000.mat'};
 register
 
 close all;
@@ -50,36 +76,8 @@ clearvars -except ppath ipath opath...
 
 scale_trans = 4;
 scale_rot   = 2;
-inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
+inputFileName = {'Recon3D_solver_1_FrameNumber_1000.mat'};
 register
-
-% close all;
-% clearvars -except ppath ipath opath...
-%     inputFilePath1 inputFilePath2 savePath...
-%     voxel_x voxel_y voxel_z...
-%     angle clip scale_trans...
-%     myfunc_combine myfunc_MI...
-%     ;
-% 
-% scale_rot   = 20;
-% offset  = [0 0 0];
-% inputFileName = {'Recon3D_solver_1_FrameNumber_1000.mat'};
-% register
-% 
-% close all;
-% clearvars -except ppath ipath opath...
-%     inputFilePath1 inputFilePath2 savePath...
-%     voxel_x voxel_y voxel_z...
-%     angle clip scale_trans...
-%     myfunc_combine myfunc_MI...
-%     ;
-% 
-% scale_rot   = 2;
-% scale_trans = 4;
-% offset  = [0 0 0];
-% inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
-% register
-
 
 
 
