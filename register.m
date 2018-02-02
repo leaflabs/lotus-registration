@@ -2,6 +2,8 @@
 % if isempty(poolobj)
 %     parpool(4);
 % end
+delete(gcp('nocreate'));
+parpool(2);
 tic
 
 %% load parameters
@@ -86,11 +88,19 @@ param.centroid = calc_centroid(side2,param);
 canonical = translate (pos2, -param.centroid);
 rotated = rotate (canonical,param.rot+param.angle);
 param.rot = param.rot + param.angle;
-new = translate (rotated, param.centroid+param.offset);
-param.trans = param.centroid + param.offset;
+%new = translate (rotated, param.centroid+param.offset);
+new = translate (rotated, param.centroid);
+%param.trans = param.centroid + param.offset;
+param.trans = param.centroid;
 
 %% estimate offsets
 offsets = estimate_offsets(side1, side2, pos1, pos2, new, param);
+for i=1:3
+    if ~isempty(param.offset{i})
+        offsets(i) = param.offset{i};
+    end
+end
+param.offset = offsets;
 new = translate (new, offsets);
 param.trans = param.trans + offsets;
 
@@ -201,12 +211,15 @@ end
 
 i = find(cdf_side1>param.pop_thresh,1); % keep only first instance
 j = find(cdf_side2>param.pop_thresh,1); % keep only first instance
-p = find(cdf_side1>param.contour_thresh,1); % keep only first instance
-q = find(cdf_side2>param.contour_thresh,1); % keep only first instance
+%p = find(cdf_side1>param.contour_thresh,1); % keep only first instance
+%q = find(cdf_side2>param.contour_thresh,1); % keep only first instance
 param.threshold1 = centers(i);
 param.threshold2 = centers(j);
-param.contour_int1 = centers(p);
-param.contour_int2 = centers(q);
+%param.contour_int1 = centers(p);
+%param.contour_int2 = centers(q);
+param.contour_int1 = centers(i);
+param.contour_int2 = centers(j);
+
 
 if param.plot
     f = figure;
@@ -230,7 +243,7 @@ if param.plot
         ];
     a = xlim;
     b=ylim;
-    text(a(2)/3,b(2)/2,mystr,'FontSize',8,'Color',[0 0 0]);
+    text(a(2)/3,b(2)/2,mystr,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
     ax1 = axes('Position',[0 0 1 1],'Visible','off');
     axes(ax1);
@@ -434,10 +447,11 @@ parfor i=1:param.Nnull
     % apply transformation
     % rotate an amount r PLUS param.rot
     % thus param.rot tracks the current rotation
-    rotated = rotate (canonical,r);
+    %rotated = rotate (canonical,r);
     % translate rotated by an amount param.trans+d
     % thus param.trans tracks the current position
-    new = translate (rotated, param.centroid+d);
+    new = translate (rotate (canonical, r), param.centroid+d);
+    %new = translate (rotated, param.centroid+d);
     % measure mutual_information
     if strcmp(param.myfunc_MI,'multiply')
         MI = mutual_information (pos1, index1, side1, new, side2, param, 0);
@@ -895,7 +909,6 @@ index = find( tmp(:,1)<=s(1) & tmp(:,2)<=s(2) & tmp(:,3)<=s(3) ...
 i1 = side1(tmp(index));
 i2 = side2(param.index2(index));
 mi = sum(double(i1).*double(i2));
-
 % for i=1:length(tmp)
 %     % convert position to a,b,c
 %     a = tmp(i,1);
@@ -1070,9 +1083,9 @@ for i=1:n:length(param.index1)
 end
 
 
-text(-800,400,'LFM1','FontSize',12,'Color',[0 0 1]);
-text(-800,300,'LFM2','FontSize',12,'Color',[0.8 0.8 0.8]);
-text(-800,200,'DLFM','FontSize',12,'Color',[1 0 0]);
+text(-800,400,'LFM1','FontSize',12,'Color',[0 0 1],'Interpreter','none');
+text(-800,300,'LFM2','FontSize',12,'Color',[0.8 0.8 0.8],'Interpreter','none');
+text(-800,200,'DLFM','FontSize',12,'Color',[1 0 0],'Interpreter','none');
 
 q = param.centroid; % centroid2
 plot( q(2), q(3), 'o','Color',colors{2});
@@ -1516,6 +1529,8 @@ offsets = [u_lag(u_index)*param.voxel_y...
     v_lag(v_index)*param.voxel_x...
     w_lag(w_index)*param.voxel_z...
     ];
+
+
 
 % if 0 < 1
 %     T = '      (scaled by total intensity in sample)';
@@ -2385,7 +2400,8 @@ param.Nnull = 2000;
 
 param.psf   = [-1.0 -1.0 -1.0]; %um
 %param.offset = [-8 -30 0];
-param.offset = [0 0 0];
+%param.offset = [0 0 0];
+offset = {[], [], []};
 param.trans = [0 0 0]; % um
 %param.angle   = [-1.2*pi/2 0 0]; % radians
 param.angle   = [-1.0*pi/2 0 0]; % radians
