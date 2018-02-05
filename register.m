@@ -3,6 +3,16 @@ function register (param)
 %%
 param.timestamp = [param.inputFileName{1}(1:end-4) '__' datestr(datetime('now'),'yyyymmdd_HHMMSS')];
 fname = sprintf('%s%s.log',param.savePath, param.timestamp);
+if ~exist(param.savePath,'dir')
+    status = mkdir(param.savePath);
+    if status == 1
+        disp(['Created folder: ' param.savePath]);
+    else
+        disp(['Error attempting to create folder:' param.savePath]);
+        status
+        exit;
+    end
+end
 diary(fname)
 tic
 
