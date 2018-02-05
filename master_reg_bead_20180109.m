@@ -8,6 +8,8 @@ param = init_param();
 [~,hostname] = system('hostname')
 param.hostname = strtrim(hostname);
 
+
+
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
 	%% setup parallel pool
 	delete(gcp('nocreate'));
@@ -36,7 +38,7 @@ else
 	param.ppath = '/om/user/jkinney/DLFM'
 	addpath([param.ppath '/lotus-registration']);
     	param.ipath = '/om/user/jkinney/DLFM/bead/20180109'
-	param.opath = [param.ppath '/worm/20171215']
+	param.opath = [param.ppath '/bead/20180109']
 end
 param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
 param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];
