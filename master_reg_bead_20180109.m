@@ -9,6 +9,10 @@ param = init_param();
 param.hostname = strtrim(hostname);
 
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
+	%% setup parallel pool
+	delete(gcp('nocreate'));
+	parpool(2);
+
 
 	param.ppath = '/Users/justin/Desktop/DLFM'
 	addpath([param.ppath '/lotus-registration']);
@@ -16,15 +20,22 @@ if ~isempty(strfind(param.hostname, 'Justins-Mac'))
 	param.opath = param.ipath
 
 elseif ~isempty(strfind(param.hostname, 'willis'))
+	%% setup parallel pool
+	delete(gcp('nocreate'));
+	parpool(2);
 
 	param.ppath = '/home/jkinney/Desktop/DLFM'
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/bead/20180109']
 	param.opath = param.ipath
 else
+	%% setup parallel pool
+	delete(gcp('nocreate'));
+	parpool;
+
 	param.ppath = '/om/user/jkinney/DLFM'
 	addpath([param.ppath '/lotus-registration']);
-    param.ipath = '/om/user/jkinney/DLFM/bead/20180109'
+    	param.ipath = '/om/user/jkinney/DLFM/bead/20180109'
 	param.opath = [param.ppath '/worm/20171215']
 end
 param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
@@ -41,10 +52,9 @@ param.scale_rot   = 20;
 param.trans_amp = param.scale_trans * param.voxel_x; % um
 param.rot_amp = param.scale_rot * pi/800; % radians
 
-param.inputFileName = {'Recon3D_1_Mono_N15.mat'};
-
 param
 
+param.inputFileName = {'Recon3D_1_Mono_N15.mat'};
 register(param)
 close all;
 

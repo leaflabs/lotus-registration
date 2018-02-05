@@ -6,10 +6,6 @@ fname = sprintf('%s%s.log',param.savePath, param.timestamp);
 diary(fname)
 tic
 
-%% setup parallel pool
-delete(gcp('nocreate'));
-parpool(2);
-
 %% load volumes
 f = [param.inputFilePath1 param.inputFileName{1}];
 disp(sprintf('\nLoading volume %s\n',f));
