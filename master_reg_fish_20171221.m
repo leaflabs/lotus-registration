@@ -41,7 +41,7 @@ param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
 param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];
 
 %%
-param.savePath = [param.opath '/registration/'];
+param.savePath = [param.opath '/interpolate/'];
 param.voxel_x = 0.323/2; % um
 param.voxel_y = 0.323/2; % um
 param.voxel_z = 2.0;     % um
