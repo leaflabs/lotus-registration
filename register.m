@@ -322,14 +322,17 @@ if exist(f,'file') == 2
         disp('XguessSAVE1 found.');
         if ~strcmp(class(XguessSAVE1),'uint16')
             disp('Warning input data is not 16 bit.');
-            keyboard
-            %disp('Data will be analyzed as 8 bit.');
-            %XguessSAVE1 = cast(XguessSAVE1, 'uint16');
+            if strcmp(class(XguessSAVE1),'uint8')
+                disp('Data will be scaled to 16 bit.');
+                XguessSAVE1 = cast(XguessSAVE1, 'uint16')*2^8;
+            else
+                keyboard
+            end
         end
     else
         %disp('WTF?! Unknown data name.');
         disp(sprintf('No data was recognized:\n'));
-	whos
+        whos
         keyboard;
     end
     out = interpolate (XguessSAVE1,param);
