@@ -1,27 +1,14 @@
-% poolobj = gcp('nocreate'); % If no pool, do not create new one.
-% if isempty(poolobj)
-%     parpool(4);
-% end
-delete(gcp('nocreate'));
-parpool(2);
-tic
+function register (param)
 
-%% load parameters
-param = struct;
-param = reeset(param);
-disp('Loading parameters:');
-a = who;
-for i=1:length(a)
-    mystr = sprintf('param.%s = %s;',a{i},a{i});
-    disp(mystr);
-    eval(mystr)
-end
-param.trans_amp = param.scale_trans * param.voxel_x; % um
-param.rot_amp = param.scale_rot * pi/800; % radians
+%%
 param.timestamp = [param.inputFileName{1}(1:end-4) '__' datestr(datetime('now'),'yyyymmdd_HHMMSS')];
 fname = sprintf('%s%s.log',param.savePath, param.timestamp);
 diary(fname)
+tic
 
+%% setup parallel pool
+delete(gcp('nocreate'));
+parpool(2);
 
 %% load volumes
 f = [param.inputFilePath1 param.inputFileName{1}];
@@ -180,6 +167,8 @@ fname = sprintf('%s%s_parameters.mat',param.savePath,param.timestamp);
 save(fname,'param');
 elapsedTime = toc
 diary off;
+
+end
 
 
 %% functions
@@ -2365,77 +2354,3 @@ ff=getframe(f);
 [X, map] = frame2im(ff);
 imwrite(X, str);
 end
-
-
-function param = reeset (param)
-param.voxel_x = 0.323; % um
-param.voxel_y = 0.323; % um
-param.voxel_z = 4.0; % um
-param.interp = 8;
-param.myfunc_combine = 'multiply_sqrt';
-param.myfunc_MI = 'multiply';
-
-param.prate = -1;
-param.Trate = 1e-1;
-param.final_p = 1e-2;
-param.init_p = 0.3;
-param.scale_trans = 40;
-param.scale_rot = 1;
-param.trans_amp = param.scale_trans * param.voxel_x; % um
-param.rot_amp = param.scale_rot * pi/800; % radians
-%param.trans_amp = 1.0; % um
-%param.rot_amp = pi/80; % radians
-
-% amount to clip from periphery in pixels
-% dim1 min, dim1 max, dim2 min, dim2 max, dim3 min, dim3 max,
-param.clip = [0,0,0,0,0,0];
-
-param.power = 1;
-param.T0 = -1;
-param.TC0 = 30;
-param.MC0 = 30;
-%param.TC0 = 1;
-%param.MC0 = 900;
-param.Nnull = 2000;
-
-param.psf   = [-1.0 -1.0 -1.0]; %um
-%param.offset = [-8 -30 0];
-%param.offset = [0 0 0];
-offset = {[], [], []};
-param.trans = [0 0 0]; % um
-%param.angle   = [-1.2*pi/2 0 0]; % radians
-param.angle   = [-1.0*pi/2 0 0]; % radians
-param.rot   = [0 0 0]; % radians
-
-param.lfdisplay = false;
-
-%param.centroid = [169.8834 184.3252 129.1565];
-param.centroid = [-1 -1 -1];
-
-% indices of side2 that are being tracked
-%param.threshold = 20;
-param.threshold1 = 40;
-param.threshold2 = 40;
-param.threshold_plot = 40;
-param.index2 = [];
-
-param.rapid = false;
-param.savevol = true;
-param.plot = true;
-%param.savePath      = '/Users/justin/Desktop/LFM volume registration/';
-param.savePath      = '/home/jkinney/Desktop/LFM volume registration/registration/param_sweep/';
-%param.savePath      = '/tmp/';
-param.inputFilePath = '/home/jkinney/Desktop/LFM volume registration/from_nikita/';
-param.inputFileName = {
-    'raw_side1.mat',
-    'raw_side2.mat'};
-end
-
-
-%% PARKING LOT
-% For each temperature, run for long time to see equilibration
-%
-% for each threshold, report fraction of voxels and total intensity used
-% to measure registration.
-%
-% Use uniform sampling of threshold to allow comparisons across thresholds.

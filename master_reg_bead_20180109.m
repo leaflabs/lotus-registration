@@ -1,50 +1,78 @@
 clear all;
 close all;
 
+%% load parameters
+param = init_param();
+
 %%
 [~,hostname] = system('hostname')
-hostname = strtrim(hostname);
+param.hostname = strtrim(hostname);
 
-if strcmp(hostname,'Justins-Mac.local')
+if ~isempty(strfind(param.hostname, 'Justins-Mac'))
 
-	ppath = '/Users/justin/Desktop/DLFM'
-	addpath([ppath '/lotus-registration']);
-	ipath = [ppath '/bead/20180109']
-	opath = ipath
+	param.ppath = '/Users/justin/Desktop/DLFM'
+	addpath([param.ppath '/lotus-registration']);
+	param.ipath = [param.ppath '/bead/20180109']
+	param.opath = param.ipath
 
-elseif strcmp(hostname,'willis')
+elseif ~isempty(strfind(param.hostname, 'willis'))
 
-	ppath = '/home/jkinney/Desktop/DLFM'
-	addpath([ppath '/lotus-registration']);
-	ipath = [ppath '/bead/20180109']
-	opath = ipath
+	param.ppath = '/home/jkinney/Desktop/DLFM'
+	addpath([param.ppath '/lotus-registration']);
+	param.ipath = [param.ppath '/bead/20180109']
+	param.opath = param.ipath
 else
-	ppath = '/om/user/jkinney/DLFM'
-	addpath([ppath '/lotus-registration']);
-        ipath = '/om/user/jkinney/DLFM/bead/20180109'
-	opath = [ppath '/worm/20171215']
+	param.ppath = '/om/user/jkinney/DLFM'
+	addpath([param.ppath '/lotus-registration']);
+    param.ipath = '/om/user/jkinney/DLFM/bead/20180109'
+	param.opath = [param.ppath '/worm/20171215']
 end
-inputFilePath1 = [ipath '/horizontal/Reconstructed/'];
-inputFilePath2 = [ipath '/vertical/Reconstructed/'];
+param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
+param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];
 
 %%
-savePath = [opath '/interpolate/'];
-voxel_x = 0.323/2; % um
-voxel_y = 0.323/2; % um
-voxel_z = 2.0; % um
-clip    = [100,100,100,100,0,0];
+param.savePath = [param.opath '/registration/'];
+param.voxel_x = 0.323/2; % um
+param.voxel_y = 0.323/2; % um
+param.voxel_z = 2.0;     % um
+param.clip    = [100,100,100,100,0,0];
+param.scale_trans = 40;
+param.scale_rot   = 20;
+param.trans_amp = param.scale_trans * param.voxel_x; % um
+param.rot_amp = param.scale_rot * pi/800; % radians
 
-%
-scale_trans = 40;
-scale_rot   = 20;
-inputFileName = {'Recon3D_1_Mono_N15.mat'};
-register
+param.inputFileName = {'Recon3D_1_Mono_N15.mat'};
 
+param
+
+register(param)
 close all;
-clearvars -except ppath ipath opath...
-   inputFilePath1 inputFilePath2 savePath...
-   voxel_x voxel_y voxel_z...
-   angle clip scale_trans...
-   myfunc_combine myfunc_MI...
-   ;
+
+param.inputFileName = {'Recon3D_2_Mono_N15.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'Recon3D_3_Mono_N15.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'Recon3D_4_Mono_N15.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'Recon3D_5_Mono_N15.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'Recon3D_6_Mono_N15.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'Recon3D_7_Mono_N15.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'Recon3D_8_Mono_N15.mat'};
+register(param)
+close all;
 
