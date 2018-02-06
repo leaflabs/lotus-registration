@@ -46,7 +46,7 @@ end
 %% clip volumes for registration
 a = size(side1);
 if ~isempty(find(param.clip>0))
-    disp('Clipping pixels from periphery:');
+    fprintf('\nClipping pixels from periphery:\n');
     disp(sprintf('%d ',param.clip));
     disp(sprintf('\n'));
     side1 = side1( 1+param.clip(1):a(1)-param.clip(2),...
@@ -253,9 +253,7 @@ if param.plot
     text(0.4,0.7,mystr1,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
     
     str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
-    ff=getframe(f);
-    [X, map] = frame2im(ff);
-    imwrite(X, str);
+    save_plot(f,str);
 end
 end
 
@@ -284,19 +282,19 @@ for i = 1:M
     if linind(2)>numel(side2)
         linind(2) = numel(side2);
     end
-    disp(sprintf('\nchunk %d of %d, zind %d %d, linind %d %d',i,M, zind(1),zind(2),linind(1),linind(2)));
+    fprintf('chunk %d of %d, zind %d %d, linind %d %d',i,M, zind(1),zind(2),linind(1),linind(2));
     % for each voxel in chunk in side2, extract position to final_pos2
-    disp('Init_pos');
+    %disp('Init_pos');
     final_pos2 = init_pos([linind(1):linind(2)]', side2, param);
     % for each position in final_pos2, apply rot and translation
-    disp('Translate');
+    %disp('Translate');
     tmp = translate (final_pos2, -param.centroid);
-    disp('Rotate');
+    %disp('Rotate');
     tmp = rotate (tmp, param.rot); % CHECK
-    disp('Translate');
+    %disp('Translate');
     final_pos2 = translate (tmp, param.trans); 
     % for each voxel in side1, find positions in final_pos2 and combine and normalize
-    disp('combine');
+    %disp('combine');
     out(linind(1):linind(2)) = combine (side1, side2, final_pos2, zind, linind, param);
 end
 if ~param.rapid
@@ -390,8 +388,9 @@ ind = find(abc_side1(:,2)>s(2));
 ind = find(abc_side1(:,3)>s(3));
 [r4,c] = ind2sub(size(abc_side1),ind);
 rem = unique([r1;r2;r3;r4]);
-disp(sprintf('abc_side1 %d, rem %d, r1 %d, r2 %d, r3 %d, r4 %d',...
-    length(abc_side1),length(rem),length(r1),length(r2),length(r3),length(r4)));
+N = length(abc_side1);
+fprintf('Number of voxels %d, fraction used %f, fraction with negative index %f, fraction outside of side1 %f\n',...
+    N,length(rem)/N,length(r1)/N,(length(r2)+length(r3)+length(r4))/N);
 % chunk is a systematic sweep in z dimensino of side2
 % in contrast, abc_side1 are the voxels in side1 coordinate system of a
 % rotated and translated side2, so not well behaved
@@ -445,6 +444,7 @@ param.rot_amp = pi / gain;
 %profile on;
 disp(sprintf('\nCount    Mutual_Information                Offset [um]                        Rotation [radians]'));
 parfor i=1:param.Nnull
+    MI = 0;
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
@@ -517,10 +517,7 @@ title(['null distribution (bootstrapped from'...
     sprintf(' %d random registrations)',length(nullMIvec))]);
 
 str=sprintf('%s%s_null_distribution.png',param.savePath,param.timestamp);
-ff=getframe(f);
-[X, map] = frame2im(ff);
-imwrite(X, str);
-
+save_plot(f, str);
 
 f = figure;
 plot(centers,cdf);
@@ -538,9 +535,7 @@ title(['null distribution (bootstrapped from'...
     sprintf(' %d random registrations)',length(nullMIvec))]);
 
 str=sprintf('%s%s_null_cdf.png',param.savePath,param.timestamp);
-ff=getframe(f);
-[X, map] = frame2im(ff);
-imwrite(X, str);
+save_plot(f, str);
 end
 
 
@@ -677,105 +672,59 @@ rotated = rotate (canonical,param.rot);
 new = translate (rotated, param.trans);
 end
 
-function save_plot (h, param,f)
-prefix = sprintf('%s%s_',param.savePath,param.timestamp);
-str=sprintf('%s_%s.png',prefix,f);
-fr=getframe(h);
-[X, map] = frame2im(fr);
-imwrite(X, str);
+function save_plot (f, filename)
+fr = getframe(f);
+[X, ~] = frame2im(fr);
+imwrite(X, filename);
 end
 
 function save_stats (param)
 prefix = sprintf('%s%s_',param.savePath,param.timestamp);
 % plot Pvec
 h = figure;
-plot([1:numel(param.Pvec)],param.Pvec);
+plot(1:numel(param.Pvec),param.Pvec);
 xlabel('iteration');
 ylabel('probability of allowing a decrease in MI');
 title('simulated annealing schedule');
 if 0>1
-    fname = sprintf('%s_p.fig',prefix)
+    fname = sprintf('%s_p.fig',prefix);
     savefig(h,fname);
 else
     str=sprintf('%s_p.png',prefix);
-    f=getframe(gcf);
-    [X, map] = frame2im(f);
-    imwrite(X, str);
+    save_plot(h, str);
 end
 
 h = figure;
-plot([1:numel(param.MIvec)],log10(param.MIvec));
+plot(1:numel(param.MIvec),log10(param.MIvec));
 xlabel('iteration');
 ylabel('log (mutual information)');
 title('evolution of mutual information during simulated annealing');
 if 0>1
-    fname = sprintf('%s_MI.fig',prefix)
+    fname = sprintf('%s_MI.fig',prefix);
     savefig(h,fname);
 else
     str=sprintf('%s_MI.png',prefix);
-    f=getframe(gcf);
-    [X, map] = frame2im(f);
-    imwrite(X, str);
+    save_plot(h, str);
 end
 
 f = figure;
-plot([1:numel(param.cdfvec)],param.cdfvec);
+plot(1:numel(param.cdfvec),param.cdfvec);
 xlabel('iteration');
 ylabel('fraction of null distribution');
 title('fraction of null distribution less than current mutual informaton');
 ylim([0 1.05]);
 if 0>1
-    fname = sprintf('%s_frac_null.fig',prefix)
+    fname = sprintf('%s_frac_null.fig',prefix);
     savefig(h,fname);
 else
     str=sprintf('%s_frac_null.png',prefix);
-    ff=getframe(f);
-    [X, map] = frame2im(ff);
-    imwrite(X, str);
+    save_plot(f, str);
 end
-
-% h = figure;
-% a = size(param.transvec);
-% subplot(1,3,1);
-% plot([1:a(1)],param.transvec(:,1));
-% xlabel('iteration');
-% ylabel('translation in dim 1 (um)');
-% hold on;
-% plot(1,param.transvec(end,1),'ro');
-% hold off;
-% 
-% subplot(1,3,2);
-% plot([1:a(1)],param.transvec(:,2));
-% xlabel('iteration');
-% ylabel('translation in dim 2 (um)');
-% title('trajectory of simulated annealing');
-% hold on;
-% plot(1,param.transvec(end,2),'ro');
-% hold off;
-% 
-% subplot(1,3,3);
-% plot([1:a(1)],param.transvec(:,3));
-% xlabel('iteration');
-% ylabel('translation in dim 3 (um)');
-% hold on;
-% plot(1,param.transvec(end,3),'ro');
-% hold off;
-% 
-% if 0>1
-%     fname = sprintf('%s_trans.fig',prefix)
-%     savefig(h,fname);
-% else
-%     %fname = sprintf('%s%s_p.fig',param.savePath,param.timestamp)
-%     str=sprintf('%s_trans.png',prefix);
-%     f=getframe(gcf);
-%     [X, map] = frame2im(f);
-%     imwrite(X, str);
-% end
 
 h = figure;
 a = size(param.offsetvec);
 subplot(1,3,1);
-plot([1:a(1)],param.offsetvec(:,1));
+plot(1:a(1),param.offsetvec(:,1));
 xlabel('iteration');
 ylabel('offset in dim 1 (um)');
 hold on;
@@ -784,7 +733,7 @@ hold off;
 xlim([1 a(1)]);
 
 subplot(1,3,2);
-plot([1:a(1)],param.offsetvec(:,2));
+plot(1:a(1),param.offsetvec(:,2));
 xlabel('iteration');
 ylabel('offset in dim 2 (um)');
 title('trajectory of simulated annealing');
@@ -794,7 +743,7 @@ hold off;
 xlim([1 a(1)]);
 
 subplot(1,3,3);
-plot([1:a(1)],param.offsetvec(:,3));
+plot(1:a(1),param.offsetvec(:,3));
 xlabel('iteration');
 ylabel('offset in dim 3 (um)');
 hold on;
@@ -803,22 +752,17 @@ hold off;
 xlim([1 a(1)]);
 
 if 0>1
-    fname = sprintf('%s_offset.fig',prefix)
+    fname = sprintf('%s_offset.fig',prefix);
     savefig(h,fname);
 else
-    %fname = sprintf('%s%s_p.fig',param.savePath,param.timestamp)
     str=sprintf('%s_offset.png',prefix);
-    f=getframe(gcf);
-    [X, map] = frame2im(f);
-    imwrite(X, str);
+    save_plot(h, str);
 end
-
-
 
 h = figure;
 a = size(param.rotvec);
 subplot(1,3,1);
-plot([1:a(1)],param.rotvec(:,1));
+plot(1:a(1),param.rotvec(:,1));
 xlabel('iteration');
 ylabel('rotation around dim 1 (radians)');
 hold on;
@@ -827,7 +771,7 @@ hold off;
 xlim([1 a(1)]);
 
 subplot(1,3,2);
-plot([1:a(1)],param.rotvec(:,2));
+plot(1:a(1),param.rotvec(:,2));
 xlabel('iteration');
 ylabel('rotation around dim 2 (radians)');
 title('trajectory of simulated annealing');
@@ -837,7 +781,7 @@ hold off;
 xlim([1 a(1)]);
 
 subplot(1,3,3);
-plot([1:a(1)],param.rotvec(:,3));
+plot(1:a(1),param.rotvec(:,3));
 xlabel('iteration');
 ylabel('rotation around dim 3 (radians)');
 hold on;
@@ -846,14 +790,11 @@ hold off;
 xlim([1 a(1)]);
 
 if 0>1
-    fname = sprintf('%s_rot.fig',prefix)
+    fname = sprintf('%s_rot.fig',prefix);
     savefig(h,fname);
 else
-    %fname = sprintf('%s%s_p.fig',param.savePath,param.timestamp)
     str=sprintf('%s_rot.png',prefix);
-    f=getframe(gcf);
-    [X, map] = frame2im(f);
-    imwrite(X, str);
+    save_plot(h, str);
 end
 
 
@@ -865,33 +806,7 @@ a=param.trans;
 b=param.rot;
 out = sprintf('trans = [%6.6g0 %6.6g0 %6.6g0], rot = [%7.6g0 %7.6g0 %7.6g0]',a(1),a(2),a(3),b(1),b(2),b(3));
 end
-% 
-% function mi = mutual_information (pos1, index1, side1, new, side2, param, threshold)
-% mi = 0;
-% s = size(side1);
-% scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
-% tmp = ceil(new*scale);
-% for i=1:length(tmp)
-%     % convert position to a,b,c
-%     a = tmp(i,1);
-%     b = tmp(i,2);
-%     c = tmp(i,3);
-%     % check
-%     if a>s(1) || b>s(2) || c>s(3) || a<1 || b<1 || c<1
-%         keyboard
-%         continue;
-%     else
-%         i1 = side1(a,b,c);
-%         i2 = side2(param.index2(i));
-%         if threshold
-%             if i1<threshold && i2<threshold
-%                 continue;
-%             end
-%         end
-%         mi = mi + double(double(i1)*double(i2));
-%     end
-% end
-% end
+
 
 function mi = mutual_information (side1, new, side2, param)
 scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
@@ -906,177 +821,6 @@ i2 = side2(param.index2(index));
 mi = sum(double(i1).*double(i2));
 end
 
-% function mi = par_mutual_information (pos1, index1, side1, new, side2, param, threshold)
-% mi = 0;
-% s = size(side1);
-% scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
-% tmp = ceil(new*scale);
-% parfor i=1:length(tmp)
-%     % convert position to a,b,c
-%     a = tmp(i,1);
-%     b = tmp(i,2);
-%     c = tmp(i,3);
-%     % check
-%     if a>s(1) || b>s(2) || c>s(3) || a<1 || b<1 || c<1
-%         continue;
-%     else
-%         i1 = side1(a,b,c);
-%         i2 = side2(param.index2(i));
-%         if threshold
-%             if i1<threshold && i2<threshold
-%                 continue;
-%             end
-%         end
-%         mi = mi + double(double(i1)*double(i2));
-%     end
-% end
-% end
-
-% function mi = mutual_information_sqrt (pos1, index1, side1, new, side2, param, threshold)
-% mi = 0;
-% s = size(side1);
-% scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
-% tmp = ceil(new*scale);
-% for i=1:length(tmp)
-%     % convert position to a,b,c
-%     a = tmp(i,1);
-%     b = tmp(i,2);
-%     c = tmp(i,3);
-%     % check
-%     if a>s(1) || b>s(2) || c>s(3) || a<1 || b<1 || c<1
-%         continue;
-%     else
-%         i1 = side1(a,b,c);
-%         i2 = side2(param.index2(i));
-%         if threshold
-%             if i1<threshold && i2<threshold
-%                 continue;
-%             end
-%         end
-%         mi = mi + sqrt(double(double(i1)*double(i2)));
-%     end
-% end
-% end
-
-% function plot_pos (pos1, pos2, side1, side2, new, param, f)
-% 
-% glyph = {'.','.'};
-% colors = {[0 0 1],
-%     [0.8 0.8 0.8],
-%     [1 0.8 0.8],};
-% 
-% N = 1000;
-% 
-% %index1 = find(side1>param.threshold);
-% %index2 = find(side2>param.threshold);
-% 
-% h = figure;
-% subplot(2,2,2);
-% hold on;
-% 
-% n = ceil(length(param.index2)/N);
-% for i=1:n:length(param.index2)
-%     val = 1-single(side2(param.index2(i)))/2^16;
-%     plot(pos2(i,2), -pos2(i,1), glyph{2},'Color',[val val val]);
-% end
-% 
-% n = ceil(length(param.index2)/N);
-% for i=1:n:length(param.index2)
-%     val = 1-single(side2(param.index2(i)))/2^16;
-%     plot(new(i,2), -new(i,1), glyph{2},'Color',[1 val val]);
-% end
-% 
-% n = ceil(length(param.index1)/N);
-% for i=1:n:length(param.index1)
-%     val = 1-single(side1(param.index1(i)))/2^16;
-%     plot(pos1(i,2), -pos1(i,1), glyph{2},'Color',[val val 1]);
-% end
-% 
-% % text(300,-250,'LFM1','FontSize',12,'Color',[0 0 1]);
-% % text(300,-270,'LFM2','FontSize',12,'Color',[0.8 0.8 0.8]);
-% % text(300,-290,'DLFM','FontSize',12,'Color',[1 0 0]);
-% 
-% q = param.centroid; % centroid2
-% plot( q(2), -q(1), 'o','Color',colors{2});
-% hold off;
-% xlabel('two [um]');
-% ylabel('one [um]');
-% axis equal;
-% 
-% 
-% subplot(2,2,1);
-% hold on;
-% 
-% n = ceil(length(param.index2)/N);
-% for i=1:n:length(param.index2)
-%     val = 1-single(side2(param.index2(i)))/2^16;
-%     plot(pos2(i,3), -pos2(i,1), glyph{2},'Color',[val val val]);
-% end
-% 
-% n = ceil(length(param.index2)/N);
-% for i=1:n:length(param.index2)
-%     val = 1-single(side2(param.index2(i)))/2^16;
-%     plot(new(i,3), -new(i,1), glyph{2},'Color',[1 val val]);
-% end
-% 
-% n = ceil(length(param.index1)/N);
-% for i=1:n:length(param.index1)
-%     val = 1-single(side1(param.index1(i)))/2^16;
-%     plot(pos1(i,3), -pos1(i,1), glyph{2},'Color',[val val 1]);
-% end
-% 
-% % text(300,-250,'LFM1','FontSize',12,'Color',[0 0 1]);
-% % text(300,-270,'LFM2','FontSize',12,'Color',[0.8 0.8 0.8]);
-% % text(300,-290,'DLFM','FontSize',12,'Color',[1 0 0]);
-% 
-% q = param.centroid; % centroid2
-% plot( q(3), -q(1), 'o','Color',colors{2});
-% hold off;
-% axis equal;
-% xlabel('three [um]');
-% ylabel('one [um]');
-% 
-% subplot(2,2,4);
-% hold on;
-% 
-% n = ceil(length(param.index2)/N);
-% for i=1:n:length(param.index2)
-%     val = 1-single(side2(param.index2(i)))/2^16;
-%     plot(pos2(i,2), pos2(i,3), glyph{2},'Color',[val val val]);
-% end
-% 
-% n = ceil(length(param.index2)/N);
-% for i=1:n:length(param.index2)
-%     val = 1-single(side2(param.index2(i)))/2^16;
-%     plot(new(i,2), new(i,3), glyph{2},'Color',[1 val val]);
-% end
-% 
-% n = ceil(length(param.index1)/N);
-% for i=1:n:length(param.index1)
-%     val = 1-single(side1(param.index1(i)))/2^16;
-%     plot(pos1(i,2), pos1(i,3), glyph{2},'Color',[val val 1]);
-% end
-% 
-% 
-% text(-800,400,'LFM1','FontSize',12,'Color',[0 0 1],'Interpreter','none');
-% text(-800,300,'LFM2','FontSize',12,'Color',[0.8 0.8 0.8],'Interpreter','none');
-% text(-800,200,'DLFM','FontSize',12,'Color',[1 0 0],'Interpreter','none');
-% 
-% q = param.centroid; % centroid2
-% plot( q(2), q(3), 'o','Color',colors{2});
-% hold off;
-% 
-% axis equal;
-% xlabel('two [um]');
-% ylabel('three [um]');
-% 
-% prefix = sprintf('%s%s_',param.savePath,param.timestamp);
-% str=sprintf('%s_%s.png',prefix,f);
-% fr=getframe(h);
-% [X, map] = frame2im(fr);
-% imwrite(X, str);
-% end
-
 
 function out = rotation_matrix (angle)
 a = [1 0 0;...
@@ -1090,16 +834,6 @@ c = [cos(angle(3)) -sin(angle(3)) 0;...
     0 0 1];
 out = a*b*c;
 end
-
-
-% function i = intensity (index, side)
-% [a,b,c] = ind2sub(size(side),index);
-% i = double(side(a,b,c));
-% if i==0
-%     disp('WTF!');
-%     keyboard;
-% end
-% end
 
 
 function [out] = rotate (pos, angle)
@@ -1142,32 +876,10 @@ pos = [y x z];
 end
 
 
-% function L = linear_new (new, side1, param)
-% L = zeros([length(new) 1]);
-% for i=1:length(new)
-%     % convert position to a,b,c
-%     y = new(i,1);
-%     a = ceil(y/param.voxel_y);
-%     x = new(i,2);
-%     b = ceil(x/param.voxel_x);
-%     z = new(i,3);
-%     c = ceil(z/param.voxel_z);
-%     % check
-%     s = size(side1);
-%     if a>s(1) || b>s(2) || c>s(3) || a<1 || b<1 || c<1
-%         L(i) = -1;
-%     else
-%         % convert a,b,c to linear index
-%         ind = sub2ind(size(side1),a,b,c);
-%         L(i) = ind;
-%     end
-% end
-% end
-
 
 function save_vol (A, savePath, outFile)
 imwrite( squeeze(A(:,:,1)), [savePath outFile]);
-for k = 2:size(A,3),
+for k = 2:size(A,3)
     imwrite(squeeze(A(:,:,k)),  [savePath outFile], 'WriteMode', 'append');
 end
 end
@@ -1202,7 +914,6 @@ end
 
 
 
-
 function print_fraction (index, side, str)
 i = 0;
 for j=1:length(index)
@@ -1212,177 +923,11 @@ iT = single(sum(sum(sum(side))));
 
 fi = i/iT;
 fv = single(length(index))/single(numel(side));
-disp(sprintf('%s: %d of %d voxels (%7.3g), %d of %d total intensity (%7.3g)',...
+fprintf('%s: %d of %d voxels (%7.3g), %d of %d total intensity (%7.3g)\n',...
     str,length(index),numel(side),fv,...
-    i,iT,fi));
+    i,iT,fi);
 end
 
-% function save_1d_summed_projections (side1, side2, pos1, pos2, new, param)
-% glyph = {'.','.'};
-% colors = {[1 0 0],
-%     [0.8 0.8 0.8],
-%     [0 0 1],
-%     [0.4 0.4 0.4],};
-% 
-% onetwo = squeeze(sum(side1,3));
-% twothree = squeeze(sum(side1,1));
-% side1_d1 = squeeze(sum(onetwo,2));
-% side1_d2 = squeeze(sum(onetwo,1));
-% side1_d3 = squeeze(sum(twothree,1));
-% 
-% onetwo = squeeze(sum(side2,3));
-% twothree = squeeze(sum(side2,1));
-% side2_d1 = squeeze(sum(onetwo,2));
-% side2_d2 = squeeze(sum(onetwo,1));
-% side2_d3 = squeeze(sum(twothree,1));
-% 
-% 
-% % projections for new
-% % convert new from microns to pixels
-% a = size(new);
-% scale = [1/param.voxel_y*ones(a(1),1) ...
-%     1/param.voxel_x*ones(a(1),1) ...
-%     1/param.voxel_z*ones(a(1),1)];
-% abc_new = ceil(new.*scale);
-% ns = max(abc_new);
-% 
-% % create 2d projections of new in pixel space
-% onetwo = zeros(ns(1),ns(2));
-% for i=1:length(new)
-%     if abc_new(i,1) > 0 && abc_new(i,2) > 0
-%         onetwo(abc_new(i,1),abc_new(i,2)) = onetwo(abc_new(i,1),abc_new(i,2)) + double(side2(param.index2(i)));
-%     end
-% end
-% twothree = zeros(ns(2),ns(3));
-% for i=1:length(new)
-%     if abc_new(i,2) > 0 && abc_new(i,3) > 0
-%         twothree(abc_new(i,2),abc_new(i,3)) = twothree(abc_new(i,2),abc_new(i,3)) + double(side2(param.index2(i)));
-%     end
-% end
-% % convert 2d projections to 1d
-% new_d1 = squeeze(sum(onetwo,2));
-% new_d2 = squeeze(sum(onetwo,1));
-% new_d3 = squeeze(sum(twothree,1));
-% 
-% % projections for pos1
-% a = size(pos1);
-% scale = [1/param.voxel_y*ones(a(1),1) ...
-%     1/param.voxel_x*ones(a(1),1) ...
-%     1/param.voxel_z*ones(a(1),1)];
-% abc_pos1 = ceil(pos1.*scale);
-% ns = max(abc_pos1);
-% 
-% onetwo = zeros(ns(1),ns(2));
-% for i=1:length(pos1)
-%     if abc_pos1(i,1) > 0 && abc_pos1(i,2) > 0
-%         onetwo(abc_pos1(i,1),abc_pos1(i,2)) = onetwo(abc_pos1(i,1),abc_pos1(i,2)) + double(side1(param.index1(i)));
-%     end
-% end
-% twothree = zeros(ns(2),ns(3));
-% for i=1:length(pos1)
-%     if abc_pos1(i,2) > 0 && abc_pos1(i,3) > 0
-%         twothree(abc_pos1(i,2),abc_pos1(i,3)) = twothree(abc_pos1(i,2),abc_pos1(i,3)) + double(side1(param.index1(i)));
-%     end
-% end
-% pos1_d1 = squeeze(sum(onetwo,2));
-% pos1_d2 = squeeze(sum(onetwo,1));
-% pos1_d3 = squeeze(sum(twothree,1));
-% 
-% % projections for pos2
-% a = size(pos2);
-% scale = [1/param.voxel_y*ones(a(1),1) ...
-%     1/param.voxel_x*ones(a(1),1) ...
-%     1/param.voxel_z*ones(a(1),1)];
-% abc_pos2 = ceil(pos2.*scale);
-% ns = max(abc_pos2);
-% 
-% onetwo = zeros(ns(1),ns(2));
-% for i=1:length(pos2)
-%     if abc_pos2(i,1) > 0 && abc_pos2(i,2) > 0
-%         onetwo(abc_pos2(i,1),abc_pos2(i,2)) = onetwo(abc_pos2(i,1),abc_pos2(i,2)) + double(side2(param.index2(i)));
-%     end
-% end
-% twothree = zeros(ns(2),ns(3));
-% for i=1:length(pos2)
-%     if abc_pos2(i,2) > 0 && abc_pos2(i,3) > 0
-%         twothree(abc_pos2(i,2),abc_pos2(i,3)) = twothree(abc_pos2(i,2),abc_pos2(i,3)) + double(side2(param.index2(i)));
-%     end
-% end
-% pos2_d1 = squeeze(sum(onetwo,2));
-% pos2_d2 = squeeze(sum(onetwo,1));
-% pos2_d3 = squeeze(sum(twothree,1));
-% 
-% if 0 < 1
-%     T = 'Summed intensity projection (scaled by summed intensity)';
-%     scale_d1 = [sum(pos1_d1) sum(pos2_d1) sum(side1_d1) sum(side2_d1) sum(new_d1)];
-%     scale_d2 = [sum(pos1_d2) sum(pos2_d2) sum(side1_d2) sum(side2_d2) sum(new_d2)];
-%     scale_d3 = [sum(pos1_d3) sum(pos2_d3) sum(side1_d3) sum(side2_d3) sum(new_d3)];
-%     %disp(T);
-% elseif 0 > 1
-%     T = 'Summed intensity projection (scaled by max intensity)';
-%     scale_d1 = [max(pos1_d1) max(pos2_d1) max(side1_d1) max(side2_d1) max(new_d1)];
-%     scale_d2 = [max(pos1_d2) max(pos2_d2) max(side1_d2) max(side2_d2) max(new_d2)];
-%     scale_d3 = [max(pos1_d3) max(pos2_d3) max(side1_d3) max(side2_d3) max(new_d3)];
-%     %disp(T);
-% else
-%     T = 'Summed intensity projection (not scaled)';
-%     scale_d1 = [1 1 1 1 1];
-%     scale_d2 = [1 1 1 1 1];
-%     scale_d3 = [1 1 1 1 1];
-%     %disp(T);
-% end
-% 
-% 
-% 
-% f = figure;
-% set(gcf,'Position',[79          18        1270         940]);
-% subplot(3,1,1);
-% plot(pos1_d1/scale_d1(1),'o','Color',colors{1});
-% hold on;
-% plot(pos2_d1/scale_d1(2),'o','Color',colors{4});
-% plot(side1_d1/scale_d1(3),'.','Color',colors{2});
-% plot(side2_d1/scale_d1(4),'*','Color',colors{2});
-% plot(new_d1/scale_d1(5),'-','Color',colors{4});
-% xlabel('first dimension [pixels]');
-% ylabel('intensity');
-% hold off;
-% legend('pos1','pos2','LFM1','LFM2','new');
-% title(T);
-% %xlim([100 1100]);
-% 
-% subplot(3,1,2);
-% plot(pos1_d2/scale_d2(1),'o','Color',colors{1});
-% hold on;
-% plot(pos2_d2/scale_d2(2),'o','Color',colors{4});
-% plot(side1_d2/scale_d2(3),'.','Color',colors{2});
-% plot(side2_d2/scale_d2(4),'*','Color',colors{2});
-% plot(new_d2/scale_d2(5),'-','Color',colors{4});
-% xlabel('second dimension [pixels]');
-% ylabel('intensity');
-% hold off;
-% legend('pos1','pos2','LFM1','LFM2','new');
-% %xlim([100 1100]);
-% %ylim([0 0.005]);
-% 
-% subplot(3,1,3);
-% plot(pos1_d3/scale_d3(1),'o','Color',colors{1});
-% hold on;
-% plot(pos2_d3/scale_d3(2),'o','Color',colors{4});
-% plot(side1_d3/scale_d3(3),'.','Color',colors{2});
-% plot(side2_d3/scale_d3(4),'*','Color',colors{2});
-% plot(new_d3/scale_d3(5),'-','Color',colors{4});
-% xlabel('third dimension [pixels]');
-% ylabel('intensity');
-% hold off;
-% legend('pos1','pos2','LFM1','LFM2','new');
-% %xlim([100 1100]);
-% %ylim([0 0.005]);
-% 
-% str=sprintf('%s%s_summed_intensity_projection.png',param.savePath,param.timestamp);
-% ff=getframe(f);
-% [X, map] = frame2im(ff);
-% imwrite(X, str);
-% end
 
 function offsets = estimate_offsets (side1, side2, new, param)
 
@@ -1391,12 +936,6 @@ twothree = squeeze(max(side1,[],1));
 side1_d1 = single(squeeze(max(onetwo,[],2)));
 side1_d2 = single(squeeze(max(onetwo,[],1)));
 side1_d3 = single(squeeze(max(twothree,[],1)));
-
-onetwo = squeeze(max(side2,[],3));
-twothree = squeeze(max(side2,[],1));
-side2_d1 = single(squeeze(max(onetwo,[],2)));
-side2_d2 = single(squeeze(max(onetwo,[],1)));
-side2_d3 = single(squeeze(max(twothree,[],1)));
 
 %
 % projections for new
@@ -1450,34 +989,30 @@ if param.plot
     subplot(3,1,1);
     plot(u_lag,u_acor/max(u_acor));
     xlabel('lag in first dimension [pixels]');
-    ylabel('Normalized cross-correlation');
+    ylabel('correlation');
+    title('Normalized cross-correlation between LFM1 and rotated LFM2');
     subplot(3,1,2);
     plot(v_lag,v_acor/max(v_acor));
     xlabel('lag in second dimension [pixels]');
-    ylabel('Normalized cross-correlation');
+    ylabel('correlation');
     subplot(3,1,3);
     plot(w_lag,w_acor/max(w_acor));
     xlabel('lag in third dimension [pixels]');
-    ylabel('Normalized cross-correlation');
+    ylabel('correlation');
     
     str=sprintf('%s%s_xcorr.png',param.savePath,param.timestamp);
-    ff=getframe(f);
-    [X, map] = frame2im(ff);
-    imwrite(X, str);
+    save_plot(f, str);
 end
 
 end
-
-
 
 
 
 function save_1d_max_projections (side1, side2, pos1, pos2, new, param, str)
-glyph = {'.','.'};
-colors = {[0 0 1],
-    [0.8 0.8 0.8],
-    [0 0 1],
-    [1 0 0],};
+colors = {[0 0 1]
+    [0.8 0.8 0.8]
+    [0 0 1]
+    [1 0 0]};
 
 onetwo = squeeze(max(side1,[],3));
 twothree = squeeze(max(side1,[],1));
@@ -1595,63 +1130,43 @@ subplot(3,1,1);
 semilogy(side1_d1/scale_d1(3),'.','Color',colors{1});
 hold on;
 semilogy(side2_d1/scale_d1(4),'.','Color',colors{2});
-%semilogy(pos1_d1/scale_d1(1),'o','Color',colors{1});
-%semilogy(pos2_d1/scale_d1(2),'o','Color',colors{2});
 semilogy(new_d1/scale_d1(5),'-','Color',colors{4});
 xlabel('first dimension [pixels]');
 ylabel(yl);
 hold off;
-%legend('side1','side2','pos1','pos2','new');
-%legend('pos1','pos2','new');
 legend('LFM1','LFM2','LFM2 coarse reg');
 title([str T],'Interpreter','none');
-%xlim([100 1100]);
 
 subplot(3,1,2);
 semilogy(side1_d2/scale_d2(3),'.','Color',colors{1});
 hold on;
 semilogy(side2_d2/scale_d2(4),'.','Color',colors{2});
-%semilogy(pos1_d2/scale_d2(1),'o','Color',colors{1});
-%semilogy(pos2_d2/scale_d2(2),'o','Color',colors{2});
 semilogy(new_d2/scale_d2(5),'-','Color',colors{4});
 xlabel('second dimension [pixels]');
 ylabel(yl);
 hold off;
-%legend('side1','side2','pos1','pos2','new');
-%legend('pos1','pos2','new');
 legend('LFM1','LFM2','LFM2 coarse reg');
-%xlim([100 1100]);
-%ylim([0 0.005]);
 
 subplot(3,1,3);
 semilogy(side1_d3/scale_d3(3),'.','Color',colors{1});
 hold on;
 semilogy(side2_d3/scale_d3(4),'.','Color',colors{2});
-%semilogy(pos1_d3/scale_d3(1),'o','Color',colors{1});
-%semilogy(pos2_d3/scale_d3(2),'o','Color',colors{2});
 semilogy(new_d3/scale_d3(5),'-','Color',colors{4});
 xlabel('third dimension [pixels]');
 ylabel(yl);
 hold off;
-%legend('side1','side2','pos1','pos2','new');
-%legend('pos1','pos2','new');
 legend('LFM1','LFM2','LFM2 coarse reg');
-%xlim([100 1100]);
-%ylim([0 0.005]);
 
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
-ff=getframe(f);
-[X, map] = frame2im(ff);
-imwrite(X, str);
+save_plot(f, str);
 end
 
 
 function save_2d_contour_plots (side1, side2, pos1, pos2, new, param, str)
-glyph = {'.','.'};
-colors = {[1 0 0],
-    [0.8 0.8 0.8],
-    [0 0 1],
-    [0.4 0.4 0.4],};
+colors = {[1 0 0]
+    [0.8 0.8 0.8]
+    [0 0 1]
+    [0.4 0.4 0.4]};
 
 % projections for new
 % convert new from microns to pixels
@@ -1769,22 +1284,22 @@ f = figure('units','normalized','outerposition',[0 0 1 1]);
 subplot(2,2,1);
 hold on;
 a = size(onethree_new);
-x = [1:a(2)];
-y = [1:a(1)];
+x = 1:a(2);
+y = 1:a(1);
 [X,Y] = meshgrid(x,y);
 clevel = param.contour_int2;
 v = [ clevel, clevel ];
 contour(X,Y,onethree_new,v,'Color',colors{1});
 a = size(onethree_pos1);
-x = [1:a(2)];
-y = [1:a(1)];
+x = 1:a(2);
+y = 1:a(1);
 [X,Y] = meshgrid(x,y);
 clevel = param.contour_int1;
 v = [ clevel, clevel ];
 contour(X,Y,onethree_pos1,v,'Color',colors{3});
 a = size(onethree_pos2);
-x = [1:a(2)];
-y = [1:a(1)];
+x = 1:a(2);
+y = 1:a(1);
 [X,Y] = meshgrid(x,y);
 clevel = param.contour_int2;
 v = [ clevel, clevel ];
@@ -1801,22 +1316,22 @@ set(gca,'XDir','reverse');
 subplot(2,2,2);
 hold on;
 a = size(onetwo_new);
-x = [1:a(2)];
-y = [1:a(1)];
+x = 1:a(2);
+y = 1:a(1);
 [X,Y] = meshgrid(x,y);
 clevel = param.contour_int2;
 v = [ clevel, clevel ];
 contour(X,Y,onetwo_new,v,'Color',colors{1});
 a = size(onetwo_pos1);
-x = [1:a(2)];
-y = [1:a(1)];
+x = 1:a(2);
+y = 1:a(1);
 [X,Y] = meshgrid(x,y);
 clevel = param.contour_int1;
 v = [ clevel, clevel ];
 contour(X,Y,onetwo_pos1,v,'Color',colors{3});
 a = size(onetwo_pos2);
-x = [1:a(2)];
-y = [1:a(1)];
+x = 1:a(2);
+y = 1:a(1);
 [X,Y] = meshgrid(x,y);
 clevel = param.contour_int2;
 v = [ clevel, clevel ];
@@ -1831,29 +1346,29 @@ set(gca,'Ydir','reverse');
 subplot(2,2,4);
 hold on;
 a = size(threetwo_new);
-x = [1:a(2)];
-y = [1:a(1)];
+x = 1:a(2);
+y = 1:a(1);
 [X,Y] = meshgrid(x,y);
 clevel = param.contour_int2;
 v = [ clevel, clevel ];
 contour(X,Y,threetwo_new,v,'Color',colors{1});
 a = size(threetwo_pos1);
-x = [1:a(2)];
-y = [1:a(1)];
+x = 1:a(2);
+y = 1:a(1);
 [X,Y] = meshgrid(x,y);
 clevel = param.contour_int1;
 v = [ clevel, clevel ];
 contour(X,Y,threetwo_pos1,v,'Color',colors{3});
 a = size(threetwo_pos2);
-x = [1:a(2)];
-y = [1:a(1)];
+x = 1:a(2);
+y = 1:a(1);
 [X,Y] = meshgrid(x,y);
 clevel = param.contour_int2;
 v = [ clevel, clevel ];
 contour(X,Y,threetwo_pos2,v,'Color',colors{2});
 xlabel('dim two [pixels]');
 ylabel('dim three [pixels]');
-plot(c(2),c(3),'go');
+plot(c(2),c(3),'g*');
 daspect([1,1,1]);
 hold off;
 set(gca,'Ydir','reverse');
@@ -1863,6 +1378,7 @@ axes(ax1);
 text(0.25,0.4,'LFM1','FontSize',12,'Color',colors{3},'Interpreter','none');
 text(0.25,0.35,'LFM2','FontSize',12,'Color',colors{2},'Interpreter','none');
 text(0.25,0.3,'LFM2 coarse reg','FontSize',12,'Color',colors{1},'Interpreter','none');
+text(0.25,0.25,'centroid of LFM2 coarse reg','FontSize',12,'Color',[0 1 0],'Interpreter','none');
 text(0.5,0.92,str,'FontSize',12,'Color',[0 0 0] ,'Interpreter','none');
 
 text(0.5,0.8,sprintf('contour at intensity level %4.0f',param.contour_int1),'FontSize',12,'Color',colors{3},'Interpreter','none');
@@ -1870,134 +1386,10 @@ text(0.5,0.75,sprintf('contour at intensity level %4.0f',param.contour_int2),'Fo
 text(0.5,0.7,sprintf('contour at intensity level %4.0f',param.contour_int2),'FontSize',12,'Color',colors{1},'Interpreter','none');
 
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
-ff=getframe(f);
-[X, map] = frame2im(ff);
-imwrite(X, str);
+save_plot(f, str);
+
 end
 
-
-% function save_2d_projections (side1, side2, pos1, pos2, new, param, flag, str)
-% %f = figure();
-% %set(gcf,'Position',[1367          19        1184         952]);
-% f = figure('units','normalized','outerposition',[0 0 1 1]);
-% 
-% yz = squeeze(sum(side1,2));
-% subplot(2,6,1);
-% dr = ceil(log2(max(max(yz))));
-% imagesc(yz,[0 2^dr]);
-% xlabel('three [pixels]');
-% ylabel('one [pixels]');
-% title('LFM1');
-% colorbar();
-% daspect([1,1,1]);
-% 
-% xy = squeeze(sum(side1,3));
-% subplot(2,6,2);
-% dr = ceil(log2(max(max(xy))));
-% imagesc(xy,[0 2^dr]);
-% xlabel('two [pixels]');
-% ylabel('one [pixels]');
-% title('LFM1');
-% colorbar();
-% daspect([1,1,1]);
-% 
-% xz = squeeze(sum(side1,1))';
-% subplot(2,6,8);
-% dr = ceil(log2(max(max(xz))));
-% imagesc(xz,[0 2^dr]);
-% xlabel('two [pixels]');
-% ylabel('three [pixels]');
-% title('LFM1');
-% colorbar();
-% daspect([1,1,1]);
-% 
-% 
-% yz = squeeze(sum(side2,2));
-% subplot(2,6,3);
-% dr = ceil(log2(max(max(yz))));
-% imagesc(yz,[0 2^dr]);
-% xlabel('three [pixels]');
-% ylabel('one [pixels]');
-% title('LFM2');
-% colorbar();
-% daspect([1,1,1]);
-% 
-% xy = squeeze(sum(side2,3));
-% subplot(2,6,4);
-% dr = ceil(log2(max(max(xy))));
-% imagesc(xy,[0 2^dr]);
-% xlabel('two [pixels]');
-% ylabel('one [pixels]');
-% title('LFM2');
-% colorbar();
-% daspect([1,1,1]);
-% 
-% xz = squeeze(sum(side2,1))';
-% subplot(2,6,10);
-% dr = ceil(log2(max(max(xz))));
-% imagesc(xz,[0 2^dr]);
-% xlabel('two [pixels]');
-% ylabel('three [pixels]');
-% title('LFM2');
-% colorbar();
-% daspect([1,1,1]);
-% 
-% if flag
-%     yz = squeeze(sum(new,2));
-%     subplot(2,6,5);
-%     dr = ceil(log2(max(max(yz))));
-%     imagesc(yz,[0 2^dr]);
-%     xlabel('three [pixels]');
-%     ylabel('one [pixels]');
-%     title('DLFM');
-%     colorbar();
-%     daspect([1,1,1]);
-%     
-%     xy = squeeze(sum(new,3));
-%     subplot(2,6,6);
-%     dr = ceil(log2(max(max(xy))));
-%     imagesc(xy,[0 2^dr]);
-%     xlabel('two [pixels]');
-%     ylabel('one [pixels]');
-%     title('DLFM');
-%     colorbar();
-%     daspect([1,1,1]);
-%     
-%     xz = squeeze(sum(new,1))';
-%     subplot(2,6,12);
-%     dr = ceil(log2(max(max(xz))));
-%     imagesc(xz,[0 2^dr]);
-%     xlabel('two [pixels]');
-%     ylabel('three [pixels]');
-%     title('DLFM');
-%     colorbar();
-%     daspect([1,1,1]);
-% end
-% 
-% 
-% % set all colorbars to same range
-% crange = [];
-% i = [1 2 3 4 8 10];
-% if flag
-%     i = [i 5 6 12];
-% end
-% 
-% for j=i
-%     subplot(2,6,j);
-%     crange = [crange;caxis];
-% end
-% m = max(crange);
-% for j=i
-%     subplot(2,6,j);
-%     caxis(m);
-% end
-% 
-% % save figure
-% str=sprintf('%s%s_%s.png',param.savePath,param.timestamp, str);
-% ff=getframe(f);
-% [X, map] = frame2im(ff);
-% imwrite(X, str);
-% end
 
 function save_2d_max_projections (side1, side2, new, param, flag, str)
 
@@ -2098,23 +1490,6 @@ if flag
     daspect([1,1,1]);
 end
 
-% % set all colorbars to same range
-% crange = [];
-% i = [1 2 3 4 8 10];
-% if flag
-%     i = [i 5 6 12];
-% end
-% 
-% for j=i
-%     subplot(2,6,j);
-%     crange = [crange;caxis];
-% end
-% m = max(crange);
-% for j=i
-%     subplot(2,6,j);
-%     caxis(m);
-% end
-
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
 text(0.15,0.97,[param.inputFilePath1 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
@@ -2127,9 +1502,8 @@ drawnow
 
 % save figure
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp, str);
-ff=getframe(f);
-[X, map] = frame2im(ff);
-imwrite(X, str);
+save_plot(f, str);
+
 end
 
 
@@ -2226,7 +1600,6 @@ drawnow
 
 % save figure
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp, str);
-ff=getframe(f);
-[X, map] = frame2im(ff);
-imwrite(X, str);
+save_plot(f, str);
+
 end
