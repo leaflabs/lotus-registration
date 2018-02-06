@@ -57,7 +57,8 @@ param.plot = true;
 %param.savePath      = '/Users/justin/Desktop/LFM volume registration/';
 param.savePath      = '/home/jkinney/Desktop/LFM volume registration/registration/param_sweep/';
 %param.savePath      = '/tmp/';
-param.inputFilePath = '/home/jkinney/Desktop/LFM volume registration/from_nikita/';
+param.inputFilePath1 = '';
+param.inputFilePath2 = '';
 param.inputFileName = {
     'raw_side1.mat',
     'raw_side2.mat'};
