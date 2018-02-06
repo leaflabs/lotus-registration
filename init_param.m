@@ -22,7 +22,6 @@ param.rot_amp = param.scale_rot * pi/800; % radians
 % dim1 min, dim1 max, dim2 min, dim2 max, dim3 min, dim3 max,
 param.clip = [0,0,0,0,0,0];
 
-param.power = 1;
 param.T0 = -1;
 param.TC0 = 30;
 param.MC0 = 30;
@@ -48,7 +47,6 @@ param.centroid = [-1 -1 -1];
 %param.threshold = 20;
 param.threshold1 = 40;
 param.threshold2 = 40;
-param.threshold_plot = 40;
 param.index2 = [];
 
 param.rapid = false;
