@@ -168,9 +168,10 @@ if param.plot
 end
 
 %% save final parameters
+%fname = sprintf('%s%s_parameters.mat',param.savePath,param.timestamp);
+%save(fname,'param');
+
 param
-fname = sprintf('%s%s_parameters.mat',param.savePath,param.timestamp);
-save(fname,'param');
 elapsedTime = toc
 diary off;
 
