@@ -201,8 +201,8 @@ for i=1:length(h_side2)
     cdf_side2 = [cdf_side2 total];
 end
 
-i = derive_threshold (cdf_side1);
-j = derive_threshold (cdf_side2);
+i = derive_threshold (cdf_side1, param);
+j = derive_threshold (cdf_side2, param);
 
 param.threshold1 = centers(i);
 param.threshold2 = centers(j);
@@ -248,7 +248,7 @@ end
 end
 
 
-function i = derive_threshold (cdf)
+function i = derive_threshold (cdf, param)
 % look for large jump in cdf
 dif = cdf(2:end)-cdf(1:end-1);
 sdif = flipud(sortrows([dif' [1:length(dif)]'],1));
