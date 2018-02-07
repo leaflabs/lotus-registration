@@ -51,6 +51,8 @@ param.scale_rot   = 20;
 param.trans_amp = param.scale_trans * param.voxel_x; % um
 param.rot_amp = param.scale_rot * pi/800; % radians
 
+param.angle   = [-0.8*pi/2 0 0];
+
 param
 
 param.inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};

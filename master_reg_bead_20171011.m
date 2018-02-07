@@ -66,5 +66,6 @@ param.inputFileName = {'Recon3D_1_low_Mono_N15.mat'};
 register(param)
 close all;
 param.inputFileName = {'Recon3D_2_high_Mono_N15.mat'};
+param.angle = [-1.2*pi/2 0 0];
 register(param)
 close all;
