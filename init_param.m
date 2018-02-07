@@ -50,7 +50,7 @@ param.threshold2 = 40;
 param.index2 = [];
 
 param.N = 10000;
-param.xlim_thresh = 0.999; %HARDCODED
+param.xlim_thresh = 0.9999; %HARDCODED
 %param.contour_thresh = 0.99;
 param.pop_thresh = 0.99; %HARDCODED
 
@@ -65,5 +65,7 @@ param.inputFilePath2 = '';
 param.inputFileName = {
     'raw_side1.mat',
     'raw_side2.mat'};
+
+param.xlim_1d = [0 0 0];
 end
 

@@ -242,10 +242,10 @@ if param.plot
     ax1 = axes('Position',[0 0 1 1],'Visible','off');
     axes(ax1);
     mystr2 = [num2str(param.N) ' bins in distribution'];
-    text(0.4,0.3,mystr2,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+    text(0.4,0.3,mystr2,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
     a = xlim;
     b=ylim;
-    text(0.4,0.7,mystr1,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+    text(0.4,0.7,mystr1,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
     
     str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
     save_plot(f,str);
@@ -429,7 +429,14 @@ end
 
 
 function [cdf,centers,nullMIvec] = null_distribution (side1, side2, canonical, param)
-nullMIvec = [];
+nullf = [param.savePath param.inputFileName{1}(1:end-4) '_null.mat'];
+if exist(nullf,'file') == 2
+    load(nullf,'nullMIvec');
+else
+    nullMIvec = [];
+end
+LL = length(nullMIvec);
+fprintf('\nnull distribution has N = %d\n',LL);
 % determine gain so offset limit = half or quarter of volume limits
 % and so that rotation limit = pi
 a = max ([ size(side1) size(side2)]);
@@ -470,7 +477,10 @@ parfor i=1:param.Nnull
     %         profile viewer
 end
 param.rot_amp = tmp;
-%profile viewer;
+
+% add to existing null distribution if any
+fprintf('\nnull distribution has N = %d, was N = %d\n',length(nullMIvec),LL);
+save(nullf,'nullMIvec');
 
 % CDF
 edges = linspace(min(nullMIvec),max(nullMIvec),param.Nnull);
@@ -486,17 +496,6 @@ for i=1:length(h_MI)
     total = total + h_MI(i);
     cdf = [cdf total];
 end
-
-% add to existing null distribution if any
-nullf = [param.savePath param.inputFileName{1}(1:end-4) '_null.mat'];
-if exist(nullf,'file') == 2
-    tmp = nullMIvec;
-    load(nullf,'nullMIvec');
-    fprintf('nullMIvec was N = %d\n',length(nullMIvec));
-    nullMIvec = [nullMIvec tmp];
-    fprintf('nullMIvec is now N = %d\n',length(nullMIvec)); 
-end
-save(nullf,'nullMIvec');
 
 % plot PDF and CDF
 f = figure;
@@ -1133,6 +1132,12 @@ ylabel(yl);
 hold off;
 legend('LFM1','LFM2','LFM2 coarse reg');
 title([str T],'Interpreter','none');
+if param.xlim_1d(1) > 0
+    xlim([0 param.xlim_1d(1)]);
+else
+    a = xlim;
+    param.xlim_1d(1)=a(2);
+end
 
 subplot(3,1,2);
 semilogy(side1_d2/scale_d2(3),'.','Color',colors{1});
@@ -1143,6 +1148,12 @@ xlabel('second dimension [pixels]');
 ylabel(yl);
 hold off;
 legend('LFM1','LFM2','LFM2 coarse reg');
+if param.xlim_1d(2) > 0
+    xlim([0 param.xlim_1d(2)]);
+else
+    a = xlim;
+    param.xlim_1d(2)=a(2);
+end
 
 subplot(3,1,3);
 semilogy(side1_d3/scale_d3(3),'.','Color',colors{1});
@@ -1153,6 +1164,12 @@ xlabel('third dimension [pixels]');
 ylabel(yl);
 hold off;
 legend('LFM1','LFM2','LFM2 coarse reg');
+if param.xlim_1d(3) > 0
+    xlim([0 param.xlim_1d(3)]);
+else
+    a = xlim;
+    param.xlim_1d(3)=a(2);
+end
 
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
 save_plot(f, str);
@@ -1372,19 +1389,22 @@ set(gca,'Ydir','reverse');
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-text(0.25,0.4,'LFM1','FontSize',12,'Color',colors{3},'Interpreter','none');
-text(0.25,0.35,'LFM2','FontSize',12,'Color',colors{2},'Interpreter','none');
-text(0.25,0.3,'LFM2 coarse reg','FontSize',12,'Color',colors{1},'Interpreter','none');
-text(0.25,0.25,'centroid of LFM2 coarse reg','FontSize',12,'Color',[0 1 0],'Interpreter','none');
-text(0.5,0.92,str,'FontSize',12,'Color',[0 0 0] ,'Interpreter','none');
 
-text(0.5,0.8,sprintf('contour at intensity level %4.0f',param.contour_int1),'FontSize',12,'Color',colors{3},'Interpreter','none');
-text(0.5,0.75,sprintf('contour at intensity level %4.0f',param.contour_int2),'FontSize',12,'Color',colors{2},'Interpreter','none');
-text(0.5,0.7,sprintf('contour at intensity level %4.0f',param.contour_int2),'FontSize',12,'Color',colors{1},'Interpreter','none');
+text(0.2,0.45,str,'FontSize',12,'Color',[0 0 0] ,'Interpreter','none');
+
+msg = sprintf('LFM1: contour at intensity level %4.0f',param.contour_int1);
+text(0.2,0.4,msg,'FontSize',12,'Color',colors{3},'Interpreter','none');
+
+msg = sprintf('LFM2: contour at intensity level %4.0f',param.contour_int2);
+text(0.2,0.35,msg,'FontSize',12,'Color',colors{2},'Interpreter','none');
+
+msg = sprintf('LFM2 coarse reg: contour at intensity level %4.0f',param.contour_int2);
+text(0.2,0.3,msg,'FontSize',12,'Color',colors{1},'Interpreter','none');
+
+text(0.2,0.25,'centroid of LFM2 coarse reg','FontSize',12,'Color',[0 1 0],'Interpreter','none');
 
 str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
 save_plot(f, str);
-
 end
 
 
