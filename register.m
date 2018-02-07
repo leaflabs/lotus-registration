@@ -18,10 +18,10 @@ tic
 
 %% load volumes
 f = [param.inputFilePath1 param.inputFileName{1}];
-disp(sprintf('\nLoading volume %s\n',f));
+fprintf('\nLoading volume %s\n\n',f);
 side1 = loadData(f, param);
 f = [param.inputFilePath2 param.inputFileName{1}];
-disp(sprintf('\nLoading volume %s\n',f));
+fprintf('\nLoading volume %s\n\n',f);
 side2 = loadData(f, param);
 param.voxel_z = param.voxel_z / param.interp;
 
@@ -47,8 +47,8 @@ end
 a = size(side1);
 if ~isempty(find(param.clip>0))
     fprintf('\nClipping pixels from periphery:\n');
-    disp(sprintf('%d ',param.clip));
-    disp(sprintf('\n'));
+    fprintf('%d \n',param.clip);
+    fprintf('\n\n');
     side1 = side1( 1+param.clip(1):a(1)-param.clip(2),...
         1+param.clip(3):a(2)-param.clip(4),...
         1+param.clip(5):a(3)-param.clip(6));
@@ -90,7 +90,7 @@ for i=1:3
     end
 end
 param.offset = offsets;
-disp(sprintf('\nestimated offsets = [%f %f %f]',offsets(1),offsets(2),offsets(3)));
+fprintf('\nestimated offsets = [%f %f %f]\n',offsets(1),offsets(2),offsets(3));
 new = translate (new, offsets);
 param.trans = param.trans + offsets;
 
@@ -131,9 +131,9 @@ else
 end
 w = find(param.centers>MI,1); % keep only first instance
 if ~isempty(w)
-    disp(sprintf('\npre-coarse MI frac = %.5g\n',param.cdf(w)));
+    fprintf('\npre-coarse MI frac = %.5g\n\n',param.cdf(w));
 else
-    disp(sprintf('\npre-coarse MI frac = 1.0\n'));
+    fprintf('\npre-coarse MI frac = 1.0\n\n');
 end
 
 
@@ -206,12 +206,12 @@ j = derive_threshold (cdf_side2);
 
 param.threshold1 = centers(i);
 param.threshold2 = centers(j);
-disp(sprintf('threshold1 = %f',param.threshold1));
-disp(sprintf('threshold2 = %f',param.threshold2));
+fprintf('threshold1 = %f\n',param.threshold1);
+fprintf('threshold2 = %f\n',param.threshold2);
 param.contour_int1 = centers(i);
 param.contour_int2 = centers(j);
-disp(sprintf('contour_int1 = %f',param.contour_int1));
-disp(sprintf('contour_int2 = %f\n\n',param.contour_int2));
+fprintf('contour_int1 = %f\n',param.contour_int1);
+fprintf('contour_int2 = %f\n\n\n',param.contour_int2);
 
 if param.plot
     f = figure;
@@ -240,8 +240,6 @@ if param.plot
     axes(ax1);
     mystr2 = [num2str(param.N) ' bins in distribution'];
     text(0.4,0.3,mystr2,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
-    a = xlim;
-    b=ylim;
     text(0.4,0.7,mystr1,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
     
     str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
@@ -313,7 +311,7 @@ end
 
 XguessSAVE1 = out;
 outFile = sprintf('%s%s_%s.mat',param.savePath,param.timestamp,param.myfunc_combine);
-disp(sprintf('Saving combined volume to %s.',outFile));
+fprintf('Saving combined volume to %s.\n',outFile);
 save(outFile,'XguessSAVE1','-v7.3');
 end
 
@@ -321,7 +319,7 @@ function out = loadData (f, param)
 if exist(f,'file') == 2
     load(f);
     if exist('Xvolume','var')
-        if strcmp(class(Xvolume),'uint16')
+        if isa(Xvolume,'uint16')
             XguessSAVE1 = Xvolume;
         else
             disp('Warning input data is not 16 bit.');
@@ -330,9 +328,9 @@ if exist(f,'file') == 2
         clear Xvolume;
     elseif exist('XguessSAVE1','var')
         disp('XguessSAVE1 found.');
-        if ~strcmp(class(XguessSAVE1),'uint16')
+        if ~isa(XguessSAVE1,'uint16')
             disp('Warning input data is not 16 bit.');
-            if strcmp(class(XguessSAVE1),'uint8')
+            if isa(XguessSAVE1,'uint8')
                 disp('Data will be scaled to 16 bit.');
                 XguessSAVE1 = cast(XguessSAVE1, 'uint16')*2^8;
             else
