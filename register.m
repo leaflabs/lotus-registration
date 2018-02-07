@@ -61,10 +61,6 @@ if ~isempty(find(param.clip>0))
 end
 
 %% calculate thresholds
-param.N = 10000;
-param.xlim_thresh = 0.999; %HARDCODED
-%param.contour_thresh = 0.99;
-param.pop_thresh = 0.99; %HARDCODED
 param = calculate_thresholds (side1, side2, param,'cdf_voxel_intensities');
 
 %% voxel positions
@@ -114,7 +110,7 @@ end
 %% null distribution
 % for random rotations and offsets (within some range)
 % calculate mutual information, MI
-[cdf,centers,nullMIvec] = null_distribution (pos1, param.index1, side1, new, side2, canonical, param);
+[cdf,centers,nullMIvec] = null_distribution (side1, side2, canonical, param);
 param.cdf = cdf;
 param.centers = centers;
 param.nullMIvec = nullMIvec;
@@ -142,9 +138,8 @@ end
 
 
 %% simulated annealing
-[new, param] = simulated_annealing (pos1, param.index1, side1, new, side2, canonical, param);
+[new, param] = simulated_annealing (side1, new, side2, canonical, param);
 if param.plot
-    %plot_pos(pos1, pos2, side1, side2, new, param, 'postsim');
     save_stats(param);
 end
 
@@ -266,6 +261,7 @@ M = 20; % number of chunks
 s = size(side2);
 N = ceil(s(3)/M); % number of voxels/frames per chunk
 F = s(1)*s(2); % number of voxels per frame
+fprintf('\n');
 % for each chunk in side2
 for i = 1:M
     %disp(sprintf('chunk %d of %d',i,M));
@@ -282,7 +278,7 @@ for i = 1:M
     if linind(2)>numel(side2)
         linind(2) = numel(side2);
     end
-    fprintf('chunk %d of %d, zind %d %d, linind %d %d',i,M, zind(1),zind(2),linind(1),linind(2));
+    fprintf('chunk %2d of %2d, z index %3d to %3d, linear index %12d to %12d\n',i,M, zind(1),zind(2),linind(1),linind(2));
     % for each voxel in chunk in side2, extract position to final_pos2
     %disp('Init_pos');
     final_pos2 = init_pos([linind(1):linind(2)]', side2, param);
@@ -295,7 +291,7 @@ for i = 1:M
     final_pos2 = translate (tmp, param.trans); 
     % for each voxel in side1, find positions in final_pos2 and combine and normalize
     %disp('combine');
-    out(linind(1):linind(2)) = combine (side1, side2, final_pos2, zind, linind, param);
+    out(linind(1):linind(2)) = combine (side1, side2, final_pos2, linind, param);
 end
 if ~param.rapid
     outFile = sprintf('%s_%s.tif',param.timestamp,param.myfunc_combine);
@@ -336,13 +332,13 @@ if exist(f,'file') == 2
         end
     else
         %disp('WTF?! Unknown data name.');
-        disp(sprintf('No data was recognized:\n'));
+        fprintf('No data was recognized:\n\n');
         whos
         keyboard;
     end
     out = interpolate (XguessSAVE1,param);
 else
-    disp(sprintf('File not found:\n%s\n',f));
+    fprintf('File not found:\n%s\n\n',f);
     keyboard;
 end 
 end
@@ -369,7 +365,7 @@ end
 end
 
 
-function out = combine (side1, side2, chunk, zind, linind, param)
+function out = combine (side1, side2, chunk, linind, param)
 % chunk = x,y,z centroids of voxels in side2
 % for each centroid in chunk, calculate index of corresponding voxels in side1
 L = length(chunk);
@@ -379,18 +375,19 @@ scale = [1/param.voxel_y*ones(L,1) ...
 abc_side1 = ceil(chunk.*scale);
 % purge any indices that lie outside of side1
 ind = find(abc_side1<1);
-[r1,c] = ind2sub(size(abc_side1),ind);
+[r1,~] = ind2sub(size(abc_side1),ind);
 s = size(side1);
 ind = find(abc_side1(:,1)>s(1));
-[r2,c] = ind2sub(size(abc_side1),ind);
+[r2,~] = ind2sub(size(abc_side1),ind);
 ind = find(abc_side1(:,2)>s(2));
-[r3,c] = ind2sub(size(abc_side1),ind);
+[r3,~] = ind2sub(size(abc_side1),ind);
 ind = find(abc_side1(:,3)>s(3));
-[r4,c] = ind2sub(size(abc_side1),ind);
+[r4,~] = ind2sub(size(abc_side1),ind);
 rem = unique([r1;r2;r3;r4]);
 N = length(abc_side1);
-fprintf('Number of voxels %d, fraction used %f, fraction with negative index %f, fraction outside of side1 %f\n',...
-    N,length(rem)/N,length(r1)/N,(length(r2)+length(r3)+length(r4))/N);
+f_not_used = length(rem)/N;
+fprintf('[Voxels] Number %d, fraction used %1.3f, with negative index %1.3f, outside of side1 %1.3f\n',...
+    N,1-f_not_used,length(r1)/N,(length(r2)+length(r3)+length(r4))/N);
 % chunk is a systematic sweep in z dimensino of side2
 % in contrast, abc_side1 are the voxels in side1 coordinate system of a
 % rotated and translated side2, so not well behaved
@@ -431,7 +428,7 @@ end
 end
 
 
-function [cdf,centers,nullMIvec] = null_distribution (pos1, index1, side1, new, side2, canonical, param)
+function [cdf,centers,nullMIvec] = null_distribution (side1, side2, canonical, param)
 nullMIvec = [];
 % determine gain so offset limit = half or quarter of volume limits
 % and so that rotation limit = pi
@@ -442,7 +439,7 @@ tmp = param.rot_amp;
 param.rot_amp = pi / gain;
 %N = param.Nnull;
 %profile on;
-disp(sprintf('\nCount    Mutual_Information                Offset [um]                        Rotation [radians]'));
+fprintf('\nCount    Mutual_Information                Offset [um]                        Rotation [radians]\n');
 parfor i=1:param.Nnull
     MI = 0;
     % perturb pos
@@ -495,9 +492,9 @@ nullf = [param.savePath param.inputFileName{1}(1:end-4) '_null.mat'];
 if exist(nullf,'file') == 2
     tmp = nullMIvec;
     load(nullf,'nullMIvec');
-    disp(sprintf('nullMIvec was N = %d',length(nullMIvec)));
+    fprintf('nullMIvec was N = %d\n',length(nullMIvec));
     nullMIvec = [nullMIvec tmp];
-    disp(sprintf('nullMIvec is now N = %d',length(nullMIvec))); 
+    fprintf('nullMIvec is now N = %d\n',length(nullMIvec)); 
 end
 save(nullf,'nullMIvec');
 
@@ -541,7 +538,7 @@ end
 
 
 
-function [new, param] = simulated_annealing (pos1, index1, side1, new, side2, canonical, param)
+function [new, param] = simulated_annealing (side1, new, side2, canonical, param)
 %print_param(param);
 if strcmp(param.myfunc_MI,'multiply')
     MI = mutual_information (side1, new, side2, param);
@@ -553,11 +550,11 @@ else
 end
 last_MI = MI;
 param = setT0 (MI,param);
-param.MIvec = [MI];
+param.MIvec = MI;
 % set initial T. Start with T sufficiently high to "melt" the system
 T = param.T0;
 p = param.init_p;
-param.Pvec = [p];
+param.Pvec = p;
 % set max number of temperature changes and mean changes
 Tchanges = param.TC0;
 % while system not frozen and more temperature changes are allowed
@@ -653,7 +650,7 @@ while Tchanges > 0
         else
             str9 = sprintf('null exceeds siman by %3.2f%%',100*abs(dif)/last_MI);
         end
-        disp(sprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9));
+        fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9);
         param.Pvec = [param.Pvec p];
         param.transvec = [param.transvec; param.trans];
         param.offsetvec = [param.offsetvec; val7];
