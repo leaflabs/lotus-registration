@@ -58,12 +58,12 @@ register(param)
 close all;
 
 
-param.inputFileName = {'Recon3D_worm2_200ms_Mono_N15.mat'};
+param.inputFileName = {'Recon3D_worm2_100ms_Mono_N15.mat'};
 register(param)
 close all;
 
 
-param.inputFileName = {'Recon3D_worm3_200ms_Mono_N15.mat'};
+param.inputFileName = {'Recon3D_worm3_100ms_Mono_N15.mat'};
 register(param)
 close all;
 

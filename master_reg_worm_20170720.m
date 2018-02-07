@@ -34,7 +34,7 @@ else
 
 	param.ppath = '/om/user/jkinney/DLFM'
 	addpath([param.ppath '/lotus-registration']);
- 	param.ipath = '/om/project/boyden/DualLensLightField/7_20_17_40X_worm/video_1'
+	param.ipath = '/om/user/ehoseini/MyData/DuallensLightField/7_20_17/video_1'
 	param.opath = '/om/user/jkinney/DLFM/worm/20170720'
 end
 param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
