@@ -201,16 +201,13 @@ for i=1:length(h_side2)
     cdf_side2 = [cdf_side2 total];
 end
 
-i = find(cdf_side1>param.pop_thresh,1); % keep only first instance
-j = find(cdf_side2>param.pop_thresh,1); % keep only first instance
-%p = find(cdf_side1>param.contour_thresh,1); % keep only first instance
-%q = find(cdf_side2>param.contour_thresh,1); % keep only first instance
+i = derive_threshold (cdf_side1);
+j = derive_threshold (cdf_side2);
+
 param.threshold1 = centers(i);
 param.threshold2 = centers(j);
 disp(sprintf('threshold1 = %f',param.threshold1));
 disp(sprintf('threshold2 = %f',param.threshold2));
-%param.contour_int1 = centers(p);
-%param.contour_int2 = centers(q);
 param.contour_int1 = centers(i);
 param.contour_int2 = centers(j);
 disp(sprintf('contour_int1 = %f',param.contour_int1));
@@ -252,6 +249,18 @@ if param.plot
 end
 end
 
+
+function i = derive_threshold (cdf)
+% look for large jump in cdf
+dif = cdf(2:end)-cdf(1:end-1);
+sdif = flipud(sortrows([dif' [1:length(dif)]'],1));
+if sdif(1,1) > param.dynamic_range_thresh * sdif(2,1)
+    i = sdif(1,2)+1;
+else
+    % if not found
+    i = find(cdf>param.pop_thresh,1); % keep only first instance
+end
+end
 
 function out = combineVols (side1, side2, param)
 out = zeros(size(side2),'uint16');
