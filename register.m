@@ -676,9 +676,8 @@ new = translate (rotated, param.trans);
 end
 
 function save_plot (f, filename)
-fr = getframe(f);
-[X, ~] = frame2im(fr);
-imwrite(X, filename);
+nf = [filename(1:end-4) '_print'];
+print(f,nf,'-dpng');
 end
 
 function save_stats (param)
