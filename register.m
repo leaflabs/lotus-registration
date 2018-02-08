@@ -63,8 +63,6 @@ end
 %% calculate thresholds
 param = calculate_thresholds (side1, side2, param,'cdf_voxel_intensities');
 
-keyboard
-
 %% voxel positions
 param.index1 = find(side1>param.threshold1);
 print_fraction(param.index1,side1,'side1');
@@ -98,7 +96,7 @@ param.trans = param.trans + offsets;
 
 %% plot data
 if param.plot
-    save_1d_max_projections(side1, side2, pos1, pos2, new, param,...
+    param = save_1d_max_projections(side1, side2, pos1, pos2, new, param,...
         '1d_max_projections_presim');
     save_2d_max_projections(side1, side2, new, param, 0,...
         '2d_max_projections_presim');
@@ -154,7 +152,7 @@ if param.savevol
 end
 
 if param.plot
-    save_1d_max_projections(side1, side2, pos1, pos2, new, param,...
+    param = save_1d_max_projections(side1, side2, pos1, pos2, new, param,...
         '1d_max_projections_postsim');
     save_2d_max_projections(side1, side2, comb, param, 1, ...
         '2d_max_projections_postsim');
@@ -227,8 +225,9 @@ if param.plot
     title('cumulative density function');
     legend('LFM1','LFM2');
     hold off;
-    arbitrary_scale = 4;
-    xlim([0 centers(arbitrary_scale*max(i,j))]);
+    %arbitrary_scale = 4;
+    %xlim([0 centers(arbitrary_scale*max(i,j))]);
+    xlim([0 1e4]);
     mystr1 = [sprintf('%3.3f%% of voxels in LFM1 exceed %.0f\n',...
         100*(1-cdf_side1(i)), param.threshold1 )...
               sprintf('%3.3f%% of voxels in LFM2 exceed %.0f\n',...
@@ -647,7 +646,7 @@ while Tchanges > 0
             param.cdfvec = [param.cdfvec param.cdf(w)];
         else
             str8 = 'MI frac = 1.0';
-            param.cdfvec = [param.cdfvec 1];
+            param.cdfvec = [param.cdfvec double(last_MI)/double(param.centers(end))] ;
         end
         dif = last_MI - max(param.nullMIvec);
         % last_MI > max(param.nullMIvec) =>dif>0
@@ -1010,7 +1009,7 @@ end
 
 
 
-function save_1d_max_projections (side1, side2, pos1, pos2, new, param, str)
+function param = save_1d_max_projections (side1, side2, pos1, pos2, new, param, str)
 colors = {[0 0 1]
     [0.8 0.8 0.8]
     [0 0 1]
