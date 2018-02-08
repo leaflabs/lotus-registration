@@ -14,7 +14,17 @@ declare -a arr=(
 "worm/20180103/registration"
 )
 
-LPATH=/Users/justin/Desktop/DLFM
+if [[ $(hostname -s) = willis ]]; then
+    echo 'this is willis'
+    LPATH=/home/jkinney/Desktop/DLFM
+elif [[ $(hostname -s) = *Justins-Mac* ]]; then
+    echo 'this is mac air'
+    LPATH=/Users/justin/Desktop/DLFM
+else
+    echo unknown
+    exit
+fi
+
 RPATH=jkinney@openmind.mit.edu:/om/user/jkinney/DLFM
 
 for i in "${arr[@]}"; do
