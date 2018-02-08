@@ -676,8 +676,7 @@ new = translate (rotated, param.trans);
 end
 
 function save_plot (f, filename)
-nf = [filename(1:end-4) '_print'];
-print(f,nf,'-dpng');
+print(f,filename,'-dpng');
 end
 
 function save_stats (param)
