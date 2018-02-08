@@ -38,7 +38,7 @@ for i in "${arr[@]}"; do
 
     # pull results from openmind
     echo ""
-    rsync -av --exclude '*.mat' --exclude '*.tif' $RPATH/$i/ $LPATH/$i/
+    rsync -av --delete --exclude '*.mat' --exclude '*.tif' $RPATH/$i/ $LPATH/$i/
     echo ""
     echo ""
 done
