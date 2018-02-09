@@ -10,8 +10,14 @@ param.hostname = strtrim(hostname);
 
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
 	%% setup parallel pool
-	delete(gcp('nocreate'));
-	parpool(2);
+	p = gcp('nocreate');
+    	if isempty(p)
+        	parpool(2);
+    	elseif ~p.NumWorkers==2
+        	delete(p);
+        	parpool(2);
+        	p = gcp('nocreate');
+    	end
 
 	param.ppath = '/Users/justin/Desktop/DLFM'
 	addpath([param.ppath '/lotus-registration']);
@@ -20,8 +26,14 @@ if ~isempty(strfind(param.hostname, 'Justins-Mac'))
 
 elseif ~isempty(strfind(param.hostname, 'willis'))
 	%% setup parallel pool
-	delete(gcp('nocreate'));
-	parpool(2);
+	p = gcp('nocreate');
+    	if isempty(p)
+        	parpool(2);
+    	elseif ~p.NumWorkers==2
+        	delete(p);
+        	parpool(2);
+        	p = gcp('nocreate');
+    	end
 
 	param.ppath = '/home/jkinney/Desktop/DLFM'
 	addpath([param.ppath '/lotus-registration']);
@@ -29,8 +41,7 @@ elseif ~isempty(strfind(param.hostname, 'willis'))
 	param.opath = param.ipath
 else
 	%% setup parallel pool
-	delete(gcp('nocreate'));
-	parpool;
+	p = gcp;
 
 	param.ppath = '/om/user/jkinney/DLFM'
 	addpath([param.ppath '/lotus-registration']);
@@ -53,10 +64,10 @@ param.rot_amp = param.scale_rot * pi/800; % radians
 param
 
 param.inputFileName = {'Recon3D_worm1_200ms_Mono_N15.mat'};
-param.offset = {[0], [], []};
+%param.offset = {[0], [], []};
 register(param)
 close all;
-param.offset = {[], [], []};
+%param.offset = {[], [], []};
 
 
 param.inputFileName = {'Recon3D_worm2_200ms_Mono_N15.mat'};
