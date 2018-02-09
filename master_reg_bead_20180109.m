@@ -56,16 +56,16 @@ param.rot_amp = param.scale_rot * pi/800; % radians
 param
 
 param.inputFileName = {'Recon3D_1_Mono_N15.mat'};
-param.offset = {[0], [], []};
+%param.offset = {[0], [], []};
 register(param)
 close all;
-param.offset = {[], [], []};
+%param.offset = {[], [], []};
 
 param.inputFileName = {'Recon3D_2_Mono_N15.mat'};
-param.offset = {[], [-30], []};
+%param.offset = {[], [-30], []};
 register(param)
 close all;
-param.offset = {[], [], []};
+%param.offset = {[], [], []};
 
 param.inputFileName = {'Recon3D_3_Mono_N15.mat'};
 register(param)

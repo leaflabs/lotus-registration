@@ -53,10 +53,10 @@ param.rot_amp = param.scale_rot * pi/800; % radians
 param
 
 param.inputFileName = {'Recon3D_worm1_200ms_Mono_N15.mat'};
-param.offset = {[0], [], []};
+%param.offset = {[0], [], []};
 register(param)
 close all;
-param.offset = {[], [], []};
+%param.offset = {[], [], []};
 
 
 param.inputFileName = {'Recon3D_worm2_200ms_Mono_N15.mat'};
