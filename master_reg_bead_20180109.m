@@ -8,44 +8,19 @@ param = init_param();
 [~,hostname] = system('hostname')
 param.hostname = strtrim(hostname);
 
-
+setup_par
 
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
-	%% setup parallel pool
-	p = gcp('nocreate');
-    	if isempty(p)
-        	parpool(2);
-    	elseif ~p.NumWorkers==2
-        	delete(p);
-        	parpool(2);
-        	p = gcp('nocreate');
-    	end
-
-
 	param.ppath = '/Users/justin/Desktop/DLFM'
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/bead/20180109']
 	param.opath = param.ipath
-
 elseif ~isempty(strfind(param.hostname, 'willis'))
-	%% setup parallel pool
-	p = gcp('nocreate');
-    	if isempty(p)
-        	parpool(2);
-    	elseif ~p.NumWorkers==2
-        	delete(p);
-        	parpool(2);
-        	p = gcp('nocreate');
-    	end
-
 	param.ppath = '/home/jkinney/Desktop/DLFM'
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/bead/20180109']
 	param.opath = param.ipath
 else
-	%% setup parallel pool
-	p = gcp;
-
 	param.ppath = '/om/user/jkinney/DLFM'
 	addpath([param.ppath '/lotus-registration']);
     	param.ipath = '/om/user/jkinney/DLFM/bead/20180109'
