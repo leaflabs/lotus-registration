@@ -21,15 +21,32 @@ for i in "${arr[@]}"; do
     echo "## $i"
     echo "##"
 
-    DEST="$LPATH/$i"
-    if [ -d "$DEST" ]; then
+    ORIGIN="$LPATH/$i"
+
+    if [ -d "$ORIGIN" ]; then
+
         echo ""
-        echo $DEST
-        echo 'Folder does exist.'
-	today=`date +%Y%m%d_%H%M%S` # or whatever pattern you desire
-	NEW='_'
-	cmd="mv $DEST $DEST$NEW$today"
-	echo $cmd
-	mv $DEST $DEST$NEW$today
+        echo $ORIGIN
+        echo 'Folder exists.'
+	TODAY=`date +%Y%m%d_%H%M%S` # or whatever pattern you desire
+	DEST="${ORIGIN}_$TODAY"
+	CMD="mv $ORIGIN $DEST"
+	echo $CMD
+	eval $CMD
+
+	# find any *null.mat from $ORIGIN$NEW$today
+	CMD='find '$DEST' -name '\"'*null.mat'\"' -exec basename {} .mat \;'
+	echo $CMD
+	NULL=$(eval $CMD)
+	echo $NULL
+	# if any found
+	if [[ ! -z $NULL ]]; then
+		CMD="mkdir $ORIGIN"
+		echo $CMD
+		eval $CMD
+		CMD='cp '$DEST'/'$NULL'.mat '$ORIGIN
+		echo $CMD
+		eval $CMD
+	fi
     fi
 done
