@@ -133,7 +133,7 @@ w = find(param.centers>MI,1); % keep only first instance
 if ~isempty(w)
     fprintf('\npre-coarse MI frac = %.5g\n\n',param.cdf(w));
 else
-    fprintf('\npre-coarse MI frac = 1.0\n\n');
+    fprintf('\npre-coarse MI frac = %.5g\n\n',double(MI)/double(param.centers(end)) );
 end
 
 
@@ -228,9 +228,9 @@ if param.plot
     %arbitrary_scale = 4;
     %xlim([0 centers(arbitrary_scale*max(i,j))]);
     xlim([0 1e4]);
-    mystr1 = [sprintf('%3.3f%% of voxels in LFM1 exceed %.0f\n',...
+    mystr1 = [sprintf('%3.3f%% of voxels in LFM1 exceed %.0f in intensity\n',...
         100*(1-cdf_LFM1(i)), param.threshold1 )...
-              sprintf('%3.3f%% of voxels in LFM2 exceed %.0f\n',...
+              sprintf('%3.3f%% of voxels in LFM2 exceed %.0f in intensity\n',...
         100*(1-cdf_LFM2(j)), param.threshold2 )...
         sprintf('\nLFM1 has %d voxels\n', numel(LFM1))...
         sprintf('LFM2 has %d voxels', numel(LFM2))...
@@ -450,7 +450,7 @@ a = max ([ size(LFM1) size(LFM2)]);
 offset_limit = 0.25 * a * param.voxel_y;
 gain = offset_limit / param.trans_amp;
 tmp = param.rot_amp;
-param.rot_amp = ones(1,3)*pi/gain;
+param.rot_amp = [pi/gain 0 0];
 %N = param.Nnull;
 %profile on;
 fprintf('\nCount    Mutual_Information                Offset [um]                        Rotation [radians]\n');
@@ -573,6 +573,9 @@ param.cdfvec = [];
 w = find(param.centers>last_MI,1); % keep only first instance
 if ~isempty(w)
     param.cdfvec = [param.cdfvec param.cdf(w)];
+else
+    val = double(last_MI)/double(param.centers(end));
+    param.cdfvec = [param.cdfvec val] ;
 end
 disp('Count      Perturbation     Transformation      Overlap     Probability,Decision   ');
 while Tchanges > 0
@@ -645,8 +648,9 @@ while Tchanges > 0
             str8 = sprintf('MI frac = %.5g,',param.cdf(w));
             param.cdfvec = [param.cdfvec param.cdf(w)];
         else
-            str8 = 'MI frac = 1.0';
-            param.cdfvec = [param.cdfvec double(last_MI)/double(param.centers(end))] ;
+            val = double(last_MI)/double(param.centers(end));
+            str8 = sprintf('MI frac = %.5g,',val);
+            param.cdfvec = [param.cdfvec val] ;
         end
         dif = last_MI - max(param.nullMIvec);
         % last_MI > max(param.nullMIvec) =>dif>0
@@ -710,10 +714,12 @@ end
 
 f = figure;
 plot(1:numel(param.cdfvec),param.cdfvec);
+hold on;
+plot(xlim,[1 1],'--r');
+hold off;
 xlabel('iteration');
 ylabel('fraction of null distribution');
 title('fraction of null distribution less than current mutual informaton');
-ylim([0 1.05]);
 if 0>1
     fname = sprintf('%s_frac_null.fig',prefix);
     savefig(h,fname);
@@ -972,9 +978,56 @@ new_d3 = squeeze(max(twothree,[],1));
 % xcorr
 %
 
-[u_acor, u_lag]  = xcorr( LFM1_d1,   new_d1 );
-[v_acor, v_lag]  = xcorr( LFM1_d2,   new_d2 );
-[w_acor, w_lag]  = xcorr( LFM1_d3,   new_d3 );
+% [u_acor, u_lag]  = xcorr( LFM1_d1,   new_d1 );
+% [v_acor, v_lag]  = xcorr( LFM1_d2,   new_d2 );
+% [w_acor, w_lag]  = xcorr( LFM1_d3,   new_d3 );
+% 
+% u_index = find(u_acor == max(u_acor));
+% v_index = find(v_acor == max(v_acor));
+% w_index = find(w_acor == max(w_acor));
+% 
+% offsets = [u_lag(u_index)*param.voxel_y...
+%     v_lag(v_index)*param.voxel_x...
+%     w_lag(w_index)*param.voxel_z...
+%     ];
+% 
+% if param.plot
+%     f = figure;
+%     subplot(3,1,1);
+%     plot(u_lag,u_acor/max(u_acor));
+%     xlabel('lag in first dimension [pixels]');
+%     ylabel('correlation');
+%     title('Normalized cross-correlation between LFM1 and rotated LFM2');
+%     subplot(3,1,2);
+%     plot(v_lag,v_acor/max(v_acor));
+%     xlabel('lag in second dimension [pixels]');
+%     ylabel('correlation');
+%     subplot(3,1,3);
+%     plot(w_lag,w_acor/max(w_acor));
+%     xlabel('lag in third dimension [pixels]');
+%     ylabel('correlation');
+%     
+%     str=sprintf('%s%s_xcorr.png',param.savePath,param.timestamp);
+%     save_plot(f, str);
+% end
+
+LFM1_d1_log10 = log10(LFM1_d1);
+LFM1_d1_log10(find(isinf(LFM1_d1_log10))) = 0;
+LFM1_d2_log10 = log10(LFM1_d2);
+LFM1_d2_log10(find(isinf(LFM1_d2_log10))) = 0;
+LFM1_d3_log10 = log10(LFM1_d3);
+LFM1_d3_log10(find(isinf(LFM1_d3_log10))) = 0;
+
+new_d1_log10 = log10(new_d1);
+new_d1_log10(find(isinf(new_d1_log10))) = 0;
+new_d2_log10 = log10(new_d2);
+new_d2_log10(find(isinf(new_d2_log10))) = 0;
+new_d3_log10 = log10(new_d3);
+new_d3_log10(find(isinf(new_d3_log10))) = 0;
+
+[u_acor, u_lag]  = xcorr( LFM1_d1_log10,   new_d1_log10 );
+[v_acor, v_lag]  = xcorr( LFM1_d2_log10,   new_d2_log10 );
+[w_acor, w_lag]  = xcorr( LFM1_d3_log10,   new_d3_log10 );
 
 u_index = find(u_acor == max(u_acor));
 v_index = find(v_acor == max(v_acor));
@@ -989,17 +1042,35 @@ if param.plot
     f = figure;
     subplot(3,1,1);
     plot(u_lag,u_acor/max(u_acor));
+    hold on;
+    plot([u_lag(u_index) u_lag(u_index)],[0 1],'r');
+    hold off;
     xlabel('lag in first dimension [pixels]');
     ylabel('correlation');
-    title('Normalized cross-correlation between LFM1 and rotated LFM2');
+    title('Normalized log cross-correlation between LFM1 and rotated LFM2');
+    str = sprintf('offset = %.0d pixels %.1f um',u_lag(u_index),u_lag(u_index)*param.voxel_y);
+    text(100,0.2,str,'FontSize',8,'Color',[0 0 0] ,'Interpreter','none');
+    ylim([0 1]);
     subplot(3,1,2);
     plot(v_lag,v_acor/max(v_acor));
+    hold on;
+    plot([v_lag(v_index) v_lag(v_index)],ylim,'r');
+    hold off;
     xlabel('lag in second dimension [pixels]');
     ylabel('correlation');
+    str = sprintf('offset = %.0d pixels %.1f um',v_lag(v_index),v_lag(v_index)*param.voxel_x);
+    text(100,0.2,str,'FontSize',8,'Color',[0 0 0] ,'Interpreter','none');
+    ylim([0 1]);
     subplot(3,1,3);
     plot(w_lag,w_acor/max(w_acor));
+    hold on;
+    plot([w_lag(w_index) w_lag(w_index)],ylim,'r');
+    hold off;
     xlabel('lag in third dimension [pixels]');
     ylabel('correlation');
+    str = sprintf('offset = %.0d pixels %.1f um',w_lag(w_index),w_lag(w_index)*param.voxel_z);
+    text(100,0.2,str,'FontSize',8,'Color',[0 0 0] ,'Interpreter','none');
+    ylim([0 1]);
     
     str=sprintf('%s%s_xcorr.png',param.savePath,param.timestamp);
     save_plot(f, str);
