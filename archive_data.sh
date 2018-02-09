@@ -34,19 +34,23 @@ for i in "${arr[@]}"; do
 	echo $CMD
 	eval $CMD
 
-	# find any *null.mat from $ORIGIN$NEW$today
+	# find any *null.mat from $DEST
 	CMD='find '$DEST' -name '\"'*null.mat'\"' -exec basename {} .mat \;'
 	echo $CMD
 	NULL=$(eval $CMD)
-	echo $NULL
+	echo NULL=\'$NULL\'
 	# if any found
 	if [[ ! -z $NULL ]]; then
 		CMD="mkdir $ORIGIN"
 		echo $CMD
 		eval $CMD
-		CMD='cp '$DEST'/'$NULL'.mat '$ORIGIN
-		echo $CMD
-		eval $CMD
+		# for each file
+		for F in $NULL; do
+			CMD='cp '$DEST'/'$F'.mat '$ORIGIN
+			echo $CMD
+			eval $CMD
+			echo ""
+		done
 	fi
     fi
 done
