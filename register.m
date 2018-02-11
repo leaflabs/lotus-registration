@@ -149,8 +149,6 @@ else
     keyboard
 end
 
-keyboard
-
 %% simulated annealing
 [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param);
 if param.plot
