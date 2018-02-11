@@ -114,28 +114,42 @@ end
 param.cdf = cdf;
 param.centers = centers;
 param.nullMIvec = nullMIvec;
-% print MI of volumes pre-coarse registration
-r = -param.angle;
-rotated = rotate (canonical,r);
-% translate rotated by an amount param.trans+d
-% thus param.trans tracks the current position
-new = translate (rotated, param.centroid);
-% measure mutual_information
+
+%% print MI of volumes pre- and post-coarse registration
+% pre-coarse
 if strcmp(param.myfunc_MI,'multiply')
-    MI = mutual_information (LFM1, new, LFM2, param);
-% elseif strcmp(param.myfunc_MI,'multiply_sqrt')
-%     MI = mutual_information_sqrt (LFM1, new, LFM2, param);
+    MI = mutual_information (LFM1, pos2, LFM2, param);
 else
     disp('WTF!');
     keyboard;
 end
 w = find(param.centers>MI,1); % keep only first instance
-if ~isempty(w)
+if MI > max(nullMIvec)
+    fprintf('\npre-coarse MI frac = %.5g\n\n',double(MI)/double(max(nullMIvec)));
+elseif ~isempty(w)
     fprintf('\npre-coarse MI frac = %.5g\n\n',param.cdf(w));
 else
-    fprintf('\npre-coarse MI frac = %.5g\n\n',double(MI)/double(param.centers(end)) );
+    disp('WTF?');
+    keyboard
+end
+% post-coarse
+if strcmp(param.myfunc_MI,'multiply')
+    MI = mutual_information (LFM1, new, LFM2, param);
+else
+    disp('WTF!');
+    keyboard;
+end
+w = find(param.centers>MI,1); % keep only first instance
+if MI > max(nullMIvec)
+    fprintf('\npost-coarse MI frac = %.5g\n\n',double(MI)/double(max(nullMIvec)));
+elseif ~isempty(w)
+    fprintf('\npost-coarse MI frac = %.5g\n\n',param.cdf(w));
+else
+    disp('WTF?');
+    keyboard
 end
 
+keyboard
 
 %% simulated annealing
 [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param);
@@ -490,8 +504,10 @@ fprintf('\nnull distribution has N = %d, was N = %d\n',length(nullMIvec),LL);
 save(nullf,'nullMIvec');
 
 % CDF
-edges = linspace(min(nullMIvec),max(nullMIvec),param.Nnull);
-centers = (edges(1:end-1)+edges(2:end))/2;
+centers = linspace(min(nullMIvec),max(nullMIvec),param.Nnull);
+del = 0.5 * (centers(2)-centers(1));
+edges  = [centers-del centers(end)+del];
+%centers = 0.5 * (edges(1:end-1)+edges(2:end));
 % this works. to check: sum(h_LFM1) == numel(LFM1)
 h_MI = histcounts(nullMIvec,edges);
 % normalize cdf to 1
@@ -574,7 +590,7 @@ w = find(param.centers>last_MI,1); % keep only first instance
 if ~isempty(w)
     param.cdfvec = [param.cdfvec param.cdf(w)];
 else
-    val = double(last_MI)/double(param.centers(end));
+    val = double(last_MI)/double(max(param.nullMIvec));
     param.cdfvec = [param.cdfvec val] ;
 end
 disp('Count      Perturbation     Transformation      Overlap     Probability,Decision   ');
@@ -644,23 +660,27 @@ while Tchanges > 0
         val7 = param.trans - param.centroid;
         str7 = sprintf('final offset = [%6.6g0 %6.6g0 %6.6g0]',val7(1),val7(2),val7(3));
         w = find(param.centers>last_MI,1); % keep only first instance
-        if ~isempty(w)
-            str8 = sprintf('MI frac = %.5g,',param.cdf(w));
+        if last_MI > max(param.nullMIvec)
+            val = double(last_MI)/double(max(param.nullMIvec));
+            str8 = sprintf('MI frac = %.5g, siman exceeds null',val);
+            param.cdfvec = [param.cdfvec val] ;
+        elseif ~isempty(w)
+            str8 = sprintf('MI frac = %.5g, null exceeds siman',param.cdf(w));
             param.cdfvec = [param.cdfvec param.cdf(w)];
         else
-            val = double(last_MI)/double(param.centers(end));
-            str8 = sprintf('MI frac = %.5g,',val);
-            param.cdfvec = [param.cdfvec val] ;
+            disp('WTF?');
+            keyboard
         end
         dif = last_MI - max(param.nullMIvec);
         % last_MI > max(param.nullMIvec) =>dif>0
         % last_MI < max(param.nullMIvec) =>dif<0
-        if dif > 0
-            str9 = sprintf('siman exceeds null by %3.2f%%',100*abs(dif)/max(param.nullMIvec));
-        else
-            str9 = sprintf('null exceeds siman by %3.2f%%',100*abs(dif)/last_MI);
-        end
-        fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9);
+%         if dif > 0
+%             str9 = sprintf('siman exceeds null by %3.2f%%',100*abs(dif)/max(param.nullMIvec));
+%         else
+%             str9 = sprintf('null exceeds siman by %3.2f%%',100*abs(dif)/last_MI);
+%         end
+        fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8);
+        %fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9);
         param.Pvec = [param.Pvec p];
         param.transvec = [param.transvec; param.trans];
         param.offsetvec = [param.offsetvec; val7];
@@ -743,7 +763,6 @@ subplot(1,3,2);
 plot(1:a(1),param.offsetvec(:,2));
 xlabel('iteration');
 ylabel('offset in dim 2 (um)');
-title('trajectory of simulated annealing');
 hold on;
 plot(1,param.offsetvec(1,2),'ro');
 hold off;
@@ -757,6 +776,11 @@ hold on;
 plot(1,param.offsetvec(1,3),'ro');
 hold off;
 xlim([1 a(1)]);
+
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+str = 'trajectory of simulated annealing';
+text(0.4,0.97,str,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
 
 if 0>1
     fname = sprintf('%s_offset.fig',prefix);
@@ -781,7 +805,7 @@ subplot(1,3,2);
 plot(1:a(1),param.rotvec(:,2));
 xlabel('iteration');
 ylabel('rotation around dim 2 (radians)');
-title('trajectory of simulated annealing');
+%title('trajectory of simulated annealing');
 hold on;
 plot(1,param.rotvec(1,2),'ro');
 hold off;
@@ -796,6 +820,11 @@ plot(1,param.rotvec(1,3),'ro');
 hold off;
 xlim([1 a(1)]);
 
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+str = 'trajectory of simulated annealing';
+text(0.4,0.98,str,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
+
 if 0>1
     fname = sprintf('%s_rot.fig',prefix);
     savefig(h,fname);
@@ -803,7 +832,6 @@ else
     str=sprintf('%s_rot.png',prefix);
     save_plot(h, str);
 end
-
 
 end
 
@@ -1212,6 +1240,7 @@ if param.xlim_1d(1) > 0
     xlim([0 param.xlim_1d(1)]);
 else
     a = xlim;
+    xlim([0 a(2)]);
     param.xlim_1d(1)=a(2);
 end
 
@@ -1228,6 +1257,7 @@ if param.xlim_1d(2) > 0
     xlim([0 param.xlim_1d(2)]);
 else
     a = xlim;
+    xlim([0 a(2)]);
     param.xlim_1d(2)=a(2);
 end
 
@@ -1244,6 +1274,7 @@ if param.xlim_1d(3) > 0
     xlim([0 param.xlim_1d(3)]);
 else
     a = xlim;
+    xlim([0 a(2)]);
     param.xlim_1d(3)=a(2);
 end
 
@@ -1585,10 +1616,10 @@ end
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-text(0.15,0.97,[param.inputFilePath1 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
-text(0.4,0.97,[param.inputFilePath2 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(0.1,0.98,['LFM1 = ' param.inputFilePath1 param.inputFileName{1}],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(0.1,0.96,['LFM2 = ' param.inputFilePath2 param.inputFileName{1}],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 if flag
-    text(0.65,0.97,[param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+    text(0.1,0.94,['DLFM = ' param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 end
 text(0.4,0.1,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 drawnow
@@ -1683,10 +1714,10 @@ end
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-text(0.15,0.97,[param.inputFilePath1 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
-text(0.4,0.97,[param.inputFilePath2 param.inputFileName],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(0.1,0.98,['LFM1 = ' param.inputFilePath1 param.inputFileName{1}],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(0.1,0.96,['LFM2 = ' param.inputFilePath2 param.inputFileName{1}],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 if flag
-    text(0.65,0.97,[param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+    text(0.1,0.94,['DLFM = ' param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 end
 text(0.4,0.1,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 drawnow
