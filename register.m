@@ -30,6 +30,9 @@ param.voxel_z = param.voxel_z / param.interp;
 if param.rapid
     % must specify: param.centroid, param.trans, param.rot
     combineVols_iter_dim3 (LFM1, LFM2, param);
+    param
+    elapsedTime = toc
+    diary off;
     return;
 end
 
@@ -283,7 +286,7 @@ s = size(LFM2);
 F = s(1)*s(2); % number of voxels per frame
 fprintf('\n');
 % for each slice of dim 3 in LFM2
-parfor i = 1:s(3)
+for i = 1:s(3)
     %disp(sprintf('chunk %d of %d',i,M));
     % calculate index range
     linind = [(i-1)*F+1  i*F];
@@ -307,7 +310,7 @@ parfor i = 1:s(3)
     final_pos2 = translate (tmp, param.trans); 
     % for each voxel in LFM1, find positions in final_pos2 and combine and normalize
     %disp('combine');
-    out(i) = combine (LFM1, LFM2, final_pos2, linind, param);
+    out(:,:,i) = combine (LFM1, LFM2, final_pos2, linind, param);
 end
 if ~param.rapid
     outFile = sprintf('%s_%s.tif',param.timestamp,param.myfunc_combine);
@@ -497,6 +500,8 @@ else
     disp('WTF?!');
     keyboard
 end
+s = size(LFM2);
+out = reshape(out,s(1),s(2));
 %max(max(max(out)))
 end
 
