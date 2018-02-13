@@ -280,13 +280,13 @@ out = zeros(size(LFM2),'uint16');
 %M = 20; % number of chunks
 s = size(LFM2);
 %N = ceil(s(3)/M); % number of voxels/frames per chunk
-%F = s(1)*s(2); % number of voxels per frame
+F = s(1)*s(2); % number of voxels per frame
 fprintf('\n');
 % for each slice of dim 3 in LFM2
 parfor i = 1:s(3)
     %disp(sprintf('chunk %d of %d',i,M));
     % calculate index range
-    linind = [(i-1)*N*F+1  i*N*F];
+    linind = [(i-1)*F+1  i*F];
     if linind(1)>numel(LFM2)
         disp('LFM2 is complete!');
         continue;
