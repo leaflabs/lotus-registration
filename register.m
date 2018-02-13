@@ -288,9 +288,6 @@ parfor i = 1:s(3)
     % calculate index range
     zind = i;
     %zind = [(i-1)*N+1  i*N];
-    if zind(2)>s(3)
-        zind(2) = s(3);
-    end
     linind = [(i-1)*N*F+1  i*N*F];
     if linind(1)>numel(LFM2)
         disp('LFM2 is complete!');
