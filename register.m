@@ -307,7 +307,7 @@ parfor i = 1:s(3)
     final_pos2 = translate (tmp, param.trans); 
     % for each voxel in LFM1, find positions in final_pos2 and combine and normalize
     %disp('combine');
-    out(i) = combine (LFM1, LFM2, final_pos2, linind, param);
+    out(:,:,i) = combine (LFM1, LFM2, final_pos2, linind, param);
 end
 if ~param.rapid
     outFile = sprintf('%s_%s.tif',param.timestamp,param.myfunc_combine);
@@ -497,6 +497,8 @@ else
     disp('WTF?!');
     keyboard
 end
+s = size(LFM2);
+out = reshape(out,s(1),s(2));
 %max(max(max(out)))
 end
 
