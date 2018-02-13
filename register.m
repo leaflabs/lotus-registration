@@ -286,8 +286,6 @@ fprintf('\n');
 parfor i = 1:s(3)
     %disp(sprintf('chunk %d of %d',i,M));
     % calculate index range
-    zind = i;
-    %zind = [(i-1)*N+1  i*N];
     linind = [(i-1)*N*F+1  i*N*F];
     if linind(1)>numel(LFM2)
         disp('LFM2 is complete!');
@@ -296,7 +294,7 @@ parfor i = 1:s(3)
     if linind(2)>numel(LFM2)
         linind(2) = numel(LFM2);
     end
-    fprintf('chunk %2d of %2d, z index %3d to %3d, linear index %12d to %12d\n',i,M, zind(1),zind(2),linind(1),linind(2));
+    fprintf('zindex %2d of %2d, linear index %12d to %12d\n',i,M,linind(1),linind(2));
     % for each voxel in chunk in LFM2, extract position to final_pos2
     %disp('Init_pos');
     final_pos2 = init_pos([linind(1):linind(2)]', LFM2, param);
