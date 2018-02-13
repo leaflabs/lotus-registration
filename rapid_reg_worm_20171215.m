@@ -26,8 +26,8 @@ else
         param.ppath = '/om/user/jkinney/DLFM';
         addpath([param.ppath '/lotus-registration']);
         param.ipath = '/om/project/boyden/DualLensLightField/12_15_17_40X_worm/video 1';
-        param.opath = '/om/scratch/jkinney/worm/20171215';
-        param.inter = [param.ipath '/interpolate/'];
+        param.opath = '/om/scratch/Mon/jkinney/worm/20171215';
+        param.inter = [param.opath '/interpolate/'];
 
 	C = strsplit(param.opath,'/');
 	mypath = '';
