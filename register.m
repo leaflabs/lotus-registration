@@ -294,7 +294,7 @@ parfor i = 1:s(3)
     if linind(2)>numel(LFM2)
         linind(2) = numel(LFM2);
     end
-    fprintf('zindex %2d of %2d, linear index %12d to %12d\n',i,M,linind(1),linind(2));
+    fprintf('zindex %2d of %2d, linear index %12d to %12d\n',i,s(3),linind(1),linind(2));
     % for each voxel in chunk in LFM2, extract position to final_pos2
     %disp('Init_pos');
     final_pos2 = init_pos([linind(1):linind(2)]', LFM2, param);
