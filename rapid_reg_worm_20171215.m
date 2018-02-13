@@ -37,55 +37,16 @@ param.voxel_x = 0.323/2; % um
 param.voxel_y = 0.323/2; % um
 param.voxel_z = 2.0;     % um
 
-m = 1;
-n = 1000;
+param.m = 1;
+param.n = 1000;
 
 param.rapid = true;
 
-%% read log files
-pathNpattern = sprintf('%s*FrameNumber_%04d_*.log',param.inter,m);
-logs = dir(pathNpattern);
-if isempty(logs)
-    disp('WTF?');
-    fprintf('%s\n',pathNpattern);
-    keyboard
-end
-content = fileread([logs(1).folder '/' logs(1).name]);
-
-eval(['transM = ' get_match('trans',content)]);
-eval([  'rotM = ' get_match('rot',content)]);
-eval([  'centroidM = ' get_match('centroid',content)]);
-eval([  'clipM = ' get_match('clip',content)]);
-
-pathNpattern = sprintf('%s*FrameNumber_%04d_*.log',param.inter,n);
-logs = dir(pathNpattern);
-if isempty(logs)
-    disp('WTF?');
-    fprintf('%s\n',pathNpattern);
-    keyboard
-end
-content = fileread([logs(1).folder '/' logs(1).name]);
-
-eval(['transN = ' get_match('trans',content)]);
-eval([  'rotN = ' get_match('rot',content)]);
-eval([  'centroidN = ' get_match('centroid',content)]);
-eval([  'clipN = ' get_match('clip',content)]);
-
-if ~isempty(find( (clipN-clipM) ~= 0))
-    disp('WTF?');
-    keyboard
-end
-param.clip = clipN; % equal to clipM
-if ~isempty(find( (centroidN-centroidM) ~= 0))
-    disp('WTF?');
-    keyboard
-end
-param.centroid = centroidN ...
-        + [param.clip(1)*param.voxel_y param.clip(3)*param.voxel_x 0];
+param = read_logs(param);
 
 for i=[param.m:param.n]
-    param.rot = rotM + (rotN-rotM) * (i-m)/(n-m);
-    tmp_trans = transM + (transN-transM) * (i-m)/(n-m);
+    param.rot = param.rotM + (param.rotN-param.rotM) * (i-param.m)/(param.n-param.m);
+    tmp_trans = param.transM + (param.transN-param.transM) * (i-param.m)/(param.n-param.m);
     param.trans = tmp_trans + [ param.clip(1)*param.voxel_y  ...
         param.clip(3)*param.voxel_x   param.clip(5)*param.voxel_z ];
     param.inputFileName = {sprintf('Recon3D_solver_1_FrameNumber_%04d.mat',i)};
@@ -93,13 +54,6 @@ for i=[param.m:param.n]
     param
     
     register(param)
-end
-
-function out = get_match (str, content)
-expr = ['[^\n]* ' str ':[^\n]*'];
-match = regexp(content,expr,'match');
-s = regexp(match,'\[.*\]','match');
-out = s{1}{1};
 end
 
 
