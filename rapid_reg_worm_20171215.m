@@ -26,8 +26,25 @@ else
         param.ppath = '/om/user/jkinney/DLFM';
         addpath([param.ppath '/lotus-registration']);
         param.ipath = '/om/project/boyden/DualLensLightField/12_15_17_40X_worm/video 1';
-        param.opath = '/om/scratch/jkinney/worm/20171215';
-        param.inter = [param.ipath '/interpolate/'];
+        param.opath = '/om/scratch/Mon/jkinney/worm/20171215';
+	param.spath = '/om/user/jkinney/DLFM/worm/20171215'
+        param.inter = [param.spath '/interpolate/'];
+
+	C = strsplit(param.opath,'/');
+	mypath = '';
+	for i=2:length(C)
+	    mypath = [mypath '/' C{i}]
+	    if ~exist(mypath,'dir')
+	        status = mkdir(mypath);
+	        if status == 1
+	            disp(['Created folder: ' mypath]);
+	        else
+	            disp(['Error attempting to create folder:' mypath]);
+	            status
+	            exit;
+	        end
+	    end
+	end
 end
 param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
 param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];
