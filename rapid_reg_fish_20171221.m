@@ -25,7 +25,7 @@ elseif ~isempty(strfind(param.hostname, 'willis'))
 else
         param.ppath = '/om/user/jkinney/DLFM';
         addpath([param.ppath '/lotus-registration']);
-        param.ipath = '/om/project/boyden/DualLensLightField/12_15_17_40X_worm/video 1';
+ 	param.ipath = '/om/project/boyden/DualLensLightField/12_21_17_40X_fish/video'
         param.opath = '/om/scratch/Mon/jkinney/fish/20171221';
 	param.spath = '/om/user/jkinney/DLFM/fish/20171221'
         param.inter = [param.spath '/interpolate/'];
