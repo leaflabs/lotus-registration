@@ -8,8 +8,6 @@ param = init_param();
 [~,hostname] = system('hostname')
 param.hostname = strtrim(hostname);
 
-setup_par
-
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
         param.ppath = '/Users/justin/Desktop/DLFM';
         addpath([param.ppath '/lotus-registration']);
@@ -48,6 +46,6 @@ param
 
 prefix = 'worm_20170720';
 timestamp = datestr(datetime('now'),'yyyymmdd_HHMMSS');
-outputFileName = [param.spath '/' prefix '_' timestamp];
+outputFileName = [param.spath '/' prefix '_' timestamp]
 
 genVideo(param, outputFileName)

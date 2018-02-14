@@ -1,62 +1,35 @@
 function genVideo (param, outputFileName)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%clear all; 
-%close all; 
-%clc;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- 
-%%%%%%%%%%%%%%%%%% Load Source Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%fprintf('\nLooking for LFM1 volume files with this path and pattern:\n%s\n\n',LFM1_Path);
-%LFM1_Files = dir(LFM1_Path);
-%fprintf('Found %d files\n\n',length(LFM1_Files));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % get size of reconstructed volumes
-%i = videoRange(1);
+
 fmt = [param.inputFilePath1 param.fpattern];
 f = sprintf(fmt,param.m);
 LFM1_movieSize = get_size (f);
-
-%LFM1_movieSize(4) = length(LFM1_Files);
 disp(['Data size :  ' num2str(LFM1_movieSize(1)) ' x ' num2str(LFM1_movieSize(2))...
     ' x ' num2str(LFM1_movieSize(3)) ]);
 
-
-
-
-
-%fprintf('\nLooking for LFM2 volume files with this path and pattern:\n%s\n\n',LFM2_Path);
-%LFM2_Files = dir(LFM2_Path);
-%fprintf('Found %d files\n\n',length(LFM2_Files));
-
-% get size of reconstructed volumes
-% arbitrarily pick the first volume to measure
 fmt = [param.inputFilePath2 param.fpattern];
 f = sprintf(fmt,param.m);
 LFM2_movieSize = get_size (f);
-
-%LFM2_movieSize(4) = length(LFM2_Files);
 disp(['Data size :  ' num2str(LFM2_movieSize(1)) ' x ' num2str(LFM2_movieSize(2))...
     ' x ' num2str(LFM2_movieSize(3)) ]);
 
-
-
-
-
-%fprintf('\nLooking for DLFM volume files with this path and pattern:\n%s\n\n',DLFM_Path);
-%DLFM_Files = dir(DLFM_Path);
-%fprintf('Found %d files\n\n',length(DLFM_Files));
-
-% get size of reconstructed volumes
-% arbitrarily pick the first volume to measure
-fmt = [param.savePath param.fpattern];
+fmt = [param.savePath param.fpattern(1:end-4) '_*.mat'];
 f = sprintf(fmt,param.m);
-DLFM_movieSize = get_size (f);
-
-%DLFM_movieSize(4) = length(DLFM_Files);
+hits = dir(f);
+if isempty(hits)
+    disp('WTF?');
+    fprintf('%s\n',f);
+    keyboard
+end
+hit = [hits(1).folder '/' hits(1).name];
+DLFM_movieSize = get_size (hit);
 disp(['Data size :  ' num2str(DLFM_movieSize(1)) ' x ' num2str(DLFM_movieSize(2))...
     ' x ' num2str(DLFM_movieSize(3)) ]);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -81,29 +54,40 @@ showVideo = false;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%volumeResolution = LFM1_movieSize;
-%volumeResolutionRender = LFM1_movieSize;
-%h1 = figure; imshowMIPorth(singleFrame, zExpandRatio, 200, 20, sixteen);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 h1 = figure('Visible','on');
 iptsetpref('ImshowBorder','tight');
 
 k = 1;
 for t=[param.m:param.n]
     tic;
-    LFM1 = loadFile([LFM1_Files(t).folder '/' LFM1_Files(t).name]);
-    LFM2 = loadFile([LFM2_Files(t).folder '/' LFM2_Files(t).name]);
-    DLFM = loadFile([DLFM_Files(t).folder '/' DLFM_Files(t).name]);
+
+    fmt = [param.inputFilePath1 param.fpattern];
+    f = sprintf(fmt,t);
+    LFM1 = loadFile(f);
+
+    fmt = [param.inputFilePath2 param.fpattern];
+    f = sprintf(fmt,t);
+    LFM2 = loadFile(f);
+
+    fmt = [param.savePath param.fpattern(1:end-4) '_*.mat'];
+    f = sprintf(fmt,t);
+    hits = dir(f);
+    if isempty(hits)
+        disp('WTF?');
+        fprintf('%s\n',f);
+        keyboard
+    end
+    hit = [hits(1).folder '/' hits(1).name];
+    DLFM = loadFile(hit);
+
     imshowMIPorth(LFM1, LFM2, DLFM, zExpandRatio, zExpandRatioDLFM, gapVal, gapMIP, gapMETA, moviePixelVert);
     VideoMIP(k) = getframe(h1);
     ttime = toc;
-    disp(['Redering frame ' num2str(k) ' | ' num2str(length(videoRange)) ', took ' num2str(ttime) ' secs']);
+    disp(['Redering frame ' num2str(k) ' | ' num2str(param.n-param.m+1) ', took ' num2str(ttime) ' secs']);
     k = k + 1;
 end
 
+fprintf('\n\nSaving output file %s.avi\n\n',outputFileName);
 v = VideoWriter(outputFileName,'Uncompressed AVI');
 open(v);
 writeVideo(v,VideoMIP);
