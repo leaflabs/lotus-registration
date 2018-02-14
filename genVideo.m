@@ -11,8 +11,8 @@ LFM1_Files = dir(LFM1_Path);
 fprintf('Found %d files\n\n',length(LFM1_Files));
 
 % get size of reconstructed volumes
-% arbitrarily pick the first volume to measure
-LFM1_movieSize = get_size ([LFM1_Files(1).folder '/' LFM1_Files(1).name]);
+i = videoRange(1);
+LFM1_movieSize = get_size ([LFM1_Files(i).folder '/' LFM1_Files(i).name]);
 
 LFM1_movieSize(4) = length(LFM1_Files);
 disp(['Data size :  ' num2str(LFM1_movieSize(1)) ' x ' num2str(LFM1_movieSize(2))...
@@ -28,7 +28,7 @@ fprintf('Found %d files\n\n',length(LFM2_Files));
 
 % get size of reconstructed volumes
 % arbitrarily pick the first volume to measure
-LFM2_movieSize = get_size ([LFM2_Files(1).folder '/' LFM2_Files(1).name]);
+LFM2_movieSize = get_size ([LFM2_Files(i).folder '/' LFM2_Files(i).name]);
 
 LFM2_movieSize(4) = length(LFM2_Files);
 disp(['Data size :  ' num2str(LFM2_movieSize(1)) ' x ' num2str(LFM2_movieSize(2))...
@@ -67,7 +67,7 @@ zExpandRatio = round(4 / 0.323);
 zExpandRatioDLFM = zExpandRatio / 8;
 moviePixelVert = 1000;
 
-videoRange = 1:length(LFM1_Files);
+%videoRange = 1:length(LFM1_Files);
 
 gapMIP = 20;  % size of gap in units of pixels
 gapVal = 200; % value of gap pixels
@@ -109,6 +109,7 @@ close(v);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function out = loadFile (f)
+fprintf('Loading file %s\n',f);
 load(f);
 if exist('Xvolume') == 1
     out = Xvolume;
@@ -122,11 +123,14 @@ end
 end
 
 function out = get_size (f)
+fprintf('Loading file %s\n',f);
 load(f);
 if exist('Xvolume') == 1
     out = size(Xvolume);
+    clear Xvolume;
 elseif exist('XguessSAVE1') == 1
     out = size(XguessSAVE1);
+    clear XguessSAVE1;
 else
     disp('WTF?');
     whos
