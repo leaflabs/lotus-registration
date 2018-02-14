@@ -1,4 +1,5 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+function genVideo (param, outputFileName)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %clear all; 
 %close all; 
 %clc;
@@ -6,52 +7,55 @@
  
 %%%%%%%%%%%%%%%%%% Load Source Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fprintf('\nLooking for LFM1 volume files with this path and pattern:\n%s\n\n',LFM1_Path);
-LFM1_Files = dir(LFM1_Path);
-fprintf('Found %d files\n\n',length(LFM1_Files));
+%fprintf('\nLooking for LFM1 volume files with this path and pattern:\n%s\n\n',LFM1_Path);
+%LFM1_Files = dir(LFM1_Path);
+%fprintf('Found %d files\n\n',length(LFM1_Files));
 
 % get size of reconstructed volumes
-i = videoRange(1);
-LFM1_movieSize = get_size ([LFM1_Files(i).folder '/' LFM1_Files(i).name]);
+%i = videoRange(1);
+fmt = [param.inputFilePath1 param.fpattern];
+f = sprintf(fmt,param.m);
+LFM1_movieSize = get_size (f);
 
-LFM1_movieSize(4) = length(LFM1_Files);
+%LFM1_movieSize(4) = length(LFM1_Files);
 disp(['Data size :  ' num2str(LFM1_movieSize(1)) ' x ' num2str(LFM1_movieSize(2))...
-    ' x ' num2str(LFM1_movieSize(3)) ' x ' num2str(LFM1_movieSize(4)) ]);
+    ' x ' num2str(LFM1_movieSize(3)) ]);
 
 
 
 
 
-fprintf('\nLooking for LFM2 volume files with this path and pattern:\n%s\n\n',LFM2_Path);
-LFM2_Files = dir(LFM2_Path);
-fprintf('Found %d files\n\n',length(LFM2_Files));
+%fprintf('\nLooking for LFM2 volume files with this path and pattern:\n%s\n\n',LFM2_Path);
+%LFM2_Files = dir(LFM2_Path);
+%fprintf('Found %d files\n\n',length(LFM2_Files));
 
 % get size of reconstructed volumes
 % arbitrarily pick the first volume to measure
-LFM2_movieSize = get_size ([LFM2_Files(i).folder '/' LFM2_Files(i).name]);
+fmt = [param.inputFilePath2 param.fpattern];
+f = sprintf(fmt,param.m);
+LFM2_movieSize = get_size (f);
 
-LFM2_movieSize(4) = length(LFM2_Files);
+%LFM2_movieSize(4) = length(LFM2_Files);
 disp(['Data size :  ' num2str(LFM2_movieSize(1)) ' x ' num2str(LFM2_movieSize(2))...
-    ' x ' num2str(LFM2_movieSize(3)) ' x ' num2str(LFM2_movieSize(4)) ]);
+    ' x ' num2str(LFM2_movieSize(3)) ]);
 
 
 
 
 
-fprintf('\nLooking for DLFM volume files with this path and pattern:\n%s\n\n',DLFM_Path);
-DLFM_Files = dir(DLFM_Path);
-fprintf('Found %d files\n\n',length(DLFM_Files));
+%fprintf('\nLooking for DLFM volume files with this path and pattern:\n%s\n\n',DLFM_Path);
+%DLFM_Files = dir(DLFM_Path);
+%fprintf('Found %d files\n\n',length(DLFM_Files));
 
 % get size of reconstructed volumes
 % arbitrarily pick the first volume to measure
-DLFM_movieSize = get_size ([DLFM_Files(1).folder '/' DLFM_Files(1).name]);
+fmt = [param.savePath param.fpattern];
+f = sprintf(fmt,param.m);
+DLFM_movieSize = get_size (f);
 
-DLFM_movieSize(4) = length(DLFM_Files);
+%DLFM_movieSize(4) = length(DLFM_Files);
 disp(['Data size :  ' num2str(DLFM_movieSize(1)) ' x ' num2str(DLFM_movieSize(2))...
-    ' x ' num2str(DLFM_movieSize(3)) ' x ' num2str(DLFM_movieSize(4)) ]);
-
-
-
+    ' x ' num2str(DLFM_movieSize(3)) ]);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,7 +92,7 @@ h1 = figure('Visible','on');
 iptsetpref('ImshowBorder','tight');
 
 k = 1;
-for t=videoRange
+for t=[param.m:param.n]
     tic;
     LFM1 = loadFile([LFM1_Files(t).folder '/' LFM1_Files(t).name]);
     LFM2 = loadFile([LFM2_Files(t).folder '/' LFM2_Files(t).name]);
@@ -100,13 +104,12 @@ for t=videoRange
     k = k + 1;
 end
 
-timestamp = datestr(datetime('now'),'yyyymmdd_HHMMSS');
-outputFileName = [dataOutFileName '_' timestamp];
-v = VideoWriter([savePath outputFileName],'Uncompressed AVI');
+v = VideoWriter(outputFileName,'Uncompressed AVI');
 open(v);
 writeVideo(v,VideoMIP);
 close(v);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+end
 
 function out = loadFile (f)
 fprintf('Loading file %s\n',f);
