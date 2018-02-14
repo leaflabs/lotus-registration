@@ -286,7 +286,7 @@ s = size(LFM2);
 F = s(1)*s(2); % number of voxels per frame
 fprintf('\n');
 % for each slice of dim 3 in LFM2
-for i = 1:s(3)
+parfor i = 1:s(3)
     %disp(sprintf('chunk %d of %d',i,M));
     % calculate index range
     linind = [(i-1)*F+1  i*F];
