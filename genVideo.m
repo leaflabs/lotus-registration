@@ -8,13 +8,13 @@ function genVideo (param, outputFileName)
 
 fmt = [param.inputFilePath1 param.fpattern];
 f = sprintf(fmt,param.m);
-LFM1_movieSize = get_size (f);
+[LFM1_movieSize,p1] = get_size_and_peak (f);
 disp(['Data size :  ' num2str(LFM1_movieSize(1)) ' x ' num2str(LFM1_movieSize(2))...
     ' x ' num2str(LFM1_movieSize(3)) ]);
 
 fmt = [param.inputFilePath2 param.fpattern];
 f = sprintf(fmt,param.m);
-LFM2_movieSize = get_size (f);
+[LFM2_movieSize,p2] = get_size_and_peak (f);
 disp(['Data size :  ' num2str(LFM2_movieSize(1)) ' x ' num2str(LFM2_movieSize(2))...
     ' x ' num2str(LFM2_movieSize(3)) ]);
 
@@ -27,7 +27,7 @@ if isempty(hits)
     keyboard
 end
 hit = [hits(1).folder '/' hits(1).name];
-DLFM_movieSize = get_size (hit);
+[DLFM_movieSize,pD] = get_size_and_peak (hit);
 disp(['Data size :  ' num2str(DLFM_movieSize(1)) ' x ' num2str(DLFM_movieSize(2))...
     ' x ' num2str(DLFM_movieSize(3)) ]);
 
@@ -50,6 +50,15 @@ gapMIP = 20;  % size of gap in units of pixels
 gapVal = 200; % value of gap pixels
 gapMETA = 200;
 showVideo = false;
+
+% scale DLFM to match max(LFM1,LFM2)
+if p1>p2
+    p = p1;
+else
+    p = p2;
+end
+scale = single(p)/single(pD);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -79,6 +88,7 @@ for t=[param.m:param.n]
     end
     hit = [hits(1).folder '/' hits(1).name];
     DLFM = loadFile(hit);
+    DLFM = uint16(single(DLFM)*scale);
 
     imshowMIPorth(LFM1, LFM2, DLFM, zExpandRatio, zExpandRatioDLFM, gapVal, gapMIP, gapMETA, moviePixelVert);
     VideoMIP(k) = getframe(h1);
@@ -109,14 +119,16 @@ else
 end
 end
 
-function out = get_size (f)
+function [out,p] = get_size_and_peak (f)
 fprintf('Loading file %s\n',f);
 load(f);
 if exist('Xvolume') == 1
     out = size(Xvolume);
+    p = max(max(max(Xvolume)));
     clear Xvolume;
 elseif exist('XguessSAVE1') == 1
     out = size(XguessSAVE1);
+    p = max(max(max(XguessSAVE1)));
     clear XguessSAVE1;
 else
     disp('WTF?');
