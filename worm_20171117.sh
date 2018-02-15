@@ -10,7 +10,7 @@
 #SBATCH --mail-type=END,FAIL      # notifications for job done & fail
 #SBATCH --mail-user=jkinney@mit.edu # send-to address
 module add mit/matlab/2016b
-cd /om/user/jkinney/DLFM/lotus-registration
+cd /home/jkinney/lotus-registration
 export TZ=America/New_York
 matlab -nodisplay -nodesktop -nosplash -r "run('master_reg_worm_20171117.m');disp('FINISHED');exit"
 #matlab -nodisplay -nodesktop -nosplash -r "run('rapid_reg_worm_20171215.m');exit"
