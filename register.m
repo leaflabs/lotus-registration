@@ -163,7 +163,8 @@ end
 if param.savevol
     % would be nice to re-load full unclipped volume here
     % but doing so would jack up the next few plots.
-    comb = combineVols (LFM1, LFM2, param);
+    %comb = combineVols (LFM1, LFM2, param);
+    comb = combineVols_iter_dim3 (LFM1, LFM2, param);
 end
 
 if param.plot
