@@ -47,7 +47,7 @@ moviePixelVert = 1000;
 %videoRange = 1:length(LFM1_Files);
 
 gapMIP = 20;  % size of gap in units of pixels
-gapVal = 200; % value of gap pixels
+gapVal = (0.95)*2^16; % value of gap pixels
 gapMETA = 200;
 showVideo = false;
 
@@ -58,6 +58,7 @@ else
     p = p2;
 end
 scale = single(p)/single(pD);
+fprintf('\nIntensity rescaling of DLFM = %f\n\n',scale);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -140,23 +141,27 @@ end
 
 
 function IMGout = imshowMIPorth(LFM1, LFM2, DLFM, zExpansionFactor, zExpansionFactorDLFM, gapVal, gapMIP, gapMETA, moviePixelVert)
+% determine overall size of frame
 [xsize1, ysize1] = get_MIPsize (LFM1, zExpansionFactor, gapMIP);
 [xsize2, ysize2] = get_MIPsize (LFM2, zExpansionFactor, gapMIP);
 [xsize3, ysize3] = get_MIPsize (DLFM, zExpansionFactorDLFM, gapMIP);
 x = (xsize1 + gapMETA) + (xsize2 + gapMETA) + xsize3;
-%y = max( [ ysize1 ysize2 ysize3] );
+y = max( [ysize1 ysize2 ysize3] );
 
-IMGout = gapVal*ones(moviePixelVert, x, 'uint16');
+% initialize frame to overall size and background color
+IMGout = gapVal*ones( y, x, 'uint16');
 
-origin = 1;
-s = size(LFM1);
-IMGout = metaMIPs(LFM1, s(2), s(1), zExpansionFactor*s(3), gapMIP, origin, IMGout);
-origin = (xsize1 + gapMETA) + 1;
-s = size(LFM2);
-IMGout = metaMIPs(LFM2, s(2), s(1), zExpansionFactor*s(3), gapMIP, origin, IMGout);
-origin = (xsize1 + gapMETA) + (xsize2 + gapMETA) + 1;
-s = size(DLFM);
-IMGout = metaMIPs(DLFM, s(2), s(1), zExpansionFactorDLFM*s(3), gapMIP, origin, IMGout);
+origin1 = 1;
+s1 = size(LFM1);
+IMGout = metaMIPs(LFM1, s1(2), s1(1), zExpansionFactor * s1(3), gapMIP, origin1, IMGout);
+
+origin2 = (xsize1 + gapMETA) + 1;
+s2 = size(LFM2);
+IMGout = metaMIPs(LFM2, s2(2), s2(1), zExpansionFactor * s2(3), gapMIP, origin2, IMGout);
+
+origin3 = (xsize1 + gapMETA) + (xsize2 + gapMETA) + 1;
+s3 = size(DLFM);
+IMGout = metaMIPs(DLFM, s3(2), s3(1), zExpansionFactorDLFM * s3(3), gapMIP, origin3, IMGout);
 
 imshow(IMGout);
 
@@ -165,8 +170,8 @@ end
 
 function [xsize,ysize] = get_MIPsize (LFM, zExpansionFactor, gapMIP)
 s = size(LFM);
-xsize = s(2) + zExpansionFactor*s(3) + gapMIP;
-ysize = s(1) + zExpansionFactor*s(3) + gapMIP;
+xsize = s(2) + gapMIP + zExpansionFactor*s(3);
+ysize = s(1) + gapMIP + zExpansionFactor*s(3);
 end
 
 
@@ -187,6 +192,7 @@ ysize = sizey + sizez + gapMIP;
 IMGout( (1:sizey), ((origin-1)+1:(origin-1)+sizex) ) = IMGin1;
 IMGout( (1:sizey), ((origin-1)+sizex+gapMIP+1:(origin-1)+xsize) ) = IMGin3;
 IMGout( (sizey+gapMIP+1:ysize), ((origin-1)+1:(origin-1)+sizex) ) = IMGin2';
+
 
 end
 
