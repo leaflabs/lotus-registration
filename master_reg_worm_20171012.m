@@ -11,20 +11,20 @@ param.hostname = strtrim(hostname);
 setup_par
 
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
-	param.ppath = '/Users/justin/Desktop/DLFM'
+	param.ppath = '/Users/justin/Desktop/DLFM';
 	addpath([param.ppath '/lotus-registration']);
-	param.ipath = [param.ppath '/worm/20171012']
-	param.opath = param.ipath
+	param.ipath = [param.ppath '/worm/20171012'];
+	param.opath = param.ipath;
 elseif ~isempty(strfind(param.hostname, 'willis'))
-	param.ppath = '/home/jkinney/Desktop/DLFM'
+	param.ppath = '/home/jkinney/Desktop/DLFM';
 	addpath([param.ppath '/lotus-registration']);
-	param.ipath = [param.ppath '/worm/20171012']
-	param.opath = param.ipath
+	param.ipath = [param.ppath '/worm/20171012'];
+	param.opath = param.ipath;
 else
-	param.ppath = '/om/user/jkinney/DLFM'
+	param.ppath = '/home/jkinney';
 	addpath([param.ppath '/lotus-registration']);
-    param.ipath = '/om/user/jkinney/DLFM/worm/20171012'
-	param.opath = param.ipath
+    param.ipath = '/om/user/jkinney/DLFM/worm/20171012';
+	param.opath = param.ipath;
 end
 param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
 param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];

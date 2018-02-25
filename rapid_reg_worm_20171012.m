@@ -23,11 +23,11 @@ elseif ~isempty(strfind(param.hostname, 'willis'))
         param.opath = param.ipath;
         param.inter = [param.ipath '/interpolate/'];
 else
-        param.ppath = '/om/user/jkinney/DLFM';
+        param.ppath = '/home/jkinney';
         addpath([param.ppath '/lotus-registration']);
-        param.ipath = '/om/user/jkinney/DLFM/worm/20171012'
+        param.ipath = '/om/user/jkinney/DLFM/worm/20171012';
         param.opath = '/om/scratch/Mon/jkinney/worm/20171012';
-	      param.spath = '/om/user/jkinney/DLFM/worm/20171012'
+	    param.spath = '/om/user/jkinney/DLFM/worm/20171012';
         param.inter = [param.spath '/interpolate/'];
 
 	C = strsplit(param.opath,'/');

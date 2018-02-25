@@ -1,18 +1,22 @@
 #!/bin/bash
 
 declare -a arr=(
-"bead/20170915/registration"
-"bead/20171011/registration"
-"bead/20180109/registration"
-"fish/20171202/interpolate"
-"fish/20171221/interpolate"
-"worm/20170720/interpolate"
-"worm/20171012/interpolate"
-"worm/20171114/registration"
-"worm/20171117/registration"
-"worm/20171215/interpolate"
-"worm/20180103/registration"
+"fish/20171221/repeat"
 )
+
+#declare -a arr=(
+#"bead/20170915/registration"
+#"bead/20171011/registration"
+#"bead/20180109/registration"
+#"fish/20171202/interpolate"
+#"fish/20171221/interpolate"
+#"worm/20170720/interpolate"
+#"worm/20171012/interpolate"
+#"worm/20171114/registration"
+#"worm/20171117/registration"
+#"worm/20171215/interpolate"
+#"worm/20180103/registration"
+#)
 
 if [[ $(hostname -s) = willis ]]; then
     echo 'this is willis'
@@ -25,7 +29,7 @@ else
     exit
 fi
 
-RPATH=jkinney@openmind.mit.edu:/om/user/jkinney/DLFM
+RPATH=jkinney@openmind.mit.edu:/om/scratch/Mon/jkinney
 
 for i in "${arr[@]}"; do
     echo "##"

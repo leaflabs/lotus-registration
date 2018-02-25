@@ -13,21 +13,21 @@ setup_par
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
         param.ppath = '/Users/justin/Desktop/DLFM';
         addpath([param.ppath '/lotus-registration']);
-	param.ipath = [param.ppath '/fish/20171221']
-        param.opath = param.ipath;
+        param.ipath = [param.ppath '/fish/20171221'];
+        param.opath = param.ipath;;
         param.inter = [param.ipath '/interpolate/'];
 elseif ~isempty(strfind(param.hostname, 'willis'))
         param.ppath = '/home/jkinney/Desktop/DLFM';
         addpath([param.ppath '/lotus-registration']);
-	param.ipath = [param.ppath '/fish/20171221']
+        param.ipath = [param.ppath '/fish/20171221'];
         param.opath = param.ipath;
         param.inter = [param.ipath '/interpolate/'];
 else
-        param.ppath = '/om/user/jkinney/DLFM';
+        param.ppath = '/home/jkinney';
         addpath([param.ppath '/lotus-registration']);
- 	param.ipath = '/om/project/boyden/DualLensLightField/12_21_17_40X_fish/video'
+        param.ipath = '/om/project/boyden/DualLensLightField/12_21_17_40X_fish/video';
         param.opath = '/om/scratch/Mon/jkinney/fish/20171221';
-	param.spath = '/om/user/jkinney/DLFM/fish/20171221'
+        param.spath = '/om/user/jkinney/DLFM/fish/20171221';
         param.inter = [param.spath '/interpolate/'];
 
 	C = strsplit(param.opath,'/');
