@@ -45,7 +45,8 @@ param.inputFileName = {'Recon3D_solver_1_FrameNumber_0126.mat'};
 
 param
 
-for i=0:20
+%for i=0:20
+for i=21:99
 	rng(i);
 	register(param)
 	close all;
