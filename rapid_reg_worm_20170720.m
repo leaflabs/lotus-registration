@@ -57,12 +57,13 @@ param.voxel_z = 4.0;     % um
 param.m = 13;
 param.n = 300;
 next = param.m;
+last = 30;
 
 param.rapid = true;
 
 param = read_logs(param);
 
-for i=[next:param.n]
+for i=[next:last]
     param.rot = param.rotM + (param.rotN-param.rotM) * (i-param.m)/(param.n-param.m);
     tmp_trans = param.transM + (param.transN-param.transM) * (i-param.m)/(param.n-param.m);
     param.trans = tmp_trans + [ param.clip(1)*param.voxel_y  ...
