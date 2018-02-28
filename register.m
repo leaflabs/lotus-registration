@@ -521,7 +521,7 @@ fprintf('\nnull distribution has N = %d\n',LL);
 a = max ([ size(LFM1) size(LFM2)]);
 offset_limit = 0.15 * a * param.voxel_y;
 gain = offset_limit / param.trans_amp;
-tmp = param.rot_amp;
+%tmp = param.rot_amp;
 param.rot_amp = [pi/gain 0 0];
 %N = param.Nnull;
 %profile on;
@@ -555,7 +555,7 @@ parfor i=1:param.Nnull
     %         profile off
     %         profile viewer
 end
-param.rot_amp = tmp;
+%param.rot_amp = tmp;
 
 % add to existing null distribution if any
 fprintf('\nnull distribution has N = %d, was N = %d\n',length(nullMIvec),LL);
@@ -635,6 +635,11 @@ param.MIvec = MI;
 T = param.T0;
 p = param.init_p;
 param.Pvec = p;
+% calc rotational gain
+a = size(LFM2);
+half_span = [a(1)*param.voxel_y a(2)*param.voxel_x];
+radius = sqrt( sum( half_span .* half_span ) );
+param.rot_amp = param.trans_amp / radius * ones(1,3);
 % set max number of temperature changes and mean changes
 Tchanges = param.TC0;
 % while system not frozen and more temperature changes are allowed

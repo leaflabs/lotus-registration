@@ -37,7 +37,7 @@ param.voxel_z = 4.0;     % um
 param.clip    = [100,100,100,100,0,0];
 param.scale_trans = 40;
 param.trans_amp = param.scale_trans * param.voxel_x; % um
-param.rot_amp = param.scale_rot * pi/800; % radians
+%param.rot_amp = param.scale_rot * pi/800; % radians
 
 %param.angle   = [-1.2*pi/2 0 0];
 
