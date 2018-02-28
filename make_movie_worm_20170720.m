@@ -26,7 +26,7 @@ else
         param.ppath = '/home/jkinney';
         addpath([param.ppath '/lotus-registration']);
         param.ipath = '/om/user/ehoseini/MyData/DuallensLightField/7_20_17/video_1';
-        param.opath = '/om/scratch/Mon/jkinney/worm/20170720';
+        param.opath = '/om/scratch/Wed/jkinney/worm/20170720';
         param.spath = '/om/user/jkinney/DLFM/worm/20170720';
         param.inter = [param.spath '/interpolate/'];
 end
