@@ -9,7 +9,7 @@ param.myfunc_MI = 'multiply';
 
 param.prate = -1;
 param.Trate = 1e-1;
-param.final_p = 1e-2;
+param.final_p = 1e-3;
 param.init_p = 0.3;
 param.scale_trans = 40;
 param.scale_rot = [20 2 2];

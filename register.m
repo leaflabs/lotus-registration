@@ -629,15 +629,15 @@ else
     keyboard;
 end
 last_MI = MI;
-param = setT0 (MI,param);
+param = set_prate (MI,param);
 param.MIvec = MI;
 % set initial T. Start with T sufficiently high to "melt" the system
-T = param.T0;
+%T = param.T0;
 p = param.init_p;
 param.Pvec = p;
 % calc rotational gain
 a = size(LFM2);
-half_span = [a(1)*param.voxel_y a(2)*param.voxel_x];
+half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
 radius = sqrt( sum( half_span .* half_span ) );
 param.rot_amp = param.trans_amp / radius * ones(1,3);
 % set max number of temperature changes and mean changes
@@ -754,7 +754,7 @@ while Tchanges > 0
     end
     %profile viewer;
     %keyboard
-    T = lowerT(T,param);
+    %T = lowerT(T,param);
     Tchanges = Tchanges-1;
     p = p * param.prate;
 end
@@ -1002,9 +1002,9 @@ out = T+delT;
 end
 
 
-function param = setT0 (MI, param)
+function param = set_prate (MI, param)
 % aim for 0.95 aceptance at T0
-param.T0 = -1/log(param.init_p);
+%param.T0 = -1/log(param.init_p);
 %param.TC0 = round(log10(param.final_p) / log10(param.Trate))
 %param.T0 = -1/log(0.95)/MI;
 param.prate = 10^( ( log10(param.final_p)-log10(param.init_p) ) / param.TC0);
