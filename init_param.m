@@ -68,5 +68,8 @@ param.inputFileName = {
     'raw_side2.mat'};
 
 param.xlim_1d = [0 0 0];
+
+param.parallel = true;
+
 end
 

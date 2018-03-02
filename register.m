@@ -287,31 +287,60 @@ s = size(LFM2);
 F = s(1)*s(2); % number of voxels per frame
 fprintf('\n');
 % for each slice of dim 3 in LFM2
-parfor i = 1:s(3)
-    %disp(sprintf('chunk %d of %d',i,M));
-    % calculate index range
-    linind = [(i-1)*F+1  i*F];
-    if linind(1)>numel(LFM2)
-        disp('LFM2 is complete!');
-        continue;
+if param.parallel
+    parfor i = 1:s(3)
+        %disp(sprintf('chunk %d of %d',i,M));
+        % calculate index range
+        linind = [(i-1)*F+1  i*F];
+        if linind(1)>numel(LFM2)
+            disp('LFM2 is complete!');
+            continue;
+        end
+        if linind(2)>numel(LFM2)
+            linind(2) = numel(LFM2);
+        end
+        fprintf('zindex %2d of %2d, linear index %12d to %12d\n',i,s(3),linind(1),linind(2));
+        % for each voxel in chunk in LFM2, extract position to final_pos2
+        %disp('Init_pos');
+        final_pos2 = init_pos([linind(1):linind(2)]', LFM2, param);
+        % for each position in final_pos2, apply rot and translation
+        %disp('Translate');
+        tmp = translate (final_pos2, -param.centroid);
+        %disp('Rotate');
+        tmp = rotate (tmp, param.rot); % CHECK
+        %disp('Translate');
+        final_pos2 = translate (tmp, param.trans);
+        % for each voxel in LFM1, find positions in final_pos2 and combine and normalize
+        %disp('combine');
+        out(:,:,i) = combine (LFM1, LFM2, final_pos2, linind, param);
     end
-    if linind(2)>numel(LFM2)
-        linind(2) = numel(LFM2);
+else
+    for i = 1:s(3)
+        %disp(sprintf('chunk %d of %d',i,M));
+        % calculate index range
+        linind = [(i-1)*F+1  i*F];
+        if linind(1)>numel(LFM2)
+            disp('LFM2 is complete!');
+            continue;
+        end
+        if linind(2)>numel(LFM2)
+            linind(2) = numel(LFM2);
+        end
+        fprintf('zindex %2d of %2d, linear index %12d to %12d\n',i,s(3),linind(1),linind(2));
+        % for each voxel in chunk in LFM2, extract position to final_pos2
+        %disp('Init_pos');
+        final_pos2 = init_pos([linind(1):linind(2)]', LFM2, param);
+        % for each position in final_pos2, apply rot and translation
+        %disp('Translate');
+        tmp = translate (final_pos2, -param.centroid);
+        %disp('Rotate');
+        tmp = rotate (tmp, param.rot); % CHECK
+        %disp('Translate');
+        final_pos2 = translate (tmp, param.trans);
+        % for each voxel in LFM1, find positions in final_pos2 and combine and normalize
+        %disp('combine');
+        out(:,:,i) = combine (LFM1, LFM2, final_pos2, linind, param);
     end
-    fprintf('zindex %2d of %2d, linear index %12d to %12d\n',i,s(3),linind(1),linind(2));
-    % for each voxel in chunk in LFM2, extract position to final_pos2
-    %disp('Init_pos');
-    final_pos2 = init_pos([linind(1):linind(2)]', LFM2, param);
-    % for each position in final_pos2, apply rot and translation
-    %disp('Translate');
-    tmp = translate (final_pos2, -param.centroid);
-    %disp('Rotate');
-    tmp = rotate (tmp, param.rot); % CHECK
-    %disp('Translate');
-    final_pos2 = translate (tmp, param.trans); 
-    % for each voxel in LFM1, find positions in final_pos2 and combine and normalize
-    %disp('combine');
-    out(:,:,i) = combine (LFM1, LFM2, final_pos2, linind, param);
 end
 if ~param.rapid
     outFile = sprintf('%s_%s.tif',param.timestamp,param.myfunc_combine);
@@ -526,34 +555,66 @@ param.rot_amp = [pi/gain 0 0];
 %N = param.Nnull;
 %profile on;
 fprintf('\nCount    Mutual_Information                Offset [um]                        Rotation [radians]\n');
-parfor i=1:param.Nnull
-    MI = 0;
-    % perturb pos
-    % randomly pick a translation vector and rotation vector
-    % to be added to current location
-    [d,r] = perturb(param,gain);
-    % apply transformation
-    % rotate an amount r PLUS param.rot
-    % thus param.rot tracks the current rotation
-    %rotated = rotate (canonical,r);
-    % translate rotated by an amount param.trans+d
-    % thus param.trans tracks the current position
-    new = translate (rotate (canonical, r), param.centroid+d);
-    %new = translate (rotated, param.centroid+d);
-    % measure mutual_information
-    if strcmp(param.myfunc_MI,'multiply')
-        MI = mutual_information (LFM1, new, LFM2, param);
-%     elseif strcmp(param.myfunc_MI,'multiply_sqrt')
-%         MI = mutual_information_sqrt (LFM1, new, LFM2, param);
-    else
-        disp('WTF!');
-        keyboard;
+if param.parallel
+    parfor i=1:param.Nnull
+        MI = 0;
+        % perturb pos
+        % randomly pick a translation vector and rotation vector
+        % to be added to current location
+        [d,r] = perturb(param,gain);
+        % apply transformation
+        % rotate an amount r PLUS param.rot
+        % thus param.rot tracks the current rotation
+        %rotated = rotate (canonical,r);
+        % translate rotated by an amount param.trans+d
+        % thus param.trans tracks the current position
+        new = translate (rotate (canonical, r), param.centroid+d);
+        %new = translate (rotated, param.centroid+d);
+        % measure mutual_information
+        if strcmp(param.myfunc_MI,'multiply')
+            MI = mutual_information (LFM1, new, LFM2, param);
+            %     elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+            %         MI = mutual_information_sqrt (LFM1, new, LFM2, param);
+        else
+            disp('WTF!');
+            keyboard;
+        end
+        nullMIvec = [nullMIvec MI];
+        str = sprintf('i = %4d, MI = %16.0f, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,MI,d(1),d(2),d(3),r(1),r(2),r(3));
+        disp(str);
+        %         profile off
+        %         profile viewer
     end
-    nullMIvec = [nullMIvec MI];
-    str = sprintf('i = %4d, MI = %16.0f, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,MI,d(1),d(2),d(3),r(1),r(2),r(3));
-    disp(str);
-    %         profile off
-    %         profile viewer
+else
+    for i=1:param.Nnull
+        MI = 0;
+        % perturb pos
+        % randomly pick a translation vector and rotation vector
+        % to be added to current location
+        [d,r] = perturb(param,gain);
+        % apply transformation
+        % rotate an amount r PLUS param.rot
+        % thus param.rot tracks the current rotation
+        %rotated = rotate (canonical,r);
+        % translate rotated by an amount param.trans+d
+        % thus param.trans tracks the current position
+        new = translate (rotate (canonical, r), param.centroid+d);
+        %new = translate (rotated, param.centroid+d);
+        % measure mutual_information
+        if strcmp(param.myfunc_MI,'multiply')
+            MI = mutual_information (LFM1, new, LFM2, param);
+            %     elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+            %         MI = mutual_information_sqrt (LFM1, new, LFM2, param);
+        else
+            disp('WTF!');
+            keyboard;
+        end
+        nullMIvec = [nullMIvec MI];
+        str = sprintf('i = %4d, MI = %16.0f, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,MI,d(1),d(2),d(3),r(1),r(2),r(3));
+        disp(str);
+        %         profile off
+        %         profile viewer
+    end
 end
 %param.rot_amp = tmp;
 
@@ -855,33 +916,79 @@ end
 
 h = figure;
 a = size(param.rotvec);
+
 subplot(1,3,1);
-plot(1:a(1),param.rotvec(:,1));
-xlabel('iteration');
-ylabel('rotation around dim 1 (radians)');
+
+x = 1:a(1);
+yrad = param.rotvec(:,1);
+scale = 180 / pi;
+ydeg = yrad * scale;
+
+yyaxis left;
+plot(x,yrad),'k';
 hold on;
 plot(1,param.rotvec(1,1),'ro');
 hold off;
+
+xlabel('iteration');
+ylabel('rotation around dim 1 (radians)');
+title('RHS axis is degrees');
 xlim([1 a(1)]);
+y = ylim;
+ny = y*scale;
+
+yyaxis right;
+h2 = plot(x,ydeg,'k');
+ylim(ny);
+set(h2, 'Visible' ,'off');
 
 subplot(1,3,2);
-plot(1:a(1),param.rotvec(:,2));
-xlabel('iteration');
-ylabel('rotation around dim 2 (radians)');
-%title('trajectory of simulated annealing');
+
+yrad = param.rotvec(:,2);
+scale = 180 / pi;
+ydeg = yrad * scale;
+
+yyaxis left;
+plot(x,yrad),'k';
 hold on;
 plot(1,param.rotvec(1,2),'ro');
 hold off;
+
+xlabel('iteration');
+ylabel('rotation around dim 2 (radians)');
+title('RHS axis is degrees');
 xlim([1 a(1)]);
+y = ylim;
+ny = y*scale;
+
+yyaxis right;
+h2 = plot(x,ydeg,'k');
+ylim(ny);
+set(h2, 'Visible' ,'off');
 
 subplot(1,3,3);
-plot(1:a(1),param.rotvec(:,3));
-xlabel('iteration');
-ylabel('rotation around dim 3 (radians)');
+
+yrad = param.rotvec(:,3);
+scale = 180 / pi;
+ydeg = yrad * scale;
+
+yyaxis left;
+plot(x,yrad),'k';
 hold on;
 plot(1,param.rotvec(1,3),'ro');
 hold off;
+
+xlabel('iteration');
+ylabel('rotation around dim 3 (radians)');
+title('RHS axis is degrees');
 xlim([1 a(1)]);
+y = ylim;
+ny = y*scale;
+
+yyaxis right;
+h2 = plot(x,ydeg,'k');
+ylim(ny);
+set(h2, 'Visible' ,'off');
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
@@ -897,7 +1004,6 @@ else
 end
 
 end
-
 
 function out = print_param (param)
 a=param.trans;
