@@ -15,11 +15,13 @@ if ~isempty(strfind(param.hostname, 'Justins-Mac'))
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/bead/20180109'];
 	param.opath = param.ipath;
+    param.parallel = false;
 elseif ~isempty(strfind(param.hostname, 'willis'))
 	param.ppath = '/home/jkinney/Desktop/DLFM';
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/bead/20180109'];
 	param.opath = param.ipath;
+    param.parallel = false;
 else
 	param.ppath = '/home/jkinney';
 	addpath([param.ppath '/lotus-registration']);
@@ -34,10 +36,6 @@ param.savePath = [param.opath '/registration/'];
 param.voxel_x = 0.323/2; % um
 param.voxel_y = 0.323/2; % um
 param.voxel_z = 2.0;     % um
-param.clip    = [100,100,100,100,0,0];
-param.scale_trans = 40;
-param.trans_amp = param.scale_trans * param.voxel_x; % um
-param.rot_amp = param.scale_rot * pi/800; % radians
 
 param
 
@@ -55,7 +53,7 @@ close all;
 
 param.inputFileName = {'Recon3D_4_Mono_N15.mat'};
 tmp = param.angle;
-param.angle   = [-1.2*pi/2 0 0];
+%param.angle   = [-1.2*pi/2 0 0];
 register(param)
 close all;
 param.angle   = tmp;

@@ -36,21 +36,14 @@ param.savePath = [param.opath '/interpolate/'];
 param.voxel_x = 0.323; % um
 param.voxel_y = 0.323; % um
 param.voxel_z = 4.0;     % um
-param.clip    = [100,100,100,100,0,0];
-param.scale_trans = 4;
-param.trans_amp = param.scale_trans * param.voxel_x; % um
-
-%param.angle   = [-1.2*pi/2 0 0];
 
 param
 
 param.inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
 register(param)
-%close all;
-
-keyboard
+close all;
 
 param.inputFileName = {'Recon3D_solver_1_FrameNumber_0500.mat'};
 register(param)
-%close all;
+close all;
 

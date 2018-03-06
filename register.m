@@ -1092,7 +1092,6 @@ hold off;
 
 xlabel('iteration');
 ylabel('rotation around dim 1 (radians)');
-title('RHS axis is degrees');
 xlim([1 a(1)]);
 y = ylim;
 ny = y*scale;
@@ -1116,7 +1115,6 @@ hold off;
 
 xlabel('iteration');
 ylabel('rotation around dim 2 (radians)');
-title('RHS axis is degrees');
 xlim([1 a(1)]);
 y = ylim;
 ny = y*scale;
@@ -1140,7 +1138,6 @@ hold off;
 
 xlabel('iteration');
 ylabel('rotation around dim 3 (radians)');
-title('RHS axis is degrees');
 xlim([1 a(1)]);
 y = ylim;
 ny = y*scale;
@@ -1152,8 +1149,8 @@ set(h2, 'Visible' ,'off');
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-str = 'trajectory of simulated annealing';
-text(0.4,0.98,str,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
+str = 'trajectory of simulated annealing (RHS axis is degrees)';
+text(0.1,0.98,str,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
 
 if 0>1
     fname = sprintf('%s_rot.fig',prefix);
