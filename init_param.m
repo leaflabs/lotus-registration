@@ -8,7 +8,7 @@ param.myfunc_combine = 'multiply_sqrt';
 param.myfunc_MI = 'multiply';
 
 param.prate = -1;
-param.Trate = 1e-1;
+param.Trate = 1e-3;
 param.final_p = 1e-3;
 param.init_p = 0.3;
 param.scale_trans = 40;
@@ -22,8 +22,8 @@ param.rot_amp = param.scale_rot * pi/800; % radians
 % dim1 min, dim1 max, dim2 min, dim2 max, dim3 min, dim3 max,
 param.clip = [0,0,0,0,0,0];
 
-param.T0 = -1;
-param.TC0 = 30;
+param.T0 = 1e13;
+param.TC0 = 10000;
 param.MC0 = 30;
 %param.TC0 = 1;
 %param.MC0 = 900;

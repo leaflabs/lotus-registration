@@ -11,12 +11,12 @@ param.hostname = strtrim(hostname);
 setup_par
 
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
-	param.ppath = '/Users/justin/Desktop/DLFM';
+	param.ppath = '/Users/justin/Desktop/DDLFM';
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/fish/20180123'];
 	param.opath = param.ipath;
 elseif ~isempty(strfind(param.hostname, 'willis'))
-	param.ppath = '/home/jkinney/Desktop/DLFM';
+	param.ppath = '/home/jkinney/Desktop/DDLFM';
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/fish/20180123'];
 	param.opath = param.ipath;
@@ -35,19 +35,24 @@ param.voxel_x = 0.323; % um
 param.voxel_y = 0.323; % um
 param.voxel_z = 4.0;     % um
 param.clip    = [100,100,100,100,0,0];
-param.scale_trans = 40;
+param.scale_trans = 4;
 param.trans_amp = param.scale_trans * param.voxel_x; % um
 %param.rot_amp = param.scale_rot * pi/800; % radians
 
 %param.angle   = [-1.2*pi/2 0 0];
 
+%param.Nnull = 20;
+param.pop_thresh = 0.999;
+
 param
 
 param.inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
 register(param)
-close all;
+%close all;
+
+keyboard
 
 param.inputFileName = {'Recon3D_solver_1_FrameNumber_0500.mat'};
 register(param)
-close all;
+%close all;
 

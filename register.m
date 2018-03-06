@@ -679,35 +679,104 @@ end
 
 
 
-function [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param)
-%print_param(param);
-if strcmp(param.myfunc_MI,'multiply')
-    MI = mutual_information (LFM1, new, LFM2, param);
-% elseif strcmp(param.myfunc_MI,'multiply_sqrt')
-%     MI = mutual_information_sqrt (LFM1, new, LFM2, param);
-else
-    disp('WTF!');
-    keyboard;
-end
-last_MI = MI;
-param = set_prate (MI,param);
-param.MIvec = MI;
-% set initial T. Start with T sufficiently high to "melt" the system
-%T = param.T0;
-p = param.init_p;
-param.Pvec = p;
+function T = find_melting_T (LFM1, new, LFM2, canonical, param)
 % calc rotational gain
 a = size(LFM2);
 half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
 radius = sqrt( sum( half_span .* half_span ) );
 param.rot_amp = param.trans_amp / radius * ones(1,3);
-% set max number of temperature changes and mean changes
-Tchanges = param.TC0;
+param.rot_amp = [param.rot_amp(1) 0 0];
+% calculate MI
+if strcmp(param.myfunc_MI,'multiply')
+    MI = mutual_information (LFM1, new, LFM2, param);
+else
+    disp('WTF!');
+    keyboard;
+end
+init_MI = MI;
+% set initial T
+% Start with T sufficiently high to "melt" the system
+% later to guarantee melting, if needed T will be increased until
+% P (accepting a decrease in MI) = 60%
+T = param.T0;
 % while system not frozen and more temperature changes are allowed
 % profile on;
+%%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DLFM
+i = 0;
+while 1 > 0
+    i=i+1;
+    Pvec = [];
+    j = 100;
+    while j>0
+        % perturb pos
+        % randomly pick a translation vector and rotation vector
+        % to be added to current location
+        [d,r] = perturb(param,1);
+        str0 = sprintf('d = [%7.3g0 %7.3g0 %7.3g0], r = [%7.3g0 %7.3g0 %7.3g0]',d(1),d(2),d(3),r(1),r(2),r(3));
+        % apply transformation
+        % rotate an amount r PLUS param.rot
+        % thus param.rot tracks the current rotation
+        rotated = rotate (canonical,param.rot+r);
+        % translate rotated by an amount param.trans+d
+        % thus param.trans tracks the current position
+        new = translate (rotated, param.trans+d);
+        str1 = print_param(param);
+        % measure mutual_information
+        if strcmp(param.myfunc_MI,'multiply')
+            MI = mutual_information (LFM1, new, LFM2, param);
+        else
+            disp('WTF!');
+            keyboard;
+        end
+        delmi = MI - init_MI;
+        str2 = sprintf('test MI = %7.3g, delmi = %7.3g',MI,delmi);
+        str3 = 'MI increased';
+        if delmi < 0.0
+            j=j-1;
+            p = exp(delmi/T)
+            rnd = rand(1);
+            if rnd < p
+                % accept decrease in MI mutual information
+                str3 = sprintf('Accept %.3g < %.3g',rnd,p);
+                Pvec = [Pvec 1];
+            else
+                % reject move
+                Pvec = [Pvec 0];
+                str3 = sprintf('Reject %.3g > %.3g',rnd,p);
+            end
+        end
+        str4 = sprintf('%d %d, T = %d',i,j,T);
+        fprintf('%7s%75s  %84s  %40s  %22s\n',str4,str0,str1,str2,str3);
+    end
+    if sum(Pvec)<60
+        T = T * 10;
+        fprintf('\nfraction accepted = %f, new T = %d\n',sum(Pvec),T);
+    else
+        return;
+    end
+end
+end
+
+function [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param)
 param.transvec = [param.trans];
 param.offsetvec = [param.offset];
 param.rotvec = [param.rot];
+param.Pvec = [];
+% calc rotational gain
+a = size(LFM2);
+half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
+radius = sqrt( sum( half_span .* half_span ) );
+param.rot_amp = param.trans_amp / radius * ones(1,3);
+param.rot_amp = [param.rot_amp(1) 0 0];
+% calculate MI
+if strcmp(param.myfunc_MI,'multiply')
+    MI = mutual_information (LFM1, new, LFM2, param);
+else
+    disp('WTF!');
+    keyboard;
+end
+last_MI = MI;
+param.MIvec = MI;
 % CDF
 param.cdfvec = [];
 w = find(param.centers>last_MI,1); % keep only first instance
@@ -717,107 +786,126 @@ else
     val = double(last_MI)/double(max(param.nullMIvec));
     param.cdfvec = [param.cdfvec val] ;
 end
+% set initial T
+% Start with T sufficiently high to "melt" the system
+% later to guarantee melting, if needed T will be increased until
+% P (accepting a decrease in MI) = 60%
+T = find_melting_T(LFM1, new, LFM2, canonical, param);
+param.Tvec = T;
+%param = set_prate (MI,param);
+%p = param.init_p;
+% set max number of temperature changes and mean changes
+Tchanges = param.TC0;
+param.Trate = T / Tchanges;
+% while system not frozen and more temperature changes are allowed
+% profile on;
 disp('Count      Perturbation     Transformation      Overlap     Probability,Decision   ');
-while Tchanges > 0
-    pos_changes = param.MC0;
-    while pos_changes > 0
-        % perturb pos
-        % randomly pick a translation vector and rotation vector
-        % to be added to current location
-        [d,r] = perturb(param,p);
-        str0 = sprintf('d = [%7.3g0 %7.3g0 %7.3g0], r = [%7.3g0 %7.3g0 %7.3g0]',d(1),d(2),d(3),r(1),r(2),r(3));
-        % apply transformation
-        % rotate an amount r PLUS param.rot
-        % thus param.rot tracks the current rotation
-        rotated = rotate (canonical,param.rot+r);
-        param.rot = param.rot + r;
-        % translate rotated by an amount param.trans+d
-        % thus param.trans tracks the current position
-        new = translate (rotated, param.trans+d);
-        param.trans = param.trans + d;
-        str1 = print_param(param);
-        % measure mutual_information
-        if strcmp(param.myfunc_MI,'multiply')
-            MI = mutual_information (LFM1, new, LFM2, param);
-%         elseif strcmp(param.myfunc_MI,'multiply_sqrt')
-%             MI = mutual_information_sqrt (LFM1, new, LFM2, param);
-        else
-            disp('WTF!');
-            keyboard;
-        end            
-        delmi = MI - param.MIvec(end);
-        str2 = sprintf('test MI = %7.3g, delmi = %7.3g',MI,delmi);
-        if delmi > 0.0
-            % keep
-            str3 = 'Accept - MI increased';
+%%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DLFM
+i = 1;
+while 1 > 0
+    i = i+1;
+    T = T - param.Trate;
+    if T < 0
+        param.Tvec = [param.Tvec T];
+        break;
+    end
+    % perturb pos
+    % randomly pick a translation vector and rotation vector
+    % to be added to current location
+    [d,r] = perturb(param,1);
+    str0 = sprintf('d = [%7.3g0 %7.3g0 %7.3g0], r = [%7.3g0 %7.3g0 %7.3g0]',d(1),d(2),d(3),r(1),r(2),r(3));
+    % apply transformation
+    % rotate an amount r PLUS param.rot
+    % thus param.rot tracks the current rotation
+    rotated = rotate (canonical,param.rot+r);
+    param.rot = param.rot + r;
+    % translate rotated by an amount param.trans+d
+    % thus param.trans tracks the current position
+    new = translate (rotated, param.trans+d);
+    param.trans = param.trans + d;
+    str1 = print_param(param);
+    % measure mutual_information
+    if strcmp(param.myfunc_MI,'multiply')
+        MI = mutual_information (LFM1, new, LFM2, param);
+        %         elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+        %             MI = mutual_information_sqrt (LFM1, new, LFM2, param);
+    else
+        disp('WTF!');
+        keyboard;
+    end
+    delmi = MI - param.MIvec(end);
+    str2 = sprintf('test MI = %7.3g, delmi = %7.3g',MI,delmi);
+    if delmi > 0.0
+        % keep
+        str3 = 'Accept - MI increased';
+        param.MIvec = [param.MIvec MI];
+        %param.MItvec = [param.MItvec MIt];
+        last_MI = MI;
+    else
+        %         # else accept D with probability P = exp(-E/kBT)
+        %         # using (psuedo-)random number uniformly distributed in the interval (0,1)
+        p = exp(delmi/T);
+        % Specifically, if random number is less the P, then accept
+        rnd = rand(1);
+        if rnd < p
+            % accept decrease in MI mutual information
+            str3 = sprintf('Accept %.3g < %.3g',rnd,p);
             param.MIvec = [param.MIvec MI];
             %param.MItvec = [param.MItvec MIt];
             last_MI = MI;
         else
-            %         # else accept D with probability P = exp(-E/kBT)
-            %         # using (psuedo-)random number uniformly distributed in the interval (0,1)
-            %p = calc_boltzman_p(MI,T,param);
-            % Specifically, if random number is less the P, then accept
-            rnd = rand(1);
-            if rnd < p
-                % accept decrease in MI mutual information
-                str3 = sprintf('Accept %.3g < %.3g',rnd,p);
-                param.MIvec = [param.MIvec MI];
-                %param.MItvec = [param.MItvec MIt];
-                last_MI = MI;
-            else
-                % reject move
-                str3 = sprintf('Reject %.3g > %.3g',rnd,p);
-                param.rot = param.rot - r;
-                param.trans = param.trans - d;
-                tmp = param.MIvec(end);
-                param.MIvec = [param.MIvec tmp];
-                %tmpt = param.MItvec(end);
-                %param.MItvec = [param.MItvec tmpt];
-                
-            end
+            % reject move
+            str3 = sprintf('Reject %.3g > %.3g',rnd,p);
+            param.rot = param.rot - r;
+            param.trans = param.trans - d;
+            tmp = param.MIvec(end);
+            param.MIvec = [param.MIvec tmp];
+            %tmpt = param.MItvec(end);
+            %param.MItvec = [param.MItvec tmpt];
+            
         end
-        pos_changes = pos_changes-1;
-        str4 = sprintf('%d %d',Tchanges,pos_changes);
-        str6 = sprintf('Final MI = %.3g',last_MI);
-        str5 = print_param(param);
-        val7 = param.trans - param.centroid;
-        str7 = sprintf('final offset = [%6.6g0 %6.6g0 %6.6g0]',val7(1),val7(2),val7(3));
-        w = find(param.centers>last_MI,1); % keep only first instance
-        if last_MI > max(param.nullMIvec)
-            val = double(last_MI)/double(max(param.nullMIvec));
-            str8 = sprintf('MI frac = %.5g, siman exceeds null',val);
-            param.cdfvec = [param.cdfvec val] ;
-        elseif ~isempty(w)
-            str8 = sprintf('MI frac = %.5g, null exceeds siman',param.cdf(w));
-            param.cdfvec = [param.cdfvec param.cdf(w)];
-        else
-            disp('WTF?');
-            keyboard
-        end
-        dif = last_MI - max(param.nullMIvec);
-        % last_MI > max(param.nullMIvec) =>dif>0
-        % last_MI < max(param.nullMIvec) =>dif<0
-%         if dif > 0
-%             str9 = sprintf('siman exceeds null by %3.2f%%',100*abs(dif)/max(param.nullMIvec));
-%         else
-%             str9 = sprintf('null exceeds siman by %3.2f%%',100*abs(dif)/last_MI);
-%         end
-        fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8);
-        %fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9);
-        param.Pvec = [param.Pvec p];
-        param.transvec = [param.transvec; param.trans];
-        param.offsetvec = [param.offsetvec; val7];
-        param.rotvec = [param.rotvec; param.rot];
-%         profile off
-%          profile viewer
-%          keyboard
     end
+    %pos_changes = pos_changes-1;
+    str4 = sprintf('%d, T = %g',i,T);
+    str6 = sprintf('Final MI = %.3g',last_MI);
+    str5 = print_param(param);
+    val7 = param.trans - param.centroid;
+    str7 = sprintf('final offset = [%6.6g0 %6.6g0 %6.6g0]',val7(1),val7(2),val7(3));
+    w = find(param.centers>last_MI,1); % keep only first instance
+    if last_MI > max(param.nullMIvec)
+        val = double(last_MI)/double(max(param.nullMIvec));
+        str8 = sprintf('MI frac = %.5g, siman exceeds null',val);
+        param.cdfvec = [param.cdfvec val] ;
+    elseif ~isempty(w)
+        str8 = sprintf('MI frac = %.5g, null exceeds siman',param.cdf(w));
+        param.cdfvec = [param.cdfvec param.cdf(w)];
+    else
+        disp('WTF?');
+        keyboard
+    end
+    dif = last_MI - max(param.nullMIvec);
+    % last_MI > max(param.nullMIvec) =>dif>0
+    % last_MI < max(param.nullMIvec) =>dif<0
+    %         if dif > 0
+    %             str9 = sprintf('siman exceeds null by %3.2f%%',100*abs(dif)/max(param.nullMIvec));
+    %         else
+    %             str9 = sprintf('null exceeds siman by %3.2f%%',100*abs(dif)/last_MI);
+    %         end
+    fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8);
+    %fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9);
+    %param.Pvec = [param.Pvec p];
+    param.Tvec = [param.Tvec T];
+    param.transvec = [param.transvec; param.trans];
+    param.offsetvec = [param.offsetvec; val7];
+    param.rotvec = [param.rotvec; param.rot];
+    %         profile off
+    %          profile viewer
+    %          keyboard
     %profile viewer;
     %keyboard
     %T = lowerT(T,param);
-    Tchanges = Tchanges-1;
-    p = p * param.prate;
+    %Tchanges = Tchanges-1;
+    %p = p * param.prate;
 end
 rotated = rotate (canonical,param.rot);
 new = translate (rotated, param.trans);
