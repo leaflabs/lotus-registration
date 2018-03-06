@@ -15,11 +15,13 @@ if ~isempty(strfind(param.hostname, 'Justins-Mac'))
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/fish/20180123'];
 	param.opath = param.ipath;
+    param.parallel = false;
 elseif ~isempty(strfind(param.hostname, 'willis'))
 	param.ppath = '/home/jkinney/Desktop/DDLFM';
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/fish/20180123'];
 	param.opath = param.ipath;
+    param.parallel = false;
 else
 	param.ppath = '/home/jkinney';
 	addpath([param.ppath '/lotus-registration']);
@@ -37,12 +39,8 @@ param.voxel_z = 4.0;     % um
 param.clip    = [100,100,100,100,0,0];
 param.scale_trans = 4;
 param.trans_amp = param.scale_trans * param.voxel_x; % um
-%param.rot_amp = param.scale_rot * pi/800; % radians
 
 %param.angle   = [-1.2*pi/2 0 0];
-
-%param.Nnull = 20;
-param.pop_thresh = 0.999;
 
 param
 

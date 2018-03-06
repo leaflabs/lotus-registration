@@ -52,7 +52,7 @@ param.index2 = [];
 param.N = 10000;
 param.xlim_thresh = 0.9999; %HARDCODED
 %param.contour_thresh = 0.99;
-param.pop_thresh = 0.99; %HARDCODED
+param.pop_thresh = 0.999; %HARDCODED
 param.dynamic_range_thresh = 10;
 
 param.rapid = false;

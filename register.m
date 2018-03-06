@@ -99,7 +99,7 @@ param.trans = param.trans + offsets;
 
 %% plot data
 if param.plot
-    param = save_1d_max_projections(LFM1, LFM2, pos1, pos2, new, param,...
+    param = save_1d_max_projections(LFM1, LFM2, new, param,...
         '1d_max_projections_presim');
     save_2d_max_projections(LFM1, LFM2, new, param, 0,...
         '2d_max_projections_presim');
@@ -168,7 +168,7 @@ if param.savevol
 end
 
 if param.plot
-    param = save_1d_max_projections(LFM1, LFM2, pos1, pos2, new, param,...
+    param = save_1d_max_projections(LFM1, LFM2, new, param,...
         '1d_max_projections_postsim');
     save_2d_max_projections(LFM1, LFM2, comb, param, 1, ...
         '2d_max_projections_postsim');
@@ -796,7 +796,9 @@ param.Tvec = T;
 %p = param.init_p;
 % set max number of temperature changes and mean changes
 Tchanges = param.TC0;
-param.Trate = T / Tchanges;
+%param.Trate = T / Tchanges;
+param.Trate = 10^(log10(1e-3)/Tchanges);
+param.Dvec = [];
 % while system not frozen and more temperature changes are allowed
 % profile on;
 disp('Count      Perturbation     Transformation      Overlap     Probability,Decision   ');
@@ -804,8 +806,9 @@ disp('Count      Perturbation     Transformation      Overlap     Probability,De
 i = 1;
 while 1 > 0
     i = i+1;
-    T = T - param.Trate;
-    if T < 0
+    %T = T - param.Trate;
+    T = T * param.Trate;
+    if i > Tchanges
         param.Tvec = [param.Tvec T];
         break;
     end
@@ -845,6 +848,7 @@ while 1 > 0
         %         # else accept D with probability P = exp(-E/kBT)
         %         # using (psuedo-)random number uniformly distributed in the interval (0,1)
         p = exp(delmi/T);
+        param.Pvec = [param.Pvec p];
         % Specifically, if random number is less the P, then accept
         rnd = rand(1);
         if rnd < p
@@ -898,6 +902,7 @@ while 1 > 0
     param.transvec = [param.transvec; param.trans];
     param.offsetvec = [param.offsetvec; val7];
     param.rotvec = [param.rotvec; param.rot];
+    param.Dvec = [param.Dvec; d];
     %         profile off
     %          profile viewer
     %          keyboard
@@ -915,8 +920,12 @@ function save_plot (f, filename)
 print(f,filename,'-dpng');
 end
 
+
 function save_stats (param)
+
 prefix = sprintf('%s%s_',param.savePath,param.timestamp);
+
+
 % plot Pvec
 h = figure;
 plot(1:numel(param.Pvec),param.Pvec);
@@ -931,6 +940,22 @@ else
     save_plot(h, str);
 end
 
+
+% plot Tvec
+h = figure;
+plot(1:numel(param.Tvec),param.Tvec);
+xlabel('iteration');
+ylabel('Temperature (-)');
+title('simulated annealing schedule');
+if 0>1
+    fname = sprintf('%s_p.fig',prefix);
+    savefig(h,fname);
+else
+    str=sprintf('%s_T.png',prefix);
+    save_plot(h, str);
+end
+
+% plot MIvec
 h = figure;
 plot(1:numel(param.MIvec),log10(param.MIvec));
 xlabel('iteration');
@@ -944,6 +969,7 @@ else
     save_plot(h, str);
 end
 
+% plot CDFvec
 f = figure;
 plot(1:numel(param.cdfvec),param.cdfvec);
 hold on;
@@ -960,6 +986,51 @@ else
     save_plot(f, str);
 end
 
+% plot amplitude of 3D random walk
+h = figure;
+a = size(param.Dvec);
+subplot(1,3,1);
+plot(1:a(1),param.Dvec(:,1));
+xlabel('iteration');
+ylabel('random walk in dim 1 (um)');
+hold on;
+plot(1,param.Dvec(1,1),'ro');
+hold off;
+xlim([1 a(1)]);
+
+subplot(1,3,2);
+plot(1:a(1),param.Dvec(:,2));
+xlabel('iteration');
+ylabel('random walk in dim 2 (um)');
+hold on;
+plot(1,param.Dvec(1,2),'ro');
+hold off;
+xlim([1 a(1)]);
+
+subplot(1,3,3);
+plot(1:a(1),param.Dvec(:,3));
+xlabel('iteration');
+ylabel('random walk in dim 3 (um)');
+hold on;
+plot(1,param.Dvec(1,3),'ro');
+hold off;
+xlim([1 a(1)]);
+
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+str = 'trajectory of simulated annealing';
+text(0.4,0.97,str,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
+
+if 0>1
+    fname = sprintf('%s_d.fig',prefix);
+    savefig(h,fname);
+else
+    str=sprintf('%s_d.png',prefix);
+    save_plot(h, str);
+end
+
+
+% plot offset
 h = figure;
 a = size(param.offsetvec);
 subplot(1,3,1);
@@ -1002,6 +1073,7 @@ else
     save_plot(h, str);
 end
 
+% plot rot
 h = figure;
 a = size(param.rotvec);
 
@@ -1365,7 +1437,7 @@ end
 
 
 
-function param = save_1d_max_projections (LFM1, LFM2, pos1, pos2, new, param, str)
+function param = save_1d_max_projections (LFM1, LFM2, new, param, str)
 colors = {[0 0 1]
     [0.8 0.8 0.8]
     [0 0 1]
@@ -1410,66 +1482,18 @@ new_d1 = squeeze(max(onetwo,[],2));
 new_d2 = squeeze(max(onetwo,[],1));
 new_d3 = squeeze(max(twothree,[],1));
 
-% projections for pos1
-a = size(pos1);
-scale = [1/param.voxel_y*ones(a(1),1) ...
-    1/param.voxel_x*ones(a(1),1) ...
-    1/param.voxel_z*ones(a(1),1)];
-abc_pos1 = ceil(pos1.*scale);
-ns = max(abc_pos1);
-
-onetwo = zeros(ns(1),ns(2));
-for i=1:length(pos1)
-    if abc_pos1(i,1) > 0 && abc_pos1(i,2) > 0
-        onetwo(abc_pos1(i,1),abc_pos1(i,2)) = max([onetwo(abc_pos1(i,1),abc_pos1(i,2)) double(LFM1(param.index1(i)))]);
-    end
-end
-twothree = zeros(ns(2),ns(3));
-for i=1:length(pos1)
-    if abc_pos1(i,2) > 0 && abc_pos1(i,3) > 0
-        twothree(abc_pos1(i,2),abc_pos1(i,3)) = max([twothree(abc_pos1(i,2),abc_pos1(i,3)) double(LFM1(param.index1(i)))]);
-    end
-end
-pos1_d1 = squeeze(max(onetwo,[],2));
-pos1_d2 = squeeze(max(onetwo,[],1));
-pos1_d3 = squeeze(max(twothree,[],1));
-
-% projections for pos2
-a = size(pos2);
-scale = [1/param.voxel_y*ones(a(1),1) ...
-    1/param.voxel_x*ones(a(1),1) ...
-    1/param.voxel_z*ones(a(1),1)];
-abc_pos2 = ceil(pos2.*scale);
-ns = max(abc_pos2);
-
-onetwo = zeros(ns(1),ns(2));
-for i=1:length(pos2)
-    if abc_pos2(i,1) > 0 && abc_pos2(i,2) > 0
-        onetwo(abc_pos2(i,1),abc_pos2(i,2)) = max([onetwo(abc_pos2(i,1),abc_pos2(i,2)) double(LFM2(param.index2(i)))]);
-    end
-end
-twothree = zeros(ns(2),ns(3));
-for i=1:length(pos2)
-    if abc_pos2(i,2) > 0 && abc_pos2(i,3) > 0
-        twothree(abc_pos2(i,2),abc_pos2(i,3)) = max([twothree(abc_pos2(i,2),abc_pos2(i,3)) double(LFM2(param.index2(i)))]);
-    end
-end
-pos2_d1 = squeeze(max(onetwo,[],2));
-pos2_d2 = squeeze(max(onetwo,[],1));
-pos2_d3 = squeeze(max(twothree,[],1));
-
 if 0 < 1
     T = '      (scaled by total intensity in sample)';
-    scale_d1 = [sum(pos1_d1) sum(pos2_d1) sum(LFM1_d1) sum(LFM2_d1) sum(new_d1)];
-    scale_d2 = [sum(pos1_d2) sum(pos2_d2) sum(LFM1_d2) sum(LFM2_d2) sum(new_d2)];
-    scale_d3 = [sum(pos1_d3) sum(pos2_d3) sum(LFM1_d3) sum(LFM2_d3) sum(new_d3)];
+    scale_d1 = [ sum(LFM1_d1) sum(LFM2_d1) sum(new_d1)];
+    scale_d2 = [ sum(LFM1_d2) sum(LFM2_d2) sum(new_d2)];
+    scale_d3 = [ sum(LFM1_d3) sum(LFM2_d3) sum(new_d3)];
     yl = 'normalized intensity';
     %disp(T);
 elseif 0 < 1
     T = '      (scaled by max intensity in each projected volume)';
-    scale_d1 = single([max(pos1_d1) max(pos2_d1) max(LFM1_d1) max(LFM2_d1) max(new_d1)]);
-    scale_d2 = single([max(pos1_d2) max(pos2_d2) max(LFM1_d2) max(LFM2_d2) max(new_d2)]);
-    scale_d3 = single([max(pos1_d3) max(pos2_d3) max(LFM1_d3) max(LFM2_d3) max(new_d3)]);
+    scale_d1 = single([ max(LFM1_d1) max(LFM2_d1) max(new_d1)]);
+    scale_d2 = single([ max(LFM1_d2) max(LFM2_d2) max(new_d2)]);
+    scale_d3 = single([ max(LFM1_d3) max(LFM2_d3) max(new_d3)]);
     yl = 'normalized intensity';
     %disp(T);
 else
@@ -1484,10 +1508,10 @@ end
 f = figure;
 set(gcf,'Position',[79          18        1270         940]);
 subplot(3,1,1);
-semilogy(LFM1_d1/scale_d1(3),'.','Color',colors{1});
+semilogy(LFM1_d1/scale_d1(1),'.','Color',colors{1});
 hold on;
-semilogy(LFM2_d1/scale_d1(4),'.','Color',colors{2});
-semilogy(new_d1/scale_d1(5),'-','Color',colors{4});
+semilogy(LFM2_d1/scale_d1(2),'.','Color',colors{2});
+semilogy(new_d1/scale_d1(3),'-','Color',colors{4});
 xlabel('first dimension [pixels]');
 ylabel(yl);
 hold off;
@@ -1502,10 +1526,10 @@ else
 end
 
 subplot(3,1,2);
-semilogy(LFM1_d2/scale_d2(3),'.','Color',colors{1});
+semilogy(LFM1_d2/scale_d2(1),'.','Color',colors{1});
 hold on;
-semilogy(LFM2_d2/scale_d2(4),'.','Color',colors{2});
-semilogy(new_d2/scale_d2(5),'-','Color',colors{4});
+semilogy(LFM2_d2/scale_d2(2),'.','Color',colors{2});
+semilogy(new_d2/scale_d2(3),'-','Color',colors{4});
 xlabel('second dimension [pixels]');
 ylabel(yl);
 hold off;
@@ -1519,10 +1543,10 @@ else
 end
 
 subplot(3,1,3);
-semilogy(LFM1_d3/scale_d3(3),'.','Color',colors{1});
+semilogy(LFM1_d3/scale_d3(1),'.','Color',colors{1});
 hold on;
-semilogy(LFM2_d3/scale_d3(4),'.','Color',colors{2});
-semilogy(new_d3/scale_d3(5),'-','Color',colors{4});
+semilogy(LFM2_d3/scale_d3(2),'.','Color',colors{2});
+semilogy(new_d3/scale_d3(3),'-','Color',colors{4});
 xlabel('third dimension [pixels]');
 ylabel(yl);
 hold off;
