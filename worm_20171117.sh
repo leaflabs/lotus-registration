@@ -12,6 +12,4 @@
 module add mit/matlab/2016b
 cd /home/jkinney/lotus-registration
 export TZ=America/New_York
-matlab -nodisplay -nodesktop -nosplash -r "run('master_reg_worm_20171117.m');disp('FINISHED');exit"
-#matlab -nodisplay -nodesktop -nosplash -r "run('rapid_reg_worm_20171215.m');exit"
-#matlab -nodisplay -nodesktop -nosplash -r "eghbal=false;data3DPath='/om/user/jkinney/DLFM/worm/20171215/registration/';savePath='/om/user/jkinney/DLFM/worm/20171215/';filePattern='*multiply*.mat';dataOutFileName='worm_20171215';run('genVideo.m');exit"
+matlab -nodisplay -nodesktop -nosplash -r "run('master_reg_worm_20171117.m');disp('FINISHED');exit;"
