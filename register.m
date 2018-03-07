@@ -796,8 +796,14 @@ param.Tvec = T;
 %p = param.init_p;
 % set max number of temperature changes and mean changes
 Tchanges = param.TC0;
-%param.Trate = T / Tchanges;
-param.Trate = 10^(log10(1e-3)/Tchanges);
+if strcmp(param.anneal,'exp')
+    param.Trate = 10^(log10(1e-3)/Tchanges);
+elseif  strcmp(param.anneal,'linear')
+    param.Trate = T / Tchanges;
+else
+    disp('WTF!');
+    keyboard;
+end
 param.Dvec = [];
 % while system not frozen and more temperature changes are allowed
 % profile on;
@@ -807,7 +813,14 @@ i = 1;
 while 1 > 0
     i = i+1;
     %T = T - param.Trate;
-    T = T * param.Trate;
+    if strcmp(param.anneal,'exp')
+        T = T * param.Trate;
+    elseif  strcmp(param.anneal,'linear')
+        T = T - param.Trate;
+    else
+        disp('WTF!');
+        keyboard;
+    end
     if i > Tchanges
         param.Tvec = [param.Tvec T];
         break;
