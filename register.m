@@ -637,8 +637,8 @@ save(nullf,'nullMIvec');
 
 fprintf('\nBest of null:\n');
 fprintf('MI = %d\n',bestMI);
-fprtinf('d = [%f %f %f]\n',d(1),d(2),d(3));
-fprtinf('r = [%f %f %f]\n\n',r(1),r(2),r(3));
+fprtinf('d = [%f %f %f]\n',bestd(1),bestd(2),bestd(3));
+fprtinf('r = [%f %f %f]\n\n',bestr(1),bestr(2),bestr(3));
 % CDF
 centers = linspace(min(nullMIvec),max(nullMIvec),param.Nnull);
 del = 0.5 * (centers(2)-centers(1));
