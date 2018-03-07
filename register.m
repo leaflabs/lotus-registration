@@ -553,6 +553,9 @@ gain = offset_limit / param.trans_amp;
 %tmp = param.rot_amp;
 param.rot_amp = [pi/gain 0 0];
 %N = param.Nnull;
+bestMI = 0;
+bestd = [];
+bestr = [];
 %profile on;
 fprintf('\nCount    Mutual_Information                Offset [um]                        Rotation [radians]\n');
 if param.parallel
@@ -582,6 +585,11 @@ if param.parallel
         nullMIvec = [nullMIvec MI];
         str = sprintf('i = %4d, MI = %16.0f, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,MI,d(1),d(2),d(3),r(1),r(2),r(3));
         disp(str);
+        if MI>bestMI
+            bestMI = MI;
+            bestd = d;
+            bestr = r;
+        end
         %         profile off
         %         profile viewer
     end
@@ -612,6 +620,11 @@ else
         nullMIvec = [nullMIvec MI];
         str = sprintf('i = %4d, MI = %16.0f, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,MI,d(1),d(2),d(3),r(1),r(2),r(3));
         disp(str);
+        if MI>bestMI
+            bestMI = MI;
+            bestd = d;
+            bestr = r;
+        end
         %         profile off
         %         profile viewer
     end
@@ -622,6 +635,10 @@ end
 fprintf('\nnull distribution has N = %d, was N = %d\n',length(nullMIvec),LL);
 save(nullf,'nullMIvec');
 
+fprintf('\nBest of null:\n');
+fprintf('MI = %d\n',bestMI);
+fprtinf('d = [%f %f %f]\n',d(1),d(2),d(3));
+fprtinf('r = [%f %f %f]\n\n',r(1),r(2),r(3));
 % CDF
 centers = linspace(min(nullMIvec),max(nullMIvec),param.Nnull);
 del = 0.5 * (centers(2)-centers(1));
