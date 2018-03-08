@@ -22,12 +22,11 @@ param.rot_amp = param.scale_rot * pi/800; % radians
 % dim1 min, dim1 max, dim2 min, dim2 max, dim3 min, dim3 max,
 param.clip = [100,100,100,100,0,0];
 
-param.anneal = 'linear';
-param.T0 = 1e13;
+%param.anneal = 'linear';
+param.anneal = 'exp';
+param.Pmelt = 5; % Percent, max val = 100
+param.T0 = 1e9;
 param.TC0 = 10000;
-param.MC0 = 30;
-%param.TC0 = 1;
-%param.MC0 = 900;
 param.Nnull = 2000;
 
 param.psf   = [-1.0 -1.0 -1.0]; %um
