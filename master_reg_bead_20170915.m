@@ -26,7 +26,7 @@ else
 	param.ppath = '/home/jkinney';
 	addpath([param.ppath '/lotus-registration']);
     param.ipath = '/om/user/jkinney/DLFM/bead/20170915';
-	param.opath = [param.ppath '/bead/20170915'];
+	param.opath = param.ipath;
 end
 param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
 param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];
