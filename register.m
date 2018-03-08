@@ -113,7 +113,7 @@ end
 %% null distribution
 % for random rotations and offsets (within some range)
 % calculate mutual information, MI
-[cdf,centers,nullMIvec] = null_distribution (LFM1, LFM2, canonical, param);
+[cdf, centers, nullMIvec, param] = null_distribution (LFM1, LFM2, canonical, param);
 param.cdf = cdf;
 param.centers = centers;
 param.nullMIvec = nullMIvec;
@@ -536,7 +536,7 @@ out = reshape(out,s(1),s(2));
 end
 
 
-function [cdf,centers,nullMIvec] = null_distribution (LFM1, LFM2, canonical, param)
+function [cdf, centers, nullMIvec, param] = null_distribution (LFM1, LFM2, canonical, param)
 nullf = [param.savePath param.inputFileName{1}(1:end-4) '_null.mat'];
 if exist(nullf,'file') == 2
     load(nullf,'nullMIvec');
@@ -553,47 +553,47 @@ gain = offset_limit / param.trans_amp;
 %tmp = param.rot_amp;
 param.rot_amp = [pi/gain 0 0];
 %N = param.Nnull;
-bestMI = 0;
-bestd = [];
-bestr = [];
+param.bestMI = 0;
+param.bestd = [];
+param.bestr = [];
 %profile on;
 fprintf('\nCount    Mutual_Information                Offset [um]                        Rotation [radians]\n');
-if param.parallel
-    parfor i=1:param.Nnull
-        MI = 0;
-        % perturb pos
-        % randomly pick a translation vector and rotation vector
-        % to be added to current location
-        [d,r] = perturb(param,gain);
-        % apply transformation
-        % rotate an amount r PLUS param.rot
-        % thus param.rot tracks the current rotation
-        %rotated = rotate (canonical,r);
-        % translate rotated by an amount param.trans+d
-        % thus param.trans tracks the current position
-        new = translate (rotate (canonical, r), param.centroid+d);
-        %new = translate (rotated, param.centroid+d);
-        % measure mutual_information
-        if strcmp(param.myfunc_MI,'multiply')
-            MI = mutual_information (LFM1, new, LFM2, param);
-            %     elseif strcmp(param.myfunc_MI,'multiply_sqrt')
-            %         MI = mutual_information_sqrt (LFM1, new, LFM2, param);
-        else
-            disp('WTF!');
-            keyboard;
-        end
-        nullMIvec = [nullMIvec MI];
-        str = sprintf('i = %4d, MI = %16.0f, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,MI,d(1),d(2),d(3),r(1),r(2),r(3));
-        disp(str);
-        %if MI>bestMI
-        %    bestMI = MI;
-        %    bestd = d;
-        %    bestr = r;
-        %end
-        %         profile off
-        %         profile viewer
-    end
-else
+% if param.parallel
+%     parfor i=1:param.Nnull
+%         MI = 0;
+%         % perturb pos
+%         % randomly pick a translation vector and rotation vector
+%         % to be added to current location
+%         [d,r] = perturb(param,gain);
+%         % apply transformation
+%         % rotate an amount r PLUS param.rot
+%         % thus param.rot tracks the current rotation
+%         %rotated = rotate (canonical,r);
+%         % translate rotated by an amount param.trans+d
+%         % thus param.trans tracks the current position
+%         new = translate (rotate (canonical, r), param.centroid+d);
+%         %new = translate (rotated, param.centroid+d);
+%         % measure mutual_information
+%         if strcmp(param.myfunc_MI,'multiply')
+%             MI = mutual_information (LFM1, new, LFM2, param);
+%             %     elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+%             %         MI = mutual_information_sqrt (LFM1, new, LFM2, param);
+%         else
+%             disp('WTF!');
+%             keyboard;
+%         end
+%         nullMIvec = [nullMIvec MI];
+%         str = sprintf('i = %4d, MI = %16.0f, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,MI,d(1),d(2),d(3),r(1),r(2),r(3));
+%         disp(str);
+%         %if MI>bestMI
+%         %    bestMI = MI;
+%         %    bestd = d;
+%         %    bestr = r;
+%         %end
+%         %         profile off
+%         %         profile viewer
+%     end
+% else
     for i=1:param.Nnull
         MI = 0;
         % perturb pos
@@ -620,25 +620,27 @@ else
         nullMIvec = [nullMIvec MI];
         str = sprintf('i = %4d, MI = %16.0f, d = [%7.3f0 %7.3f0 %7.3f0], r = [%7.3f0 %7.3f0 %7.3f0]',i,MI,d(1),d(2),d(3),r(1),r(2),r(3));
         disp(str);
-        %if MI>bestMI
-        %    bestMI = MI;
-        %    bestd = d;
-        %    bestr = r;
-        %end
+        if MI>param.bestMI
+           param.bestMI = MI;
+           param.bestd = d;
+           param.bestr = r;
+        end
         %         profile off
         %         profile viewer
     end
-end
+%end
 %param.rot_amp = tmp;
 
 % add to existing null distribution if any
 fprintf('\nnull distribution has N = %d, was N = %d\n',length(nullMIvec),LL);
 save(nullf,'nullMIvec');
 
-%fprintf('\nBest of null:\n');
-%fprintf('MI = %d\n',bestMI);
-%fprtinf('d = [%f %f %f]\n',bestd(1),bestd(2),bestd(3));
-%fprtinf('r = [%f %f %f]\n\n',bestr(1),bestr(2),bestr(3));
+if ~param.parallel
+    fprintf('\nBest of null:\n');
+    fprintf('MI = %d\n',param.bestMI);
+    fprintf('d = [%f %f %f]\n',param.bestd(1),param.bestd(2),param.bestd(3));
+    fprintf('r = [%f %f %f]\n\n',param.bestr(1),param.bestr(2),param.bestr(3));
+end
 % CDF
 centers = linspace(min(nullMIvec),max(nullMIvec),param.Nnull);
 del = 0.5 * (centers(2)-centers(1));
@@ -702,7 +704,7 @@ a = size(LFM2);
 half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
 radius = sqrt( sum( half_span .* half_span ) );
 param.rot_amp = param.trans_amp / radius * ones(1,3);
-param.rot_amp = [param.rot_amp(1) 0 0];
+%param.rot_amp = [param.rot_amp(1) 0 0];
 % calculate MI
 if strcmp(param.myfunc_MI,'multiply')
     MI = mutual_information (LFM1, new, LFM2, param);
@@ -723,7 +725,8 @@ i = 0;
 while 1 > 0
     i=i+1;
     Pvec = [];
-    j = 100;
+    N = 100;
+    j = N;
     while j>0
         % perturb pos
         % randomly pick a translation vector and rotation vector
@@ -750,7 +753,7 @@ while 1 > 0
         str3 = 'MI increased';
         if delmi < 0.0
             j=j-1;
-            p = exp(delmi/T)
+            p = exp(delmi/T);
             rnd = rand(1);
             if rnd < p
                 % accept decrease in MI mutual information
@@ -762,13 +765,14 @@ while 1 > 0
                 str3 = sprintf('Reject %.3g > %.3g',rnd,p);
             end
         end
-        str4 = sprintf('%d %d, T = %d',i,j,T);
+        str4 = sprintf('%d %d, T = %1.0e',i,j,T);
         fprintf('%7s%75s  %84s  %40s  %22s\n',str4,str0,str1,str2,str3);
     end
-    if sum(Pvec)<60
+    if sum(Pvec)<param.Pmelt;
         T = T * 10;
-        fprintf('\nfraction accepted = %f, new T = %d\n',sum(Pvec),T);
+        fprintf('\nfraction accepted = %0.5f, new T = %1.0e\n\n',sum(Pvec)/N,T);
     else
+        fprintf('\n\nFinished\nfraction accepted = %0.5f, final T = %1.0e\n\n',sum(Pvec)/N,T);
         return;
     end
 end
@@ -784,7 +788,7 @@ a = size(LFM2);
 half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
 radius = sqrt( sum( half_span .* half_span ) );
 param.rot_amp = param.trans_amp / radius * ones(1,3);
-param.rot_amp = [param.rot_amp(1) 0 0];
+%param.rot_amp = [param.rot_amp(1) 0 0];
 % calculate MI
 if strcmp(param.myfunc_MI,'multiply')
     MI = mutual_information (LFM1, new, LFM2, param);
@@ -821,6 +825,8 @@ else
     disp('WTF!');
     keyboard;
 end
+fprintf('\n\nTrate = %f\n\n',param.Trate);
+
 param.Dvec = [];
 % while system not frozen and more temperature changes are allowed
 % profile on;
@@ -988,6 +994,9 @@ end
 % plot MIvec
 h = figure;
 plot(1:numel(param.MIvec),log10(param.MIvec));
+hold on;
+plot(xlim,[param.bestMI param.bestMI],'--r');
+hold off;
 xlabel('iteration');
 ylabel('log (mutual information)');
 title('evolution of mutual information during simulated annealing');
@@ -1069,6 +1078,7 @@ xlabel('iteration');
 ylabel('offset in dim 1 (um)');
 hold on;
 plot(1,param.offsetvec(1,1),'ro');
+plot(a(1),param.bestd(1),'bo');
 hold off;
 xlim([1 a(1)]);
 
@@ -1078,6 +1088,7 @@ xlabel('iteration');
 ylabel('offset in dim 2 (um)');
 hold on;
 plot(1,param.offsetvec(1,2),'ro');
+plot(a(1),param.bestd(2),'bo');
 hold off;
 xlim([1 a(1)]);
 
@@ -1087,6 +1098,7 @@ xlabel('iteration');
 ylabel('offset in dim 3 (um)');
 hold on;
 plot(1,param.offsetvec(1,3),'ro');
+plot(a(1),param.bestd(3),'bo');
 hold off;
 xlim([1 a(1)]);
 
@@ -1118,6 +1130,7 @@ yyaxis left;
 plot(x,yrad),'k';
 hold on;
 plot(1,param.rotvec(1,1),'ro');
+plot(a(1),param.bestr(1),'bo');
 hold off;
 
 xlabel('iteration');
@@ -1141,6 +1154,7 @@ yyaxis left;
 plot(x,yrad),'k';
 hold on;
 plot(1,param.rotvec(1,2),'ro');
+plot(a(1),param.bestr(2),'bo');
 hold off;
 
 xlabel('iteration');
@@ -1164,6 +1178,7 @@ yyaxis left;
 plot(x,yrad),'k';
 hold on;
 plot(1,param.rotvec(1,3),'ro');
+plot(a(1),param.bestr(3),'bo');
 hold off;
 
 xlabel('iteration');
