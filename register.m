@@ -549,9 +549,11 @@ fprintf('\nnull distribution has N = %d\n',LL);
 % and so that rotation limit = pi
 a = max ([ size(LFM1) size(LFM2)]);
 offset_limit = 0.15 * a * param.voxel_y;
-gain = offset_limit / param.trans_amp;
+param.trans_amp = offset_limit;
 %tmp = param.rot_amp;
-param.rot_amp = [pi/gain 0 0];
+gain = pi;
+tmp = param.rot_amp;
+param.rot_amp = [1 0 0];
 %N = param.Nnull;
 param.bestMI = 0;
 param.bestd = [];
@@ -629,7 +631,7 @@ fprintf('\nCount    Mutual_Information                Offset [um]               
         %         profile viewer
     end
 %end
-%param.rot_amp = tmp;
+param.rot_amp = tmp;
 
 % add to existing null distribution if any
 fprintf('\nnull distribution has N = %d, was N = %d\n',length(nullMIvec),LL);
@@ -695,7 +697,7 @@ str=sprintf('%s%s_null_cdf.png',param.savePath,param.timestamp);
 save_plot(f, str);
 end
 
-function p = estimateP (param, canonical, LFM1, LFM2, new, T, i)
+function p = estimateP (param, canonical, LFM1, LFM2, new, T, i, gain)
 init_MI = mutual_information (LFM1, new, LFM2, param);
 Pvec = [];
 N = 100;
@@ -704,7 +706,7 @@ while j>0
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
-    [d,r] = perturb(param,1);
+    [d,r] = perturb(param,gain);
     str0 = sprintf('d = [%7.3g0 %7.3g0 %7.3g0], r = [%7.3g0 %7.3g0 %7.3g0]',d(1),d(2),d(3),r(1),r(2),r(3));
     % apply transformation
     % rotate an amount r PLUS param.rot
@@ -746,12 +748,7 @@ p = sum(Pvec)/N;
 end
 
 
-function T = find_melting_T (LFM1, new, LFM2, canonical, param)
-% calc rotational gain
-a = size(LFM2);
-half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
-radius = sqrt( sum( half_span .* half_span ) );
-param.rot_amp = param.trans_amp / radius * ones(1,3);
+function T = find_melting_T (LFM1, new, LFM2, canonical, param, gain)
 %param.rot_amp = [param.rot_amp(1) 0 0];
 % calculate MI
 if strcmp(param.myfunc_MI,'multiply')
@@ -768,12 +765,12 @@ end
 T = param.T0;
 % while system not frozen and more temperature changes are allowed
 % profile on;
-%%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DLFM
+%%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DDLFM
 lP = 0;
 i = 0;
 while 1 > 0
     i=i+1;
-    p = estimateP (param, canonical, LFM1, LFM2, new, T, i);
+    p = estimateP (param, canonical, LFM1, LFM2, new, T, i, gain);
     fprintf('\nfraction accepted = %0.5f, T = %1.0e\n',p,T);
     if p < param.Pmelt;
         T = T * 10;
@@ -787,7 +784,7 @@ hT = T;
 lT = T/10;
 mT = (hT+lT)/2;
 i = 0;
-mP = estimateP (param, canonical, LFM1, LFM2, new, mT, i);
+mP = estimateP (param, canonical, LFM1, LFM2, new, mT, i, gain);
 Pdiff = abs(mP-param.Pmelt);
 fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f,Pdiff = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff);
 while Pdiff > param.Pepsilon
@@ -798,7 +795,7 @@ while Pdiff > param.Pepsilon
         hT = mT;
     end
     mT = (hT+lT)/2;
-    mP = estimateP (param, canonical, LFM1, LFM2, new, mT, i);
+    mP = estimateP (param, canonical, LFM1, LFM2, new, mT, i, gain);
     Pdiff = abs(mP-param.Pmelt);
     fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f, Pdiff = %1.5f, Pepsilon = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff,param.Pepsilon);
 end
@@ -810,12 +807,12 @@ param.transvec = [param.trans];
 param.offsetvec = [param.offset];
 param.rotvec = [param.rot];
 param.Pvec = [];
+param.trans_amp = 3.5; %um, half diameter of neuron
 % calc rotational gain
 a = size(LFM2);
 half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
 radius = sqrt( sum( half_span .* half_span ) );
-scale = param.trans_amp / radius * ones(1,3);
-param.rot_amp = scale .* param.rot_amp;
+gain = param.trans_amp / radius;
 % calculate MI
 if strcmp(param.myfunc_MI,'multiply')
     MI = mutual_information (LFM1, new, LFM2, param);
@@ -838,7 +835,7 @@ end
 % Start with T sufficiently high to "melt" the system
 % later to guarantee melting, if needed T will be increased until
 % P (accepting a decrease in MI) = 60%
-T = find_melting_T(LFM1, new, LFM2, canonical, param);
+T = find_melting_T(LFM1, new, LFM2, canonical, param, gain);
 param.Tvec = T;
 %param = set_prate (MI,param);
 %p = param.init_p;
@@ -858,7 +855,7 @@ param.Dvec = [];
 % while system not frozen and more temperature changes are allowed
 % profile on;
 disp('Count      Perturbation     Transformation      Overlap     Probability,Decision   ');
-%%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DLFM
+%%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DDLFM
 i = 1;
 pass = 0;
 while 1 > 0
@@ -883,7 +880,7 @@ while 1 > 0
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
-    [d,r] = perturb(param,1);
+    [d,r] = perturb(param,gain);
     str0 = sprintf('d = [%7.3f %7.3f %7.3f], r = [%7.5f %7.5f %7.5f]',d(1),d(2),d(3),r(1),r(2),r(3));
     % apply transformation
     % rotate an amount r PLUS param.rot
@@ -1326,9 +1323,9 @@ end
 
 
 function [d,r] = perturb (param, gain)
-d1 = random('unif',-1,1) * param.trans_amp * gain;
-d2 = random('unif',-1,1) * param.trans_amp * gain;
-d3 = random('unif',-1,1) * param.trans_amp * gain;
+d1 = random('unif',-1,1) * param.trans_amp;
+d2 = random('unif',-1,1) * param.trans_amp;
+d3 = random('unif',-1,1) * param.trans_amp;
 r1 = random('unif',-1,1) * param.rot_amp(1) * gain;
 r2 = random('unif',-1,1) * param.rot_amp(2) * gain;
 r3 = random('unif',-1,1) * param.rot_amp(3) * gain;
@@ -1945,7 +1942,7 @@ if flag
     imagesc(yz,[0 2^dr]);
     xlabel('three [pixels]');
     ylabel('one [pixels]');
-    title('DLFM');
+    title('DDLFM');
     %colorbar();
     daspect([1,1,1]);
     set(gca,'XDir','reverse');
@@ -1956,7 +1953,7 @@ if flag
     imagesc(xy,[0 2^dr]);
     xlabel('two [pixels]');
     ylabel('one [pixels]');
-    title('DLFM');
+    title('DDLFM');
     %colorbar();
     daspect([1,1,1]);
     
@@ -1966,7 +1963,7 @@ if flag
     imagesc(xz,[0 2^dr]);
     xlabel('two [pixels]');
     ylabel('three [pixels]');
-    title('DLFM');
+    title('DDLFM');
     colorbar();
     daspect([1,1,1]);
 end
@@ -1976,7 +1973,7 @@ axes(ax1);
 text(0.1,0.98,['LFM1 = ' param.inputFilePath1 param.inputFileName{1}],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 text(0.1,0.96,['LFM2 = ' param.inputFilePath2 param.inputFileName{1}],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 if flag
-    text(0.1,0.94,['DLFM = ' param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+    text(0.1,0.94,['DDLFM = ' param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 end
 text(0.4,0.1,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 drawnow
@@ -2062,7 +2059,7 @@ if flag
     x = [a(2)+1 b(2)+a(2)];
     y = [b(1)+1 b(1)+c(1)];
     imagesc('XData',x,'YData',y,'CData',xz);
-    title('DLFM');
+    title('DDLFM');
     colorbar();
     xlabel('pixels');
     ylabel('pixels');
@@ -2074,7 +2071,7 @@ axes(ax1);
 text(0.1,0.98,['LFM1 = ' param.inputFilePath1 param.inputFileName{1}],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 text(0.1,0.96,['LFM2 = ' param.inputFilePath2 param.inputFileName{1}],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 if flag
-    text(0.1,0.94,['DLFM = ' param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+    text(0.1,0.94,['DDLFM = ' param.savePath param.timestamp],'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 end
 text(0.4,0.1,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 drawnow

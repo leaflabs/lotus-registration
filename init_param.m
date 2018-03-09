@@ -11,9 +11,7 @@ param.prate = -1;
 param.Trate = 1e-3;
 param.final_p = 1e-3;
 param.init_p = 0.3;
-param.scale_trans = 4;
-param.scale_rot = [20 2 2];
-param.trans_amp = param.scale_trans * param.voxel_x; % um
+param.trans_amp = 1; % um
 %param.rot_amp = param.scale_rot * pi/800; % radians
 param.rot_amp = [1 0.1 0.1]; 
 %param.trans_amp = 1.0; % um
@@ -25,7 +23,7 @@ param.clip = [100,100,100,100,0,0];
 
 %param.anneal = 'linear';
 param.anneal = 'exp';
-param.Pmelt = 0.15; % fraction, max val = 1
+param.Pmelt = 0.2; % fraction, max val = 1
 param.Pepsilon = 0.02; % fraction, error allowed for finding T that matches Pmelt
 param.T0 = 1e9;
 param.TC0 = 10000;
