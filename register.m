@@ -857,7 +857,7 @@ while 1 > 0
     % randomly pick a translation vector and rotation vector
     % to be added to current location
     [d,r] = perturb(param,1);
-    str0 = sprintf('d = [%7.3g0 %7.3g0 %7.3g0], r = [%7.3g0 %7.3g0 %7.3g0]',d(1),d(2),d(3),r(1),r(2),r(3));
+    str0 = sprintf('d = [%7.3f %7.3f %7.3f], r = [%7.5f %7.5f %7.5f]',d(1),d(2),d(3),r(1),r(2),r(3));
     % apply transformation
     % rotate an amount r PLUS param.rot
     % thus param.rot tracks the current rotation
@@ -1217,7 +1217,7 @@ end
 function out = print_param (param)
 a=param.trans;
 b=param.rot;
-out = sprintf('trans = [%6.6g0 %6.6g0 %6.6g0], rot = [%7.6g0 %7.6g0 %7.6g0]',a(1),a(2),a(3),b(1),b(2),b(3));
+out = sprintf('trans = [%6.6f %6.6f %6.6f], rot = [%7.6f %7.6f %7.6f]',a(1),a(2),a(3),b(1),b(2),b(3));
 end
 
 
