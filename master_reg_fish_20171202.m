@@ -11,13 +11,13 @@ param.hostname = strtrim(hostname);
 setup_par
 
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
-	param.ppath = '/Users/justin/Desktop/DLFM';
+	param.ppath = '/Users/justin/Desktop/DDLFM';
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/fish/20171202'];
 	param.opath = param.ipath;
     param.parallel = false;
 elseif ~isempty(strfind(param.hostname, 'willis'))
-	param.ppath = '/home/jkinney/Desktop/DLFM';
+	param.ppath = '/home/jkinney/Desktop/DDLFM';
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = [param.ppath '/fish/20171202'];
 	param.opath = param.ipath;
