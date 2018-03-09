@@ -25,7 +25,8 @@ param.clip = [100,100,100,100,0,0];
 
 %param.anneal = 'linear';
 param.anneal = 'exp';
-param.Pmelt = 5; % Percent, max val = 100
+param.Pmelt = 0.15; % fraction, max val = 1
+param.Pepsilon = 0.02; % fraction, error allowed for finding T that matches Pmelt
 param.T0 = 1e9;
 param.TC0 = 10000;
 param.Nnull = 2000;
