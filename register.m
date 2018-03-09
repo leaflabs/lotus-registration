@@ -787,8 +787,8 @@ param.Pvec = [];
 a = size(LFM2);
 half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
 radius = sqrt( sum( half_span .* half_span ) );
-param.rot_amp = param.trans_amp / radius * ones(1,3);
-%param.rot_amp = [param.rot_amp(1) 0 0];
+scale = param.trans_amp / radius * ones(1,3);
+param.rot_amp = scale .* param.rot_amp;
 % calculate MI
 if strcmp(param.myfunc_MI,'multiply')
     MI = mutual_information (LFM1, new, LFM2, param);
@@ -833,7 +833,12 @@ param.Dvec = [];
 disp('Count      Perturbation     Transformation      Overlap     Probability,Decision   ');
 %%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DLFM
 i = 1;
+pass = 0;
 while 1 > 0
+    if pass>1000
+        fprintf('(\n\n1000 passes in a row. The model is frozen.\n\n');
+        break;
+    end
     i = i+1;
     %T = T - param.Trate;
     if strcmp(param.anneal,'exp')
@@ -880,6 +885,7 @@ while 1 > 0
         param.MIvec = [param.MIvec MI];
         %param.MItvec = [param.MItvec MIt];
         last_MI = MI;
+        pass = 0;
     else
         %         # else accept D with probability P = exp(-E/kBT)
         %         # using (psuedo-)random number uniformly distributed in the interval (0,1)
@@ -893,6 +899,7 @@ while 1 > 0
             param.MIvec = [param.MIvec MI];
             %param.MItvec = [param.MItvec MIt];
             last_MI = MI;
+            pass = 0;
         else
             % reject move
             str3 = sprintf('Reject %.3g > %.3g',rnd,p);
@@ -902,7 +909,7 @@ while 1 > 0
             param.MIvec = [param.MIvec tmp];
             %tmpt = param.MItvec(end);
             %param.MItvec = [param.MItvec tmpt];
-            
+            pass = pass + 1;
         end
     end
     %pos_changes = pos_changes-1;
@@ -995,7 +1002,7 @@ end
 h = figure;
 plot(1:numel(param.MIvec),log10(param.MIvec));
 hold on;
-plot(xlim,[param.bestMI param.bestMI],'--r');
+plot(xlim,log10(param.bestMI)*ones(2,1),'--r');
 hold off;
 xlabel('iteration');
 ylabel('log (mutual information)');

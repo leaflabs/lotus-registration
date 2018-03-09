@@ -14,7 +14,8 @@ param.init_p = 0.3;
 param.scale_trans = 4;
 param.scale_rot = [20 2 2];
 param.trans_amp = param.scale_trans * param.voxel_x; % um
-param.rot_amp = param.scale_rot * pi/800; % radians
+%param.rot_amp = param.scale_rot * pi/800; % radians
+param.rot_amp = [1 0.1 0.1]; 
 %param.trans_amp = 1.0; % um
 %param.rot_amp = pi/80; % radians
 
