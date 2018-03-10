@@ -43,7 +43,6 @@ param
 
 param.inputFileName = {'Recon3D_solver_1_FrameNumber_0013.mat'};
 register(param)
-keyboard
 close all;
 
 param.inputFileName = {'Recon3D_solver_1_FrameNumber_0300.mat'};
