@@ -9,5 +9,6 @@ if ~isempty(strfind(param.hostname, 'Justins-Mac')) | ...
 %               p = gcp('nocreate');
 %       end
 else
+	pause ( rand * 5 ); % random pause for up to 5 seconds to avoid filename collisions in parallel logging code.
 	p = gcp;
 end
