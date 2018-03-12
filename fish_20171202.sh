@@ -12,4 +12,6 @@
 module add mit/matlab/2016b
 cd /home/jkinney/lotus-registration
 export TZ=America/New_York
-matlab -nodisplay -nodesktop -nosplash -r "run('master_reg_fish_20171202.m');disp('FINISHED');exit;"
+#matlab -nodisplay -nodesktop -nosplash -r "run('master_reg_fish_20171202.m');disp('FINISHED');exit;"
+matlab -nodisplay -nodesktop -nosplash -r "run('rapid_reg_fish_20171202.m');disp('FINISHED');exit;"
+matlab -nodisplay -nodesktop -nosplash -r "run('make_movie_fish_20171202.m');disp('FINISHED');exit;"

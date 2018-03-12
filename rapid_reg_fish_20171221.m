@@ -26,7 +26,7 @@ else
         param.ppath = '/home/jkinney';
         addpath([param.ppath '/lotus-registration']);
         param.ipath = '/om/project/boyden/DualLensLightField/12_21_17_40X_fish/video';
-        param.opath = '/om/scratch/Mon/jkinney/fish/20171221';
+        param.opath = '/om/scratch/Tue/jkinney/fish/20171221';
         param.spath = '/om/user/jkinney/DLFM/fish/20171221';
         param.inter = [param.spath '/interpolate/'];
 
@@ -56,8 +56,7 @@ param.voxel_z = 4.0;     % um
 
 param.m = 126;
 param.n = 500;
-%next = param.m;
-next = 161;
+next = param.m;
 
 param.rapid = true;
 

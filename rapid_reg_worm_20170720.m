@@ -26,7 +26,7 @@ else
         param.ppath = '/home/jkinney';
         addpath([param.ppath '/lotus-registration']);
 	    param.ipath = '/om/user/ehoseini/MyData/DuallensLightField/7_20_17/video_1';
-        param.opath = '/om/scratch/Wed/jkinney/worm/20170720';
+        param.opath = '/om/scratch/Tue/jkinney/worm/20170720';
 	    param.spath = '/om/user/jkinney/DLFM/worm/20170720';
         param.inter = [param.spath '/interpolate/'];
 
@@ -56,9 +56,7 @@ param.voxel_z = 4.0;     % um
 
 param.m = 13;
 param.n = 300;
-%next = param.m;
-next = 31;
-%last = 30;
+next = param.m;
 last = param.n;
 
 param.rapid = true;

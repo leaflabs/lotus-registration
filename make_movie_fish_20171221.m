@@ -26,7 +26,7 @@ else
         param.ppath = '/home/jkinney';
         addpath([param.ppath '/lotus-registration']);
         param.ipath = '/om/project/boyden/DualLensLightField/12_21_17_40X_fish/video';
-        param.opath = '/om/scratch/Mon/jkinney/fish/20171221';
+        param.opath = '/om/scratch/Tue/jkinney/fish/20171221';
         param.spath = '/om/user/jkinney/DLFM/fish/20171221';
         param.inter = [param.spath '/interpolate/'];
 end
@@ -38,7 +38,6 @@ param.savePath = [param.opath '/registration/'];
 
 param.m = 126;
 param.n = 500;
-
 
 param.fpattern = 'Recon3D_solver_1_FrameNumber_%04d.mat';
 

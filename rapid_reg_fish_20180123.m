@@ -13,21 +13,21 @@ setup_par
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
         param.ppath = '/Users/justin/Desktop/DLFM';
         addpath([param.ppath '/lotus-registration']);
-        param.ipath = [param.ppath '/worm/20171215'];
-        param.opath = param.ipath;
+        param.ipath = [param.ppath '/fish/20180123'];
+        param.opath = param.ipath;;
         param.inter = [param.ipath '/interpolate/'];
 elseif ~isempty(strfind(param.hostname, 'willis'))
         param.ppath = '/home/jkinney/Desktop/DLFM';
         addpath([param.ppath '/lotus-registration']);
-        param.ipath = [param.ppath '/worm/20171215'];
+        param.ipath = [param.ppath '/fish/20180123'];
         param.opath = param.ipath;
         param.inter = [param.ipath '/interpolate/'];
 else
         param.ppath = '/home/jkinney';
         addpath([param.ppath '/lotus-registration']);
-        param.ipath = '/om/project/boyden/DualLensLightField/12_15_17_40X_worm/video 1';
-        param.opath = '/om/scratch/Tue/jkinney/worm/20171215';
-        param.spath = '/om/user/jkinney/DLFM/worm/20171215';
+ 	param.ipath = '/om/project/boyden/DualLensLightField/01_23_18_NLS/video1';
+        param.opath = '/om/scratch/Tue/jkinney/fish/20180123';
+        param.spath = '/om/user/jkinney/DLFM/fish/20180123';
         param.inter = [param.spath '/interpolate/'];
 
 	C = strsplit(param.opath,'/');
@@ -50,12 +50,12 @@ param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
 param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];
 
 param.savePath = [param.opath '/registration/'];
-param.voxel_x = 0.323/2; % um
-param.voxel_y = 0.323/2; % um
-param.voxel_z = 2.0;     % um
+param.voxel_x = 0.323; % um
+param.voxel_y = 0.323; % um
+param.voxel_z = 4.0;     % um
 
 param.m = 1;
-param.n = 1000;
+param.n = 500;
 next = param.m;
 
 param.rapid = true;

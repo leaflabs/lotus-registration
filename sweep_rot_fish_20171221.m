@@ -24,7 +24,7 @@ else
 	param.ppath = '/home/jkinney';
 	addpath([param.ppath '/lotus-registration']);
  	param.ipath = '/om/project/boyden/DualLensLightField/12_21_17_40X_fish/video';
-        param.opath = '/om/scratch/Mon/jkinney/fish/20171221';
+        param.opath = '/om/scratch/Tue/jkinney/fish/20171221';
 end
 param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
 param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];
