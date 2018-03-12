@@ -1109,7 +1109,7 @@ xlabel('iteration');
 ylabel('offset in dim 1 (um)');
 hold on;
 plot(1,param.offsetvec(1,1),'ro');
-plot(a(1),param.bestd(1),'bo');
+plot(a(1),param.bestd(1),'gs');
 hold off;
 xlim([1 a(1)]);
 
@@ -1119,7 +1119,7 @@ xlabel('iteration');
 ylabel('offset in dim 2 (um)');
 hold on;
 plot(1,param.offsetvec(1,2),'ro');
-plot(a(1),param.bestd(2),'bo');
+plot(a(1),param.bestd(2),'gs');
 hold off;
 xlim([1 a(1)]);
 
@@ -1129,14 +1129,14 @@ xlabel('iteration');
 ylabel('offset in dim 3 (um)');
 hold on;
 plot(1,param.offsetvec(1,3),'ro');
-plot(a(1),param.bestd(3),'bo');
+plot(a(1),param.bestd(3),'gs');
 hold off;
 xlim([1 a(1)]);
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-str = 'trajectory of simulated annealing';
-text(0.4,0.97,str,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
+str = 'trajectory of simulated annealing (Green squares are best of null)';
+text(0.4,0.97,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
 if 0>1
     fname = sprintf('%s_offset.fig',prefix);
@@ -1161,7 +1161,7 @@ yyaxis left;
 plot(x,yrad),'k';
 hold on;
 plot(1,param.rotvec(1,1),'ro');
-plot(a(1),param.bestr(1),'bo');
+plot(a(1),param.bestr(1),'gs');
 hold off;
 
 xlabel('iteration');
@@ -1185,7 +1185,7 @@ yyaxis left;
 plot(x,yrad),'k';
 hold on;
 plot(1,param.rotvec(1,2),'ro');
-plot(a(1),param.bestr(2),'bo');
+plot(a(1),param.bestr(2),'gs');
 hold off;
 
 xlabel('iteration');
@@ -1209,7 +1209,7 @@ yyaxis left;
 plot(x,yrad),'k';
 hold on;
 plot(1,param.rotvec(1,3),'ro');
-plot(a(1),param.bestr(3),'bo');
+plot(a(1),param.bestr(3),'gs');
 hold off;
 
 xlabel('iteration');
@@ -1225,8 +1225,8 @@ set(h2, 'Visible' ,'off');
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-str = 'trajectory of simulated annealing (RHS axis is degrees)';
-text(0.1,0.98,str,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
+str = 'trajectory of simulated annealing (RHS axis is degrees, green squares are best of null.)';
+text(0.1,0.98,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
 if 0>1
     fname = sprintf('%s_rot.fig',prefix);
