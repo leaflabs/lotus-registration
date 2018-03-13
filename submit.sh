@@ -6,6 +6,8 @@ sbatch lotus-registration/bead_20180302.sh
 sbatch lotus-registration/fish_20171202.sh
 sbatch lotus-registration/fish_20171221.sh
 sbatch lotus-registration/fish_20180123.sh
+sbatch lotus-registration/fish_20180227_vid1.sh
+sbatch lotus-registration/fish_20180227_vid2.sh
 sbatch lotus-registration/worm_20170720.sh
 sbatch lotus-registration/worm_20171012.sh
 sbatch lotus-registration/worm_20171114.sh
