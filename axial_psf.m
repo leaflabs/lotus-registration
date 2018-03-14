@@ -48,9 +48,8 @@ index = [];
 z = [];
 bead_psf_DDLFM = [];
 bead_psf_LFM2 = [];
-%for i=1:a(1)
-for i=1:4
-
+for i=1:a(1)
+%for i=1:4
     if ~isempty(find(blacklist==i))
         msg = sprintf('Skipping index %d since blacklisted.',i);
         disp(msg);
@@ -84,6 +83,10 @@ for i=1:4
         = sliceYZ(DDLFM, row, col, z, config, sprintf('%s/%s_bead%03d_YZ.png',psfpath,suffix(1:end-4),i));
     [bead_center_y_2, fwhm_y_2, bead_center_x, fwhm_x] ...
         = sliceYX(DDLFM, row, col, z, config, sprintf('%s/%s_bead%03d_YX.png',psfpath,suffix(1:end-4),i));
+    bead_center_y_1 = bead_center_y_1 + config.clip(1)*config.pixel;
+    bead_center_y_2 = bead_center_y_2 + config.clip(1)*config.pixel;
+    bead_center_x = bead_center_x + config.clip(3)*config.pixel;
+    bead_center_z = bead_center_z + config.clip(5)*config.zspacing;
     if fwhm_y_1 > 0 & fwhm_y_2 > 0 & fwhm_x > 0 & fwhm_z > 0
         bead_psf_DDLFM = [bead_psf_DDLFM;[z, bead_center_y_1, fwhm_y_1, bead_center_z, fwhm_z, bead_center_y_2, fwhm_y_2, bead_center_x, fwhm_x]];
         %index = [index i];
@@ -123,6 +126,7 @@ for i=1:4
     if fwhm_y_1 > 0 & fwhm_y_2 > 0 & fwhm_x > 0 & fwhm_z > 0
         bead_psf_LFM2 = [bead_psf_LFM2;[z, bead_center_y_1, fwhm_y_1, bead_center_z, fwhm_z, bead_center_y_2, fwhm_y_2, bead_center_x, fwhm_x]];
     end
+    %keyboard
     close all;
 end
 end
@@ -157,6 +161,11 @@ axialVals = plot_axial_psf_cropped(config, h, csec_cropped);
     dim,size(csec_cropped),z,0);
 %axialC = axialPSF (config, h, axialVals, crop_index,...
 %    dim,size(csec_cropped),z,0);
+
+
+bead_center_y = bead_center_y + (crop_index(1)-1)*config.pixel;
+bead_center_x = bead_center_x + (crop_index(3)-1)*config.pixel;
+
 figure(h);
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
@@ -192,11 +201,16 @@ axialVals = plot_axial_psf_cropped(config, h, csec_cropped);
     dim,size(csec_cropped),z,0);
 %axialC = axialPSF (config, h, axialVals, crop_index,...
 %    dim,size(csec_cropped),z,0);
+
+bead_center_y = bead_center_y + (crop_index(1)-1)*config.pixel;
+bead_center_z = bead_center_z + (crop_index(3)-1)*config.zspacing;
+
 figure(h);
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
 text(0.05,0.97,beadname,'FontSize',10,'Color',[0 0 0],'Interpreter','none');
 print(h,beadname,'-dpng');
+%keyboard
 end
 
 function [bead_center, fwhm] = latPSFx (config, handle, axialVals, crop_index, dim, b, z, myflag)
@@ -503,7 +517,7 @@ else
     % calculate bead center
     bead_center = 0.5*(latPosInt1+latPosInt0);
 end
-
+%keyboard
 figure(handle);
 %subplot(2,2,2);
 %text(0.1,15.0,myStr,'FontSize',6);
