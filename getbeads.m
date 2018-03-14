@@ -1,6 +1,5 @@
 function getbeads (fvec, outpath)
 for i=1:length(fvec)
-    
     fname = [fvec(i).folder '/' fvec(i).name]
     load(fname);
     if exist('Xvolume','var')
