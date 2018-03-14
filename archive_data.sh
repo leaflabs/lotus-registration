@@ -9,6 +9,8 @@ declare -a arr=(
 "fish/20171202/interpolate"
 "fish/20171221/interpolate"
 "fish/20180123/interpolate"
+"fish/20180227/vid1/interpolate"
+"fish/20180227/vid2/interpolate"
 "worm/20170720/interpolate"
 "worm/20171012/interpolate"
 "worm/20171114/registration"
