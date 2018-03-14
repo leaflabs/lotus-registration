@@ -34,7 +34,7 @@ if 0 > 1
     end
 end
 
-if 0 < 1
+if 0 > 1
 config = struct;
 crop_um = 20;
 config.zspacing = 0.5;
@@ -149,7 +149,7 @@ fprintf('\n# Output file = %s\n',filename);
 %% fwhm dim i vs fwhm dim j
 h = figure();
 
-subplot(2,1,1);
+subplot(3,1,1);
 daspect([1,1,1]);
 hold on;
 plot(fwhm_2_DDLFM,fwhm_1_DDLFM,'k*');
@@ -166,7 +166,7 @@ xlabel('fwhm dim 2 or width (um)');
 ylabel('fwhm dim 1 or height (um)');
 title(['Full-width at Half-Max,  N = ' num2str(length(bead_mat_DDLFM)) ' beads']);
 
-subplot(2,1,2);
+subplot(3,1,2);
 daspect([1,1,1]);
 hold on;
 plot(fwhm_3_DDLFM,fwhm_1_DDLFM,'k*');
@@ -181,6 +181,26 @@ plot([1 m],[1 m],'b--');
 hold off;
 xlabel('fwhm dim 3 or depth (um)');
 ylabel('fwhm dim 1 or height (um)');
+
+subplot(3,1,3);
+hold on;
+plot(1*ones(numel(fwhm_1_DDLFM),1),fwhm_1_DDLFM,'k*');
+plot(2*ones(numel(fwhm_2_DDLFM),1),fwhm_2_DDLFM,'k*');
+plot(3*ones(numel(fwhm_3_DDLFM),1),fwhm_3_DDLFM,'k*');
+plot(4*ones(numel(fwhm_1_LFM2),1),fwhm_1_LFM2,'rd');
+plot(5*ones(numel(fwhm_2_LFM2),1),fwhm_2_LFM2,'rd');
+plot(6*ones(numel(fwhm_3_LFM2),1),fwhm_3_LFM2,'rd');
+hold off;
+yl = ylim;
+ylim([0 15]);
+xlim([0 7]);
+ylabel('fwhm (um)');
+text(1,-5,'DDLFM dim1','FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(2,-5,'DDLFM dim2','FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(3,-5,'DDLFM dim3','FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(4,-5,'LFM2 dim1','FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(5,-5,'LFM2 dim2','FontSize',8,'Color',[0 0 0],'Interpreter','none');
+text(6,-5,'LFM2 dim3','FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
