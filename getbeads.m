@@ -14,6 +14,7 @@ for i=1:length(fvec)
     figure(1);
     dynamic_range = round(log2(max(max(xy))));
     imagesc(xy,[0 2^dynamic_range]);
+    daspect([1,1,1]);
     xlabel('x');
     ylabel('y');
     colorbar();
