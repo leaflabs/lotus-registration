@@ -8,7 +8,7 @@ param = init_param();
 [~,hostname] = system('hostname')
 param.hostname = strtrim(hostname);
 
-setup_par
+%setup_par
 
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
         param.ppath = '/Users/justin/Desktop/DLFM';
@@ -56,9 +56,13 @@ param.voxel_z = 4.0;     % um
 
 param.m = 1;
 param.n = 500;
-next = param.m;
+%next = param.m;
+next = 298;
+
+next = read_next(param.savePath,'Recon3D_solver_1_FrameNumber_','.mat');
 
 param.rapid = true;
+param.parallel = false;
 
 param = read_logs(param);
 
