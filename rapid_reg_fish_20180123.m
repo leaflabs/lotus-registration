@@ -11,13 +11,13 @@ param.hostname = strtrim(hostname);
 %setup_par
 
 if ~isempty(strfind(param.hostname, 'Justins-Mac'))
-        param.ppath = '/Users/justin/Desktop/DLFM';
+        param.ppath = '/Users/justin/Desktop/DDLFM';
         addpath([param.ppath '/lotus-registration']);
         param.ipath = [param.ppath '/fish/20180123'];
         param.opath = param.ipath;;
         param.inter = [param.ipath '/interpolate/'];
 elseif ~isempty(strfind(param.hostname, 'willis'))
-        param.ppath = '/home/jkinney/Desktop/DLFM';
+        param.ppath = '/home/jkinney/Desktop/DDLFM';
         addpath([param.ppath '/lotus-registration']);
         param.ipath = [param.ppath '/fish/20180123'];
         param.opath = param.ipath;
@@ -57,7 +57,7 @@ param.voxel_z = 4.0;     % um
 param.m = 1;
 param.n = 500;
 %next = param.m;
-next = 298;
+%next = 298;
 
 next = read_next(param.savePath,'Recon3D_solver_1_FrameNumber_','.mat');
 
