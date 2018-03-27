@@ -13,18 +13,19 @@ else
 end
 
 timestamp = [datestr(datetime('now'),'yyyymmdd_HHMMSS')];
-fname = sprintf('%s/%s.log',ppath, timestamp);
+fname = sprintf('%s/measurePSF_%s.log',ppath, timestamp);
 diary(fname)
 tic
 
 ddlfm = {
-    'bead/20170915',
+    %'bead/20170915',
     %'bead/20180109', 40x
-    'bead/20180227',
-    'bead/20180302',
+    %'bead/20180227',
+    %'bead/20180302',
+    'bead/20180319',
     };
 %%
-if 0 > 1
+if 0 < 1
     for i=1:numel(ddlfm)
         opath = [ppath '/' ddlfm{i} '/registration/'];
         p = [opath '*_multiply_sqrt.mat'];
@@ -34,7 +35,7 @@ if 0 > 1
     end
 end
 
-if 0 > 1
+if 0 < 1
 config = struct;
 crop_um = 20;
 config.zspacing = 0.5;
@@ -142,7 +143,7 @@ axes(ax1);
 myStr = 'DDLFM = black asterick, LFM2 = red diamond';
 text(0.4,0.9,myStr,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
-filename=sprintf('%s/%s_fwhm_vs_pos.png',outpath,timestamp);
+filename=sprintf('%s/measurePSF_%s_fwhm_vs_pos.png',outpath,timestamp);
 print(h,filename,'-dpng');
 fprintf('\n# Output file = %s\n',filename);
 
@@ -207,7 +208,7 @@ axes(ax1);
 myStr = 'DDLFM = black asterick, LFM2 = red diamond';
 text(0.4,0.9,myStr,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
-filename=sprintf('%s/%s_fwhm_vs_fwhm.png',outpath,timestamp);
+filename=sprintf('%s/measurePSF_%s_fwhm_vs_fwhm.png',outpath,timestamp);
 print(h,filename,'-dpng');
 fprintf('\n# Output file = %s\n',filename);
 end
