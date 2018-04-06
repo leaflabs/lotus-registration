@@ -94,7 +94,6 @@ else
 end
 
 %% plot
-%colors = {'k','r','b','g'};
 %symbols = {'o','+','*','.','x','s','d','^','v','>','<','p','h'};
 symbols = {'o'};
 colors = {};
@@ -102,8 +101,8 @@ for i=1:numel(d)
     colors{i}=rand(1,3);
 end
 plot_raw(out, opath, colors, symbols, d);
-plot_beads(out, beads_trans, opath, colors, voxel_size );
 keyboard
+plot_beads(out, beads_trans, opath, colors, voxel_size );
 fwhm = [];
 spread = calcSpread(bl, beads, voxel_size);
 plot_spread(spread, ppath, colors, fwhm);
@@ -169,65 +168,84 @@ end
 
 function out = getSize (v)
 out = v * v * 4;
+%out = 12;
 end
 
-%%
-function plot_raw (out, ppath, colors, symbols, d)
-
-a = numel(out);
-h = figure;
-
-subplot(1,3,1);
-hold on;
-j=0;
-for i=1:a
-    b = size(out{i});
-    if ~isempty(strfind(d(i).name, 'before'))
+function color = getColor (fname, C)
+if 0<1
+    if ~isempty(strfind(fname, 'before'))
         color = 'k';
-    elseif ~isempty(strfind(d(i).name, 'after'))
+    elseif ~isempty(strfind(fname, 'after'))
         color = 'r';
     else
         color = 'y';
     end
-    %
+else
+    color = C;
+end
+end
+
+function plotOffset (out, symbols, d, colors, index)
+hold on;
+j=0;
+for i=1:numel(out)
+    % set color
+    color = getColor(d(i).name, colors{i});
+    % set symbol
     j=j+1;
-    if j>numel(symbols);
+    if j>numel(symbols)
         j=1;
     end
+    symbol = symbols{j};
+    % set symbol size
     s = getSize(out{i}.final_MI_frac);
-    plot( 0, out{i}.offsetF(1), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',s);
-    %plot( 0, out{i}.offsetI(1), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',8);
-    plot( 0, out{i}.offsetI(1), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
+    % plot
+    plot( 0, out{i}.offsetF(index), 'Marker', symbol, 'Color', color, 'MarkerSize',s);
+    plot( 0, out{i}.offsetI(index), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
 end
 hold off;
+end
+
+function plotRot (out, symbols, d, colors, index)
+hold on;
+j=0;
+for i=1:numel(out)
+    % set color
+    color = getColor(d(i).name, colors{i});
+    % set symbol
+    j=j+1;
+    if j>numel(symbols)
+        j=1;
+    end
+    symbol = symbols{j};
+    % set symbol size
+    s = getSize(out{i}.final_MI_frac);
+    % plot
+    plot( 0, out{i}.rot(index), 'Marker', symbol, 'Color', color, 'MarkerSize',s);
+    %plot( 0, out{i}.angle(1), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',8 );
+    plot( 0, out{i}.angle(index), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
+end
+hold off;
+end
+
+
+
+
+%%
+function plot_raw (out, ppath, colors, symbols, d)
+
+%a = numel(out);
+f = figure;
+
+subplot(1,3,1);
+plotOffset (out, symbols, d, colors, 1);
 ylabel('offset in dim 1 (um)');
 set(gca,'xtick',[]);
 y = ylim;
 del = y(2)-y(1);
 
 subplot(1,3,2);
-hold on;
-j=0;
-for i=1:a
-    b = size(out{i});
-    if ~isempty(strfind(d(i).name, 'before'))
-        color = 'k';
-    elseif ~isempty(strfind(d(i).name, 'after'))
-        color = 'r';
-    else
-        color = 'y';
-    end
-    %
-    j=j+1;
-    if j>numel(symbols);
-        j=1;
-    end
-    s = getSize(out{i}.final_MI_frac);
-    plot( 0, out{i}.offsetF(2), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',s);
-    %plot( 0, out{i}.offsetI(2), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',8);
-    plot( 0, out{i}.offsetI(2), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
-end
-hold off;
+plotOffset (out, symbols, d, colors, 2);
 ylabel('offset in dim 2 (um)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -237,28 +255,7 @@ if ndel > del
 end
 
 subplot(1,3,3);
-hold on;
-j=0;
-for i=1:a
-    b = size(out{i});
-    if ~isempty(strfind(d(i).name, 'before'))
-        color = 'k';
-    elseif ~isempty(strfind(d(i).name, 'after'))
-        color = 'r';
-    else
-        color = 'y';
-    end
-    %
-    j=j+1;
-    if j>numel(symbols);
-        j=1;
-    end
-    s = getSize(out{i}.final_MI_frac);
-    plot( 0, out{i}.offsetF(3), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',s);
-    %plot( 0, out{i}.offsetI(3), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',8);
-    plot( 0, out{i}.offsetI(3), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
-end
-hold off;
+plotOffset (out, symbols, d, colors, 3);
 ylabel('offset in dim 3 (um)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -287,39 +284,19 @@ ylim([y(1)-m y(2)+m]);
 
 % ax1 = axes('Position',[0 0 1 1],'Visible','off');
 % axes(ax1);
-% str = sprintf('Repeatability of registration parameters (N = %d bead samples)',a);
-% text(0.15,0.97,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
-% str = sprintf('Circles are final values. Asterisks are initial guesses.\nDifferent colors are different samples. Each sample was registered multiple times.');
-% text(0.15,0.06,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+% str = sprintf('Circles are final parameter values. Dots are initial parameter values.');
+% text(0.15,0.08,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+% str = sprintf('Black circles are volumes before live sample. Red circles are volumes after live sample.');
+% text(0.15,0.04,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
 str = [ppath '/distribution_offset.png'];
-print(h,str,'-dpng');
+print(f,str,'-dpng');
 
 % rotation
 h = figure;
 
 subplot(1,3,1);
-hold on;
-j=0;
-for i=1:a
-    b = size(out{i});
-    if ~isempty(strfind(d(i).name, 'before'))
-        color = 'k';
-    elseif ~isempty(strfind(d(i).name, 'after'))
-        color = 'r';
-    else
-        color = 'y';
-    end
-    j=j+1;
-    if j>numel(symbols);
-        j=1;
-    end
-    s = getSize(out{i}.final_MI_frac);
-    plot( 0, out{i}.rot(1), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',s);
-    %plot( 0, out{i}.angle(1), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',8 );
-    plot( 0, out{i}.angle(1), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
-end
-hold off;
+plotRot (out, symbols, d, colors, 1);
 ylabel('rotation around dim 1 (radians)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -327,27 +304,7 @@ del = y(2)-y(1);
 
 
 subplot(1,3,2);
-hold on;
-j=0;
-for i=1:a
-    b = size(out{i});
-    if ~isempty(strfind(d(i).name, 'before'))
-        color = 'k';
-    elseif ~isempty(strfind(d(i).name, 'after'))
-        color = 'r';
-    else
-        color = 'y';
-    end
-    j=j+1;
-    if j>numel(symbols);
-        j=1;
-    end
-    s = getSize(out{i}.final_MI_frac);
-    plot( 0, out{i}.rot(2), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',s);
-    %plot( 0, out{i}.angle(2), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',8 );
-    plot( 0, out{i}.angle(2), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
-end
-hold off;
+plotRot (out, symbols, d, colors, 2);
 ylabel('rotation around dim 2 (radians)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -357,27 +314,7 @@ if ndel > del
 end
 
 subplot(1,3,3);
-hold on;
-j=0;
-for i=1:a
-    b = size(out{i});
-    if ~isempty(strfind(d(i).name, 'before'))
-        color = 'k';
-    elseif ~isempty(strfind(d(i).name, 'after'))
-        color = 'r';
-    else
-        color = 'y';
-    end
-    j=j+1;
-    if j>numel(symbols);
-        j=1;
-    end
-    s = getSize(out{i}.final_MI_frac);
-    plot( 0, out{i}.rot(3), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',s);
-    %plot( 0, out{i}.angle(3), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',8 );
-    plot( 0, out{i}.angle(3), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
-end
-hold off;
+plotRot (out, symbols, d, colors, 3);
 ylabel('rotation around dim 3 (radians)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -406,10 +343,10 @@ ylim([y(1)-m y(2)+m]);
 
 % ax1 = axes('Position',[0 0 1 1],'Visible','off');
 % axes(ax1);
-% str = sprintf('Repeatability of registration parameters (N = %d bead samples)',a);
-% text(0.15,0.97,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
-% str = sprintf('Circles are final values. Asterisks are initial guesses.\nDifferent colors are different samples. Each sample was registered multiple times.');
-% text(0.15,0.06,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+% str = sprintf('Circles are final parameter values. Dots are initial parameter values.');
+% text(0.15,0.08,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+% str = sprintf('Black circles are volumes before live sample. Red circles are volumes after live sample.');
+% text(0.15,0.04,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
 str = [ppath '/distribution_rotation.png'];
 print(h,str,'-dpng');
