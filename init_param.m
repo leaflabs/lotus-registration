@@ -28,6 +28,7 @@ param.Pepsilon = 0.02; % fraction, error allowed for finding T that matches Pmel
 param.T0 = 1e9;
 param.TC0 = 10000;
 param.Nnull = 2000;
+param.confocal = false;
 
 param.psf   = [-1.0 -1.0 -1.0]; %um
 %param.offset = [-8 -30 0];
