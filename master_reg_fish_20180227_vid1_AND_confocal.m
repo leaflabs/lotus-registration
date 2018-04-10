@@ -41,14 +41,16 @@ param.interp = 1;
 param.angle   = [-1.0*pi/2 0 pi]; % radians
 param.Nnull = 100;
 param.confocal = true;
+param.transform = true;
+param.rapid = true;
 
 param
 
 param.inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
 register(param)
-close all;
-
-param.inputFileName = {'Recon3D_solver_1_FrameNumber_0500.mat'};
-register(param)
-close all;
+% close all;
+% 
+% param.inputFileName = {'Recon3D_solver_1_FrameNumber_0500.mat'};
+% register(param)
+% close all;
 
