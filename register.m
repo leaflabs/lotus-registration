@@ -76,16 +76,16 @@ print_fraction(param.index2,LFM2,'LFM2');
 pos2 = init_pos(param.index2,LFM2,param);
 
 %% coarse alignment of LFM2 to LFM1
+
+% rotate
 param.centroid = calc_centroid(LFM2,param);
 canonical = translate (pos2, -param.centroid);
-rotated = rotate (canonical,param.rot+param.angle);
-param.rot = param.rot + param.angle;
-%new = translate (rotated, param.centroid+param.offset);
+rotated = rotate (canonical,param.angle);
+param.rot = param.angle;
 new = translate (rotated, param.centroid);
-%param.trans = param.centroid + param.offset;
 param.trans = param.centroid;
 
-%% estimate offsets
+% estimate offsets
 offsets = estimate_offsets(LFM1, LFM2, new, param);
 for i=1:3
     if ~isempty(param.offset{i})
@@ -553,7 +553,11 @@ param.trans_amp = offset_limit;
 %tmp = param.rot_amp;
 gain = pi;
 tmp = param.rot_amp;
-param.rot_amp = [1 0 0];
+if param.confocal
+    param.rot_amp = [1 1 1];
+else
+    param.rot_amp = [1 0 0];
+end
 %N = param.Nnull;
 param.bestMI = 0;
 param.bestd = [];
