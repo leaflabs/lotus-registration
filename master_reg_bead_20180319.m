@@ -40,7 +40,9 @@ param.voxel_z = 4.0;     % um
 
 param
 
-for i=0:99
+start = 5;
+
+for i=start:99
 	param.inputFileName = {'Recon3D_1_Mono_N15.mat'};
 	register(param)
 	close all;

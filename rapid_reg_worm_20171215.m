@@ -56,7 +56,8 @@ param.voxel_z = 2.0;     % um
 
 param.m = 1;
 param.n = 1000;
-next = param.m;
+%next = param.m;
+next = 846;
 
 param.rapid = true;
 

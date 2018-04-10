@@ -37,6 +37,9 @@ param.voxel_x = 0.323; % um
 param.voxel_y = 0.323; % um
 param.voxel_z = 4.0;     % um
 
+%param.N = 20000;
+param.pop_thresh = 0.997; %HARDCODED
+
 param
 
 param.inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};

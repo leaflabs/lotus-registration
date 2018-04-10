@@ -59,7 +59,7 @@ param.n = 500;
 %next = param.m;
 %next = 298;
 
-next = read_next(param.savePath,'Recon3D_solver_1_FrameNumber_','.mat');
+next = read_next(param.savePath,'Recon3D_solver_1_FrameNumber_','.mat')
 
 param.rapid = true;
 param.parallel = false;
