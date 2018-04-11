@@ -41,16 +41,31 @@ param.interp = 1;
 param.angle   = [-1.0*pi/2 0 pi]; % radians
 param.Nnull = 100;
 param.confocal = true;
-param.transform = true;
-param.rapid = true;
 
 param
 
-param.inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
-register(param)
-% close all;
-% 
-% param.inputFileName = {'Recon3D_solver_1_FrameNumber_0500.mat'};
-% register(param)
-% close all;
+if 0>1
+    param.inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
+    register(param)
+    % close all;
+    %
+    % param.inputFileName = {'Recon3D_solver_1_FrameNumber_0500.mat'};
+    % register(param)
+    % close all;
+else
+    param.rapid = true;
+    param.inputFileName = {'Recon3D_solver_1_FrameNumber_0001.mat'};
+    % from /Users/justin/Desktop/DDLFM/fish/20180227/interpolate/
+    % Recon3D_solver_1_FrameNumber_0001__20180407_131819.log
+    param.trans = [302.8636 192.9936 77.8453];
+    param.rot = [-1.4239 0.0069 3.1928];
+    %param.centroid = [298.4520 298.4520 142];
+    register(param)
+end
+
+
+
+
+
+
 

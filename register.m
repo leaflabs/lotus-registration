@@ -25,6 +25,16 @@ fprintf('\nLoading volume %s\n\n',f);
 LFM2 = loadData(f, param);
 param.voxel_z = param.voxel_z / param.interp;
 
+%% if just transforming confocal data
+if param.rapid & param.confocal
+    tmp = LFM1;
+    LFM1 = LFM2;
+    LFM2 = ones(size(LFM2),'uint16');
+    param.rot = -param.rot;
+    param.centroid = calc_centroid(LFM2,param);
+    param.trans = param.centroid;
+end
+
 %% if registration parameters are already known
 %  then combine registered volumes
 if param.rapid
