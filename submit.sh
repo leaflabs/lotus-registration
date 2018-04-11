@@ -4,6 +4,7 @@ sbatch lotus-registration/bead_20180109.sh
 sbatch lotus-registration/bead_20180227.sh
 sbatch lotus-registration/bead_20180302.sh
 sbatch lotus-registration/bead_20180319.sh
+sbatch lotus-registration/bead_20180328.sh
 sbatch lotus-registration/fish_20171202.sh
 sbatch lotus-registration/fish_20171221.sh
 sbatch lotus-registration/fish_20180123.sh
