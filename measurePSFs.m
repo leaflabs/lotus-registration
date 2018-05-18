@@ -22,10 +22,11 @@ ddlfm = {
     %'bead/20180109', 40x
     %'bead/20180227',
     %'bead/20180302',
-    'bead/20180319',
+    %'bead/20180319',
+    'bead/20180406',
     };
 %%
-if 0 < 1
+if 0 > 1
     for i=1:numel(ddlfm)
         opath = [ppath '/' ddlfm{i} '/registration/'];
         p = [opath '*_multiply_sqrt.mat'];
