@@ -28,6 +28,7 @@ else
 	param.ipath = '/om/user/jkinney/DLFM/bead/20180328';
 	param.opath = param.ipath;
         %param.opath = '/om/scratch/Tue/jkinney/bead/20180328';
+    param.parallel = false;
 end
 param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
 param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];
@@ -43,17 +44,11 @@ param.rot_amp = [0.3 0.1 0.1];
 
 param
 
-i=3;
-param.inputFileName = {['Recon3D_after_' num2str(i) '_Mono_N15.mat']};
+i=8
+param.inputFileName = {['Recon3D_before_' num2str(i) '_Mono_N15.mat']};
 register(param)
 close all;
 
-for i=4:6
-	param.inputFileName = {['Recon3D_before_' num2str(i) '_Mono_N15.mat']};
-	register(param)
-	close all;
-	
-	param.inputFileName = {['Recon3D_after_' num2str(i) '_Mono_N15.mat']};
-	register(param)
-	close all;
-end
+param.inputFileName = {['Recon3D_after_' num2str(i) '_Mono_N15.mat']};
+register(param)
+close all;
