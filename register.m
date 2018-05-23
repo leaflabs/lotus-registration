@@ -137,8 +137,8 @@ else
     keyboard;
 end
 w = find(param.centers>MI,1); % keep only first instance
-if MI > max(nullMIvec)
-    fprintf('\npre-coarse MI frac = %.5g\n\n',double(MI)/double(max(nullMIvec)));
+if MI > param.bestMI
+    fprintf('\npre-coarse MI frac = %.5g\n\n',double(MI)/double(param.bestMI));
 elseif ~isempty(w)
     fprintf('\npre-coarse MI frac = %.5g\n\n',param.cdf(w));
 else
@@ -153,8 +153,8 @@ else
     keyboard;
 end
 w = find(param.centers>MI,1); % keep only first instance
-if MI > max(nullMIvec)
-    fprintf('\npost-coarse MI frac = %.5g\n\n',double(MI)/double(max(nullMIvec)));
+if MI > param.bestMI
+    fprintf('\npost-coarse MI frac = %.5g\n\n',double(MI)/double(param.bestMI));
 elseif ~isempty(w)
     fprintf('\npost-coarse MI frac = %.5g\n\n',param.cdf(w));
 else
@@ -549,9 +549,15 @@ end
 function [cdf, centers, nullMIvec, param] = null_distribution (LFM1, LFM2, canonical, param)
 nullf = [param.savePath param.inputFileName{1}(1:end-4) '_null.mat'];
 if exist(nullf,'file') == 2
-    load(nullf,'nullMIvec');
+    load(nullf,'nullMIvec','bestMI','bestd','bestr');
+    param.bestMI = bestMI;
+    param.bestd = bestd;
+    param.bestr = bestr;
 else
     nullMIvec = [];
+    param.bestMI = 0;
+    param.bestd = [];
+    param.bestr = [];
 end
 LL = length(nullMIvec);
 fprintf('\nnull distribution has N = %d\n',LL);
@@ -568,10 +574,6 @@ if param.confocal
 else
     param.rot_amp = [1 0 0];
 end
-%N = param.Nnull;
-param.bestMI = 0;
-param.bestd = [];
-param.bestr = [];
 %profile on;
 fprintf('\nCount    Mutual_Information                Offset [um]                        Rotation [radians]\n');
 % if param.parallel
@@ -649,7 +651,11 @@ param.rot_amp = tmp;
 
 % add to existing null distribution if any
 fprintf('\nnull distribution has N = %d, was N = %d\n',length(nullMIvec),LL);
-save(nullf,'nullMIvec');
+bestMI = param.bestMI;
+bestd = param.bestd;
+bestr = param.bestr;
+save(nullf,'nullMIvec','bestMI','bestd','bestr');
+fprintf('\nnull distribution saved as %s\n',nullf);
 
 if ~param.parallel
     fprintf('\nBest of null:\n');
@@ -657,6 +663,7 @@ if ~param.parallel
     fprintf('d = [%f %f %f]\n',param.bestd(1),param.bestd(2),param.bestd(3));
     fprintf('r = [%f %f %f]\n\n',param.bestr(1),param.bestr(2),param.bestr(3));
 end
+keyboard
 % CDF
 centers = linspace(min(nullMIvec),max(nullMIvec),param.Nnull);
 del = 0.5 * (centers(2)-centers(1));
@@ -842,7 +849,7 @@ w = find(param.centers>last_MI,1); % keep only first instance
 if ~isempty(w)
     param.cdfvec = [param.cdfvec param.cdf(w)];
 else
-    val = double(last_MI)/double(max(param.nullMIvec));
+    val = double(last_MI)/double(param.bestMI);
     param.cdfvec = [param.cdfvec val] ;
 end
 % set initial T
@@ -957,8 +964,8 @@ while 1 > 0
     val7 = param.trans - param.centroid;
     str7 = sprintf('final offset = [%6.6g0 %6.6g0 %6.6g0]',val7(1),val7(2),val7(3));
     w = find(param.centers>last_MI,1); % keep only first instance
-    if last_MI > max(param.nullMIvec)
-        val = double(last_MI)/double(max(param.nullMIvec));
+    if last_MI > param.bestMI
+        val = double(last_MI)/double(param.bestMI);
         str8 = sprintf('MI frac = %.5g, siman exceeds null',val);
         param.cdfvec = [param.cdfvec val] ;
     elseif ~isempty(w)
@@ -968,7 +975,7 @@ while 1 > 0
         disp('WTF?');
         keyboard
     end
-    dif = last_MI - max(param.nullMIvec);
+    dif = last_MI - param.bestMI;
     % last_MI > max(param.nullMIvec) =>dif>0
     % last_MI < max(param.nullMIvec) =>dif<0
     %         if dif > 0
