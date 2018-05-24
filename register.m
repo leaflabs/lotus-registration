@@ -39,7 +39,8 @@ end
 %  then combine registered volumes
 if param.rapid
     % must specify: param.centroid, param.trans, param.rot
-    combineVols_iter_dim3 (LFM1, LFM2, param);
+    out = combineVols_iter_dim3 (LFM1, LFM2, param);
+    MI = mutual_information (LFM1, out, LFM2, param)
     param
     elapsedTime = toc
     diary off;
@@ -352,7 +353,7 @@ else
         out(:,:,i) = combine (LFM1, LFM2, final_pos2, linind, param);
     end
 end
-if ~param.rapid
+if param.saveTIF
     outFile = sprintf('%s_%s.tif',param.timestamp,param.myfunc_combine);
 %     if length(param.myfunc)>4 && strcmp(param.myfunc(end-3:end),'norm')
 %         m = max(max(max(out)));

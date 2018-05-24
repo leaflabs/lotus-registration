@@ -40,6 +40,7 @@ param.angle   = [-1.0*pi/2 0 0]; % radians
 param.rot   = [0 0 0]; % radians
 
 param.lfdisplay = false;
+param.saveTIF = false;
 
 %param.centroid = [169.8834 184.3252 129.1565];
 param.centroid = [-1 -1 -1];
