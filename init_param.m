@@ -58,6 +58,7 @@ param.pop_thresh = 0.999; %HARDCODED
 param.dynamic_range_thresh = 10;
 
 param.rapid = false;
+param.justCalcMI = false;
 param.savevol = true;
 param.plot = true;
 %param.savePath      = '/Users/justin/Desktop/LFM volume registration/';

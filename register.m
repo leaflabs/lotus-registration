@@ -1,20 +1,23 @@
-function register (param)
+function MI = register (param)
+MI = -1;
 
 %%
-param.timestamp = [param.inputFileName{1}(1:end-4) '__' datestr(datetime('now'),'yyyymmdd_HHMMSS')];
-fname = sprintf('%s%s.log',param.savePath, param.timestamp);
-if ~exist(param.savePath,'dir')
-    status = mkdir(param.savePath);
-    if status == 1
-        disp(['Created folder: ' param.savePath]);
-    else
-        disp(['Error attempting to create folder:' param.savePath]);
-        status
-        exit;
+if ~param.justCalcMI
+    param.timestamp = [param.inputFileName{1}(1:end-4) '__' datestr(datetime('now'),'yyyymmdd_HHMMSS')];
+    fname = sprintf('%s%s.log',param.savePath, param.timestamp);
+    if ~exist(param.savePath,'dir')
+        status = mkdir(param.savePath);
+        if status == 1
+            disp(['Created folder: ' param.savePath]);
+        else
+            disp(['Error attempting to create folder:' param.savePath]);
+            status
+            exit;
+        end
     end
+    diary(fname)
+    tic
 end
-diary(fname)
-tic
 
 %% load volumes
 f = [param.inputFilePath1 param.inputFileName{1}];
@@ -40,7 +43,7 @@ end
 if param.rapid
     % must specify: param.centroid, param.trans, param.rot
     out = combineVols_iter_dim3 (LFM1, LFM2, param);
-    MI = mutual_information (LFM1, out, LFM2, param)
+    %MI = mutual_information (LFM1, out, LFM2, param)
     param
     elapsedTime = toc
     diary off;
@@ -85,6 +88,16 @@ param.index2 = find(LFM2>param.threshold2);
 print_fraction(param.index2,LFM2,'LFM2');
 %param.size = size(LFM2);
 pos2 = init_pos(param.index2,LFM2,param);
+
+%% if justCalcMI
+if param.justCalcMI
+    param.centroid = calc_centroid(LFM2,param);
+    tmp = translate (pos2, -param.centroid);
+    tmp = rotate (tmp, param.rot);
+    final_pos2 = translate (tmp, param.trans);
+    MI = mutual_information (LFM1, final_pos2, LFM2, param);
+    return;
+end
 
 %% coarse alignment of LFM2 to LFM1
 
@@ -240,7 +253,7 @@ param.contour_int2 = centers(j);
 fprintf('contour_int1 = %f\n',param.contour_int1);
 fprintf('contour_int2 = %f\n\n\n',param.contour_int2);
 
-if param.plot
+if param.plot & ~param.justCalcMI
     f = figure;
     plot(centers,cdf_LFM1,'b');
     hold on;
