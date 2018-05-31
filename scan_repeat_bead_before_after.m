@@ -16,8 +16,20 @@ voxel_size = [0.323 0.323 4/8]; % um
 ddlfm_path = 'bead/20180328/registration/';
 opath = [ppath '/' ddlfm_path];
 
+savePath = [opath 'analysis/'];
+if ~exist(savePath,'dir')
+    status = mkdir(savePath);
+    if status == 1
+        disp(['Created folder: ' savePath]);
+    else
+        disp(['Error attempting to create folder:' savePath]);
+        status
+        exit;
+    end
+end
+
 timestamp = [datestr(datetime('now'),'yyyymmdd_HHMMSS')];
-fname = sprintf('%s/scan_repeat_bead_before_after_%s.log',opath, timestamp);
+fname = sprintf('%sscan_repeat_bead_before_after_%s.log',savePath, timestamp);
 diary(fname)
 tic
 
@@ -28,89 +40,70 @@ if 0>1
     % % dim 1 2 3
     beads = {};
     out = {};
-    p = [opath '*_multiply_sqrt.mat'];
+    p = [opath '*.log'];
     d = dir(p);
-    fprintf('%d mat files found for\n%s\n\n',numel(d),p);
-    for i=1:length(d)
+    fprintf('%d log files found for\n%s\n\n',numel(d),p);
+    N = length(d);
+    for i=1:N
+        fprintf('file %d of %d\n',i,N);
         fname = [d(i).folder '/' d(i).name]
         % read log to get registration parameters for volume
-        lf = [fname(1:end-18) '.log'];
-        out{i} = read_log (lf);
-        % load volume
-        load(fname);
-        if exist('Xvolume','var')
-            vol = Xvolume;
-        elseif exist('XguessSAVE1','var')
-            vol = XguessSAVE1;
-        else
-            disp('WTF?! Unknown data name.');
-            keyboard
-        end
-        % find bead locations in volume
-        xyz = getXYZbead(vol, opath, [d(i).name(1:end-4) '_' timestamp]);
-        beads{i} = xyz;
-        %
-        % fwhm = {
-        % [ 8 9 12
-        % 8 10 12
-        % 10 10 12 ]
-        % [ 7 6 10
-        % 9 10 11 ]
-        % [ 8 10 11
-        % 8 8 9
-        % 10 10 10 ]
-        % [ 8 10 11
-        % 8 10 11
-        % 9 10 11]
-        % };
-        %
-    end
-    
-    %% transform bead location
-    beads_trans = {};
-    % for each volume
-    for i=1:numel(beads)
-        beads_trans{i} = [];
-        a = size(beads{i});
-        % for each bead in volume
-        for k = 1:a(1)
-            % transform bead location
-            b = transformBead (beads{i}(k,:),out{i}.centroid, out{i}.offsetF, out{i}.rot);
-            beads_trans{i} = [beads_trans{i};b];
-        end
-    end
-    
-    %% Gather more data from files
-    for i=1:length(d)
-        fname = [d(i).folder '/' d(i).name]
-        % read log to get registration parameters for volume
-        lf = [fname(1:end-18) '.log'];
-        out{i} = read_log (lf);
-    end
-    
-    save([opath '/tmp.mat']);
+        out{i} = read_log (fname);
+        out{i}
+    end    
+    save([savePath 'tmp.mat']);
 else
-    load([opath '/tmp.mat']);
+    load([savePath 'tmp.mat'],'out','d');
 end
 
 %% plot
 %symbols = {'o','+','*','.','x','s','d','^','v','>','<','p','h'};
 symbols = {'o'};
-colors = {};
-for i=1:numel(d)
-    colors{i}=rand(1,3);
-end
-plot_raw(out, opath, colors, symbols, d);
-keyboard
-plot_beads(out, beads_trans, opath, colors, voxel_size );
-fwhm = [];
-spread = calcSpread(bl, beads, voxel_size);
-plot_spread(spread, ppath, colors, fwhm);
+colors = {[0 0 0],
+    [1 0 0],
+    [0 1 0],
+    [0 0 1],
+    [1 0 1],
+    [0 1 1],
+    [0.5 0.5 0.5],
+    [0.8 0.2 0.1]};
+% colors = {[0 0 0],
+%     [0 0 0],
+%     [0 0 0],
+%     [0 0 0],
+%     [0 0 0],
+%     [0 0 0],
+%     [0 0 0],
+%     [0 0 0]};
+sets = {'before_10',
+    'before_9',
+    'before_8',
+    'before_6',
+    'after_10',
+    'after_9',
+    'after_8',
+    'after_6'};
+plot_raw(out, savePath, colors, symbols, d, sets);
 
-
-
+diary off;
 
 %% Functions
+
+function out = getDataSetName (log_filename)
+content = log_filename;
+expr = '[^\n]*Mono';
+match = regexp(content,expr,'match');
+% Assume example: Recon3D_after_10_Mono
+out = match{1}(9:end-5);
+end
+
+function out = getInputFileName (mat_filename)
+content=mat_filename;
+expr = '[^\n]*__';
+match = regexp(content,expr,'match');
+out = [match{1}(1:end-2) '.mat'];
+end
+
 
 function spread = calcSpread (bl, beads, voxel_size)
 %spread = zeros(11,3);
@@ -171,26 +164,60 @@ out = v * v * 4;
 %out = 12;
 end
 
-function color = getColor (fname, C)
-if 0<1
-    if ~isempty(strfind(fname, 'before'))
-        color = 'k';
-    elseif ~isempty(strfind(fname, 'after'))
-        color = 'r';
-    else
-        color = 'y';
-    end
+function [color,index] = getColor (fname, colors)
+index = -1;
+if ~isempty(strfind(fname, 'before_10'))
+    %color = 'k';
+    %color = [0 0 0];
+    color = colors{1};
+    index = 0;
+elseif ~isempty(strfind(fname, 'before_9'))
+    %color = 'r';
+    %color = [1 0 0];
+    color = colors{2};
+    index = 1;
+elseif ~isempty(strfind(fname, 'before_8'))
+    %color = 'b';
+    %color = [0 1 0];
+    color = colors{3};
+    index = 2;
+elseif ~isempty(strfind(fname, 'before_6'))
+    %color = 'g';
+    %color = [0 0 1];
+    color = colors{4};
+    index = 3;
+elseif ~isempty(strfind(fname, 'after_10'))
+    %color = 'r';
+    %color = [1 0 1];
+    color = colors{5};
+    index = 4;
+elseif ~isempty(strfind(fname, 'after_9'))
+    %color = 'r';
+    %color = [0 1 1];
+    color = colors{6};
+    index = 5;
+elseif ~isempty(strfind(fname, 'after_8'))
+    %color = 'r';
+    %color = [0.5 0.5 0.5];
+    color = colors{7};
+    index = 6;
+elseif ~isempty(strfind(fname, 'after_6'))
+    %color = 'r';
+    %color = [1 1 0];
+    color = colors{8};
+    index = 7;
 else
-    color = C;
+    color = [0 0 0];
 end
 end
 
-function plotOffset (out, symbols, d, colors, index)
+function title = plotOffset (out, symbols, d, colors, index)
 hold on;
 j=0;
 for i=1:numel(out)
     % set color
-    color = getColor(d(i).name, colors{i});
+    %color = getColor(d(i).name, colors{i});
+    [color,ind] = getColor(d(i).name, colors);
     % set symbol
     j=j+1;
     if j>numel(symbols)
@@ -198,12 +225,15 @@ for i=1:numel(out)
     end
     symbol = symbols{j};
     % set symbol size
-    s = getSize(out{i}.final_MI_frac);
+    %s = getSize(out{i}.final_MI_frac);
+    s = 5;
     % plot
-    plot( 0, out{i}.offsetF(index), 'Marker', symbol, 'Color', color, 'MarkerSize',s);
-    plot( 0, out{i}.offsetI(index), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
+    plot( ind, out{i}.offsetF(index), 'Marker', symbol, 'Color', color, 'MarkerSize',s);
+    %plot( ind, out{i}.offsetI(index), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
 end
 hold off;
+title = 'before = BLACK, after = RED';
+
 end
 
 function plotRot (out, symbols, d, colors, index)
@@ -211,7 +241,8 @@ hold on;
 j=0;
 for i=1:numel(out)
     % set color
-    color = getColor(d(i).name, colors{i});
+    %color = getColor(d(i).name, colors{i});
+    [color,ind] = getColor(d(i).name, colors);
     % set symbol
     j=j+1;
     if j>numel(symbols)
@@ -219,11 +250,11 @@ for i=1:numel(out)
     end
     symbol = symbols{j};
     % set symbol size
-    s = getSize(out{i}.final_MI_frac);
+    %s = getSize(out{i}.final_MI_frac);
+    s = 5;
     % plot
-    plot( 0, out{i}.rot(index), 'Marker', symbol, 'Color', color, 'MarkerSize',s);
-    %plot( 0, out{i}.angle(1), 'Marker', symbols{j}, 'Color', colors{i}, 'MarkerSize',8 );
-    plot( 0, out{i}.angle(index), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
+    plot( ind, out{i}.rot(index)*180/pi, 'Marker', symbol, 'Color', color, 'MarkerSize',s);
+    plot( ind, out{i}.angle(index)*180/pi, 'Marker', '.', 'Color', [0.2 0.4 0.2], 'MarkerSize',8);
 end
 hold off;
 end
@@ -232,7 +263,7 @@ end
 
 
 %%
-function plot_raw (out, ppath, colors, symbols, d)
+function plot_raw (out, ppath, colors, symbols, d, sets)
 
 %a = numel(out);
 f = figure;
@@ -245,7 +276,7 @@ y = ylim;
 del = y(2)-y(1);
 
 subplot(1,3,2);
-plotOffset (out, symbols, d, colors, 2);
+mytitle = plotOffset (out, symbols, d, colors, 2);
 ylabel('offset in dim 2 (um)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -253,6 +284,9 @@ ndel = y(2)-y(1);
 if ndel > del
     del = ndel;
 end
+%title(mytitle);
+str = [ppath '/distribution_offset.png'];
+title(str,'Interpreter','none');
 
 subplot(1,3,3);
 plotOffset (out, symbols, d, colors, 3);
@@ -269,25 +303,36 @@ y = ylim;
 ndel = y(2)-y(1);
 m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
 
 subplot(1,3,2);
 y = ylim;
 ndel = y(2)-y(1);
 m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
 
 subplot(1,3,3);
 y = ylim;
 ndel = y(2)-y(1);
 m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
 
 % ax1 = axes('Position',[0 0 1 1],'Visible','off');
 % axes(ax1);
-% str = sprintf('Circles are final parameter values. Dots are initial parameter values.');
-% text(0.15,0.08,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
-% str = sprintf('Black circles are volumes before live sample. Red circles are volumes after live sample.');
-% text(0.15,0.04,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+% for i=1:numel(sets)
+% text(0.3,0.9-(i-1)*0.04,sets{i},'FontSize',9,'Color',colors{i},'Interpreter','none');
+% end
+
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+for i=1:numel(sets)
+    text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
+end
 
 str = [ppath '/distribution_offset.png'];
 print(f,str,'-dpng');
@@ -297,25 +342,27 @@ h = figure;
 
 subplot(1,3,1);
 plotRot (out, symbols, d, colors, 1);
-ylabel('rotation around dim 1 (radians)');
+ylabel('rotation around dim 1 (degrees)');
 set(gca,'xtick',[]);
 y = ylim;
 del = y(2)-y(1);
 
-
 subplot(1,3,2);
 plotRot (out, symbols, d, colors, 2);
-ylabel('rotation around dim 2 (radians)');
+ylabel('rotation around dim 2 (degrees)');
 set(gca,'xtick',[]);
 y = ylim;
 ndel = y(2)-y(1);
 if ndel > del
     del = ndel;
 end
+%title(mytitle);
+str = [ppath '/distribution_rotation.png'];
+title(str,'Interpreter','none');
 
 subplot(1,3,3);
 plotRot (out, symbols, d, colors, 3);
-ylabel('rotation around dim 3 (radians)');
+ylabel('rotation around dim 3 (degrees)');
 set(gca,'xtick',[]);
 y = ylim;
 ndel = y(2)-y(1);
@@ -328,25 +375,36 @@ y = ylim;
 ndel = y(2)-y(1);
 m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
 
 subplot(1,3,2);
 y = ylim;
 ndel = y(2)-y(1);
 m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
 
 subplot(1,3,3);
 y = ylim;
 ndel = y(2)-y(1);
 m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
 
 % ax1 = axes('Position',[0 0 1 1],'Visible','off');
 % axes(ax1);
-% str = sprintf('Circles are final parameter values. Dots are initial parameter values.');
-% text(0.15,0.08,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
-% str = sprintf('Black circles are volumes before live sample. Red circles are volumes after live sample.');
-% text(0.15,0.04,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
+% for i=1:numel(sets)
+% text(0.3,0.9-(i-1)*0.04,sets{i},'FontSize',9,'Color',colors{i},'Interpreter','none');
+% end
+
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+for i=1:numel(sets)
+    text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
+end
 
 str = [ppath '/distribution_rotation.png'];
 print(h,str,'-dpng');

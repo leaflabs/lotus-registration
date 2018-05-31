@@ -73,7 +73,7 @@ if 0>1
     end
     save([param.savePath 'tmp_shuffle.mat']);
 else
-    load([param.savePath 'tmp_shuffle.mat']);
+    load([param.savePath 'tmp_shuffle.mat'],'out','d');
 end
 
 param.inputFilePath1 = [param.ipath '/horizontal/Reconstructed/'];
@@ -83,50 +83,110 @@ param.justCalcMI = true;
 
 %% apply registration parameters
 N = numel(out);
-MIvec = zeros(N,N);
-for i=1:N
-    % apply registration parameter set i
-    param.rot = out{i}.rot;
-%     param.trans = out{i}.trans + [ out{i}.clip(1)*param.voxel_y  ...
-%         out{i}.clip(3)*param.voxel_x   out{i}.clip(5)*param.voxel_z ];
-    param.trans = out{i}.trans;
-    % to all N volume pairs
-    for j=1:N
-        fprintf('\n####\n\nRegistration parameter set %d of %d\n',i,N);
-        fprintf('Volume pair %d of %d\n',j,N);
-        fprintf('Derived from data set %s\n', getInputFileName( d(i).name ));  
-        fprintf('Apply to data set %s\n',getInputFileName( d(j).name ));
-        fprintf('rot = [%f %f %f]\n',param.rot(1),param.rot(2),param.rot(3));
-        fprintf('trans = [%f %f %f]\n',param.trans(1),param.trans(2),param.trans(3));
-        param.inputFileName = {getInputFileName( d(j).name )};
-        MI = register(param);
-        fprintf('MI = %f\n',MI);
-        close all;
-        MIvec(i,j) = MI;
+
+if 0>1
+    MIvec = zeros(N,N);
+    for i=1:N
+        % apply registration parameter set i
+        param.rot = out{i}.rot;
+        %     param.trans = out{i}.trans + [ out{i}.clip(1)*param.voxel_y  ...
+        %         out{i}.clip(3)*param.voxel_x   out{i}.clip(5)*param.voxel_z ];
+        param.trans = out{i}.trans;
+        % to all N volume pairs
+        for j=1:N
+            fprintf('\n####\n\nRegistration parameter set %d of %d\n',i,N);
+            fprintf('Volume pair %d of %d\n',j,N);
+            fprintf('Derived from data set %s\n', getInputFileName( d(i).name ));
+            fprintf('Apply to data set %s\n',getInputFileName( d(j).name ));
+            fprintf('rot = [%f %f %f]\n',param.rot(1),param.rot(2),param.rot(3));
+            fprintf('trans = [%f %f %f]\n',param.trans(1),param.trans(2),param.trans(3));
+            param.inputFileName = {getInputFileName( d(j).name )};
+            MI = register(param);
+            fprintf('MI = %f\n',MI);
+            close all;
+            MIvec(i,j) = MI;
+        end
+    end
+    save([param.savePath 'tmp_shuffle_MI.mat']);
+else
+    load([param.savePath 'tmp_shuffle_MI.mat'],'MIvec');
+end
+
+%% Plot
+
+f = figure;
+hold on;
+for j=1:N
+    for i=1:N
+        if i==j
+            plot(j,MIvec(i,j),'ro');
+        else
+            plot(j,MIvec(i,j),'bo');    
+        end
     end
 end
-save([param.savePath 'tmp_shuffle_MI.mat']);
+hold off;
+ylabel('bead position in dim 1 (um)');
+set(gca,'xtick',[]);
+ylabel('MI');
+str = 'shuffle_bead_MI.png';
+title({param.savePath;str;'red = match, blue = shuffle'},'Interpreter','None');
+%subtitle('red = match, black = shuffle');
 
-keyboard
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+for i=1:N
+    name = getDataSetName(d(i).name);
+    text(0.165+(i-1)*0.039,0.01,name,'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
+    %text(0.3,0.9-(i-1)*0.04,sets{i},'FontSize',9,'Color',colors{i},'Interpreter','none');
+end
 
-% %% plot
-% %symbols = {'o','+','*','.','x','s','d','^','v','>','<','p','h'};
-% symbols = {'o'};
-% colors = {};
-% for i=1:numel(d)
-%     colors{i}=rand(1,3);
-% end
-% plot_raw(out, opath, colors, symbols, d);
-% keyboard
-% plot_beads(out, beads_trans, opath, colors, voxel_size );
-% fwhm = [];
-% spread = calcSpread(bl, beads, voxel_size);
-% plot_spread(spread, ppath, colors, fwhm);
+str = [param.savePath 'shuffle_bead_MI.png'];
+print(f,str,'-dpng');
 
 
+f = figure;
+hold on;
+% for each volume pair
+for j=1:N
+    % for each set of registration parameters
+    for i=1:N
+        if i==j
+            plot(j,MIvec(i,j)/MIvec(j,j),'ro');
+        else
+            plot(j,MIvec(i,j)/MIvec(j,j),'bo');    
+        end
+    end
+end
+hold off;
+ylabel('bead position in dim 1 (um)');
+set(gca,'xtick',[]);
+ylabel('Normalized MI');
+str = 'shuffle_bead_MI_normalized.png';
+title({param.savePath;str;'red = match, blue = shuffle'},'Interpreter','None');
+%subtitle('red = match, black = shuffle');
+
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+for i=1:N
+    name = getDataSetName(d(i).name);
+    text(0.165+(i-1)*0.039,0.01,name,'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
+    %text(0.3,0.9-(i-1)*0.04,sets{i},'FontSize',9,'Color',colors{i},'Interpreter','none');
+end
+
+str = [param.savePath 'shuffle_bead_MI_normalized.png'];
+print(f,str,'-dpng');
 
 
 %% Functions
+
+function out = getDataSetName (log_filename)
+content = log_filename;
+expr = '[^\n]*Mono';
+match = regexp(content,expr,'match');
+% Assume example: Recon3D_after_10_Mono
+out = match{1}(9:end-5);
+end
 
 function out = getInputFileName (mat_filename)
 content=mat_filename;
