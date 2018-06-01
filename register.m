@@ -677,7 +677,7 @@ if ~param.parallel
     fprintf('d = [%f %f %f]\n',param.bestd(1),param.bestd(2),param.bestd(3));
     fprintf('r = [%f %f %f]\n\n',param.bestr(1),param.bestr(2),param.bestr(3));
 end
-keyboard
+
 % CDF
 centers = linspace(min(nullMIvec),max(nullMIvec),param.Nnull);
 del = 0.5 * (centers(2)-centers(1));
@@ -1304,13 +1304,16 @@ b = [cos(angle(2)) 0 -sin(angle(2));...
 c = [cos(angle(3)) -sin(angle(3)) 0;...
     sin(angle(3)) cos(angle(3)) 0;...
     0 0 1];
-out = a*b*c;
+%out = a*b*c;
+out = c*b*a;
 end
 
 
 function [out] = rotate (pos, angle)
 rot = single( rotation_matrix (angle) );
-out = pos*rot;
+%out = pos*rot;
+out = rot*pos';
+out = out';
 end
 
 
