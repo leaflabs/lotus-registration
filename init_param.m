@@ -25,7 +25,7 @@ param.clip = [100,100,100,100,0,0];
 param.anneal = 'exp';
 param.Pmelt = 0.2; % fraction, max val = 1
 param.Pepsilon = 0.02; % fraction, error allowed for finding T that matches Pmelt
-param.T0 = 1e9;
+param.T0 = 1e11;
 param.TC0 = 10000;
 param.Nnull = 2000;
 param.confocal = false;
