@@ -1,23 +1,7 @@
 #!/bin/bash
 
 declare -a arr=(
-"bead/20170915/registration"
-"bead/20171011/registration"
-"bead/20180109/registration"
-"bead/20180227/registration"
-"bead/20180302/registration"
-"bead/20180319/registration"
-"fish/20171202/interpolate"
-"fish/20171221/interpolate"
-"fish/20180123/interpolate"
-"fish/20180227/vid1/interpolate"
-"fish/20180227/vid2/interpolate"
-"worm/20170720/interpolate"
-"worm/20171012/interpolate"
-"worm/20171114/registration"
-"worm/20171117/registration"
-"worm/20171215/interpolate"
-"worm/20180103/registration"
+"bead/20180328/registration"
 )
 
 LPATH=/om/user/jkinney/DLFM
