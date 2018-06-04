@@ -17,8 +17,8 @@
 #sbatch lotus-registration/worm_20171215.sh
 #sbatch lotus-registration/worm_20180103.sh
 
-sbatch lotus-registration/bead_20180328_4.sh
-sbatch lotus-registration/bead_20180328_5.sh
+#sbatch lotus-registration/bead_20180328_4.sh
+#sbatch lotus-registration/bead_20180328_5.sh
 sbatch lotus-registration/bead_20180328_6.sh
 sbatch lotus-registration/bead_20180328_8.sh
 sbatch lotus-registration/bead_20180328_9.sh

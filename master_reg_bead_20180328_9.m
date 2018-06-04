@@ -39,16 +39,21 @@ param.voxel_x = 0.323; % um
 param.voxel_y = 0.323; % um
 param.voxel_z = 4.0;     % um
 
-param.angle   = [-1.2*pi/2 0 0]; % radians
-param.rot_amp = [0.3 0.1 0.1]; 
+param.angle   = [pi/2 0 0]; % radians
+%param.rot_amp = [0.3 0.1 0.1]; 
 
 param
 
 i=9
-param.inputFileName = {['Recon3D_before_' num2str(i) '_Mono_N15.mat']};
-register(param)
-close all;
-
-param.inputFileName = {['Recon3D_after_' num2str(i) '_Mono_N15.mat']};
-register(param)
-close all;
+for j=1:10
+	rng(j);
+	j
+	param.inputFileName = {['Recon3D_before_' num2str(i) '_Mono_N15.mat']};
+	register(param)
+	close all;
+	
+	j
+	param.inputFileName = {['Recon3D_after_' num2str(i) '_Mono_N15.mat']};
+	register(param)
+	close all;
+end
