@@ -57,15 +57,15 @@ else
 end
 
 %% plot
-%symbols = {'o','+','*','.','x','s','d','^','v','>','<','p','h'};
-symbols = {'o'};
-colors = {[0 0 0],
-    [1 0 0],
-    [0 1 0],
-    [0 0 1],
-    [1 0 1],
-    [0 1 1],
-    [0.5 0.5 0.5],
+symbols = {'o','o','o','o','o','o','o','o','o','o','o','o','o'};
+%symbols = {'o'};
+colors = {[0 0 0]
+    [1 0 0]
+    [0 1 0]
+    [0 0 1]
+    [1 0 1]
+    [0 1 1]
+    [0.5 0.5 0.5]
     [0.8 0.2 0.1]};
 % colors = {[0 0 0],
 %     [0 0 0],
@@ -75,15 +75,18 @@ colors = {[0 0 0],
 %     [0 0 0],
 %     [0 0 0],
 %     [0 0 0]};
-sets = {'before_10',
-    'before_9',
-    'before_8',
-    'before_6',
-    'after_10',
-    'after_9',
-    'after_8',
+sets = {'before_10'
+    'before_9'
+    'before_8'
+    'before_6'
+    'after_10'
+    'after_9'
+    'after_8'
     'after_6'};
+
 plot_raw(out, savePath, colors, symbols, d, sets);
+plot_good(out, savePath, colors, symbols, d, sets);
+% xs
 
 diary off;
 
@@ -211,19 +214,18 @@ else
 end
 end
 
-function title = plotOffset (out, symbols, d, colors, index)
+function title = plotOffset (out, symbols, d, colors, index, indices)
 hold on;
-j=0;
 for i=1:numel(out)
     % set color
     %color = getColor(d(i).name, colors{i});
     [color,ind] = getColor(d(i).name, colors);
-    % set symbol
-    j=j+1;
-    if j>numel(symbols)
-        j=1;
+    if isempty(find(ind==indices))
+        continue;
     end
-    symbol = symbols{j};
+    % set symbol
+    %symbol = symbols{i};
+    symbol = 'o';
     % set symbol size
     %s = getSize(out{i}.final_MI_frac);
     s = 5;
@@ -236,19 +238,18 @@ title = 'before = BLACK, after = RED';
 
 end
 
-function plotRot (out, symbols, d, colors, index)
+function plotRot (out, symbols, d, colors, index, indices)
 hold on;
-j=0;
 for i=1:numel(out)
     % set color
     %color = getColor(d(i).name, colors{i});
     [color,ind] = getColor(d(i).name, colors);
-    % set symbol
-    j=j+1;
-    if j>numel(symbols)
-        j=1;
+    if isempty(find(ind==indices))
+        continue;
     end
-    symbol = symbols{j};
+    % set symbol
+    symbol = 'o';
+    %symbol = symbols{j};
     % set symbol size
     %s = getSize(out{i}.final_MI_frac);
     s = 5;
@@ -268,15 +269,17 @@ function plot_raw (out, ppath, colors, symbols, d, sets)
 %a = numel(out);
 f = figure;
 
+good = [0:7];
+
 subplot(1,3,1);
-plotOffset (out, symbols, d, colors, 1);
+plotOffset (out, symbols, d, colors, 1, good);
 ylabel('offset in dim 1 (um)');
 set(gca,'xtick',[]);
 y = ylim;
 del = y(2)-y(1);
 
 subplot(1,3,2);
-mytitle = plotOffset (out, symbols, d, colors, 2);
+mytitle = plotOffset (out, symbols, d, colors, 2, good);
 ylabel('offset in dim 2 (um)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -289,7 +292,7 @@ str = [ppath '/distribution_offset.png'];
 title(str,'Interpreter','none');
 
 subplot(1,3,3);
-plotOffset (out, symbols, d, colors, 3);
+plotOffset (out, symbols, d, colors, 3, good);
 ylabel('offset in dim 3 (um)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -341,14 +344,14 @@ print(f,str,'-dpng');
 h = figure;
 
 subplot(1,3,1);
-plotRot (out, symbols, d, colors, 1);
+plotRot (out, symbols, d, colors, 1, good);
 ylabel('rotation around dim 1 (degrees)');
 set(gca,'xtick',[]);
 y = ylim;
 del = y(2)-y(1);
 
 subplot(1,3,2);
-plotRot (out, symbols, d, colors, 2);
+plotRot (out, symbols, d, colors, 2, good);
 ylabel('rotation around dim 2 (degrees)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -361,7 +364,7 @@ str = [ppath '/distribution_rotation.png'];
 title(str,'Interpreter','none');
 
 subplot(1,3,3);
-plotRot (out, symbols, d, colors, 3);
+plotRot (out, symbols, d, colors, 3, good);
 ylabel('rotation around dim 3 (degrees)');
 set(gca,'xtick',[]);
 y = ylim;
@@ -410,6 +413,323 @@ str = [ppath '/distribution_rotation.png'];
 print(h,str,'-dpng');
 
 end
+
+%%
+function plot_good (out, ppath, colors, symbols, d, sets)
+
+%a = numel(out);
+f = figure;
+
+good = [1 2 4 5];
+
+subplot(1,3,1);
+plotOffset (out, symbols, d, colors, 1, good);
+ylabel('offset in dim 1 (um)');
+set(gca,'xtick',[]);
+y = ylim;
+del = y(2)-y(1);
+
+subplot(1,3,2);
+mytitle = plotOffset (out, symbols, d, colors, 2, good);
+ylabel('offset in dim 2 (um)');
+set(gca,'xtick',[]);
+y = ylim;
+ndel = y(2)-y(1);
+if ndel > del
+    del = ndel;
+end
+%title(mytitle);
+str = [ppath '/distribution_offset.png'];
+title(str,'Interpreter','none');
+
+subplot(1,3,3);
+plotOffset (out, symbols, d, colors, 3, good);
+ylabel('offset in dim 3 (um)');
+set(gca,'xtick',[]);
+y = ylim;
+ndel = y(2)-y(1);
+if ndel > del
+    del = ndel;
+end
+
+subplot(1,3,1);
+y = ylim;
+ndel = y(2)-y(1);
+m = (del-ndel)/2;
+ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
+
+subplot(1,3,2);
+y = ylim;
+ndel = y(2)-y(1);
+m = (del-ndel)/2;
+ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
+
+subplot(1,3,3);
+y = ylim;
+ndel = y(2)-y(1);
+m = (del-ndel)/2;
+ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
+
+% ax1 = axes('Position',[0 0 1 1],'Visible','off');
+% axes(ax1);
+% for i=1:numel(sets)
+% text(0.3,0.9-(i-1)*0.04,sets{i},'FontSize',9,'Color',colors{i},'Interpreter','none');
+% end
+
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+for i=1:numel(sets)
+    text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
+end
+
+str = [ppath '/distribution_offset_good.png'];
+print(f,str,'-dpng');
+
+% rotation
+h = figure;
+
+subplot(1,3,1);
+plotRot (out, symbols, d, colors, 1, good);
+ylabel('rotation around dim 1 (degrees)');
+set(gca,'xtick',[]);
+y = ylim;
+del = y(2)-y(1);
+
+subplot(1,3,2);
+plotRot (out, symbols, d, colors, 2, good);
+ylabel('rotation around dim 2 (degrees)');
+set(gca,'xtick',[]);
+y = ylim;
+ndel = y(2)-y(1);
+if ndel > del
+    del = ndel;
+end
+%title(mytitle);
+str = [ppath '/distribution_rotation.png'];
+title(str,'Interpreter','none');
+
+subplot(1,3,3);
+plotRot (out, symbols, d, colors, 3, good);
+ylabel('rotation around dim 3 (degrees)');
+set(gca,'xtick',[]);
+y = ylim;
+ndel = y(2)-y(1);
+if ndel > del
+    del = ndel;
+end
+
+subplot(1,3,1);
+y = ylim;
+ndel = y(2)-y(1);
+m = (del-ndel)/2;
+ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
+
+subplot(1,3,2);
+y = ylim;
+ndel = y(2)-y(1);
+m = (del-ndel)/2;
+ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
+
+subplot(1,3,3);
+y = ylim;
+ndel = y(2)-y(1);
+m = (del-ndel)/2;
+ylim([y(1)-m y(2)+m]);
+x = xlim;
+xlim([x(1)-1 x(2)]);
+
+% ax1 = axes('Position',[0 0 1 1],'Visible','off');
+% axes(ax1);
+% for i=1:numel(sets)
+% text(0.3,0.9-(i-1)*0.04,sets{i},'FontSize',9,'Color',colors{i},'Interpreter','none');
+% end
+
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+axes(ax1);
+for i=1:numel(sets)
+    text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
+end
+
+str = [ppath '/distribution_rotation_good.png'];
+print(h,str,'-dpng');
+
+end
+
+
+
+%%
+% function calc_stats (out, ppath, colors, d, sets)
+% 
+% 
+% 
+% % for each data set
+% 
+% good = [0 1 2 4 5];
+% 
+% for i=1:numel(out)
+%     [color,ind] = getColor(d(i).name, colors);
+%     if isempty(find(ind==good))
+%         continue;
+%     end
+%     % set symbol
+%     vec{ind}. out{i}.offsetF(index), 'Marker', symbol, 'Color', color, 'MarkerSize',s);
+%     %plot( ind, out{i}.offsetI(index), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
+% end
+% 
+% 
+% subplot(1,3,1);
+% plotOffset (out, symbols, d, colors, 1, good);
+% ylabel('offset in dim 1 (um)');
+% set(gca,'xtick',[]);
+% y = ylim;
+% del = y(2)-y(1);
+% 
+% subplot(1,3,2);
+% mytitle = plotOffset (out, symbols, d, colors, 2, good);
+% ylabel('offset in dim 2 (um)');
+% set(gca,'xtick',[]);
+% y = ylim;
+% ndel = y(2)-y(1);
+% if ndel > del
+%     del = ndel;
+% end
+% %title(mytitle);
+% str = [ppath '/distribution_offset.png'];
+% title(str,'Interpreter','none');
+% 
+% subplot(1,3,3);
+% plotOffset (out, symbols, d, colors, 3, good);
+% ylabel('offset in dim 3 (um)');
+% set(gca,'xtick',[]);
+% y = ylim;
+% ndel = y(2)-y(1);
+% if ndel > del
+%     del = ndel;
+% end
+% 
+% subplot(1,3,1);
+% y = ylim;
+% ndel = y(2)-y(1);
+% m = (del-ndel)/2;
+% ylim([y(1)-m y(2)+m]);
+% x = xlim;
+% xlim([x(1)-1 x(2)]);
+% 
+% subplot(1,3,2);
+% y = ylim;
+% ndel = y(2)-y(1);
+% m = (del-ndel)/2;
+% ylim([y(1)-m y(2)+m]);
+% x = xlim;
+% xlim([x(1)-1 x(2)]);
+% 
+% subplot(1,3,3);
+% y = ylim;
+% ndel = y(2)-y(1);
+% m = (del-ndel)/2;
+% ylim([y(1)-m y(2)+m]);
+% x = xlim;
+% xlim([x(1)-1 x(2)]);
+% 
+% % ax1 = axes('Position',[0 0 1 1],'Visible','off');
+% % axes(ax1);
+% % for i=1:numel(sets)
+% % text(0.3,0.9-(i-1)*0.04,sets{i},'FontSize',9,'Color',colors{i},'Interpreter','none');
+% % end
+% 
+% ax1 = axes('Position',[0 0 1 1],'Visible','off');
+% axes(ax1);
+% for i=1:numel(sets)
+%     text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
+% end
+% 
+% str = [ppath '/distribution_offset_good.png'];
+% print(f,str,'-dpng');
+% 
+% % rotation
+% h = figure;
+% 
+% subplot(1,3,1);
+% plotRot (out, symbols, d, colors, 1, good);
+% ylabel('rotation around dim 1 (degrees)');
+% set(gca,'xtick',[]);
+% y = ylim;
+% del = y(2)-y(1);
+% 
+% subplot(1,3,2);
+% plotRot (out, symbols, d, colors, 2, good);
+% ylabel('rotation around dim 2 (degrees)');
+% set(gca,'xtick',[]);
+% y = ylim;
+% ndel = y(2)-y(1);
+% if ndel > del
+%     del = ndel;
+% end
+% %title(mytitle);
+% str = [ppath '/distribution_rotation.png'];
+% title(str,'Interpreter','none');
+% 
+% subplot(1,3,3);
+% plotRot (out, symbols, d, colors, 3, good);
+% ylabel('rotation around dim 3 (degrees)');
+% set(gca,'xtick',[]);
+% y = ylim;
+% ndel = y(2)-y(1);
+% if ndel > del
+%     del = ndel;
+% end
+% 
+% subplot(1,3,1);
+% y = ylim;
+% ndel = y(2)-y(1);
+% m = (del-ndel)/2;
+% ylim([y(1)-m y(2)+m]);
+% x = xlim;
+% xlim([x(1)-1 x(2)]);
+% 
+% subplot(1,3,2);
+% y = ylim;
+% ndel = y(2)-y(1);
+% m = (del-ndel)/2;
+% ylim([y(1)-m y(2)+m]);
+% x = xlim;
+% xlim([x(1)-1 x(2)]);
+% 
+% subplot(1,3,3);
+% y = ylim;
+% ndel = y(2)-y(1);
+% m = (del-ndel)/2;
+% ylim([y(1)-m y(2)+m]);
+% x = xlim;
+% xlim([x(1)-1 x(2)]);
+% 
+% % ax1 = axes('Position',[0 0 1 1],'Visible','off');
+% % axes(ax1);
+% % for i=1:numel(sets)
+% % text(0.3,0.9-(i-1)*0.04,sets{i},'FontSize',9,'Color',colors{i},'Interpreter','none');
+% % end
+% 
+% ax1 = axes('Position',[0 0 1 1],'Visible','off');
+% axes(ax1);
+% for i=1:numel(sets)
+%     text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
+% end
+% 
+% str = [ppath '/distribution_rotation_good.png'];
+% print(h,str,'-dpng');
+% 
+% end
+
 
 %%
 function plot_beads (out, beads, ppath, colors, voxel)
