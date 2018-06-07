@@ -19,7 +19,17 @@
 
 #sbatch lotus-registration/bead_20180328_4.sh
 #sbatch lotus-registration/bead_20180328_5.sh
-sbatch lotus-registration/bead_20180328_6.sh
-sbatch lotus-registration/bead_20180328_8.sh
-sbatch lotus-registration/bead_20180328_9.sh
-sbatch lotus-registration/bead_20180328_10.sh
+
+#sbatch lotus-registration/bead_20180328_6.sh
+#sbatch lotus-registration/bead_20180328_8.sh
+#sbatch lotus-registration/bead_20180328_9.sh
+#sbatch lotus-registration/bead_20180328_10.sh
+
+sbatch lotus-registration/bead_20180328_6_before.sh
+sbatch lotus-registration/bead_20180328_8_before.sh
+sbatch lotus-registration/bead_20180328_9_before.sh
+sbatch lotus-registration/bead_20180328_10_before.sh
+sbatch lotus-registration/bead_20180328_6_after.sh
+sbatch lotus-registration/bead_20180328_8_after.sh
+sbatch lotus-registration/bead_20180328_9_after.sh
+sbatch lotus-registration/bead_20180328_10_after.sh
