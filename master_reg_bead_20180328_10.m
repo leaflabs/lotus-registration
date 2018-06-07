@@ -44,13 +44,15 @@ param.angle   = [pi/2 0 0]; % radians
 
 param
 
+i=10
 for j=1:10
 	rng(j);
-	i=10
+	j
 	param.inputFileName = {['Recon3D_before_' num2str(i) '_Mono_N15.mat']};
 	register(param)
 	close all;
 	
+	j
 	param.inputFileName = {['Recon3D_after_' num2str(i) '_Mono_N15.mat']};
 	register(param)
 	close all;
