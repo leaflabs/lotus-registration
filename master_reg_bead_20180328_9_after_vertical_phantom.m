@@ -43,8 +43,7 @@ param.voxel_y = 0.5; % um
 param.voxel_z = 4.0;     % um
 
 param.angle   = [0 0 0]; % radians
-%param.rot_amp = [0.3 0.1 0.1]; 
-param.Nnull = 20;
+param.interp = 1;
 
 param
 
