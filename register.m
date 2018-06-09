@@ -449,6 +449,16 @@ if exist(f,'file') == 2
             keyboard
         end
         clear Xvolume;
+    elseif exist('A','var')
+        if isa(A,'uint16')
+            XguessSAVE1 = uint16(A);
+        elseif isa(A,'double')
+            XguessSAVE1 = uint16(A);
+        else
+            disp('Warning input data is not 16 bit.');
+            keyboard
+        end
+        clear A;
     elseif exist('XguessSAVE1','var')
         disp('XguessSAVE1 found.');
         if ~isa(XguessSAVE1,'uint16')
