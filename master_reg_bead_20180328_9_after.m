@@ -35,8 +35,8 @@ param.inputFilePath2 = [param.ipath '/vertical/Reconstructed/'];
 
 %%
 param.savePath = [param.opath '/registration/'];
-param.voxel_x = 0.323; % um
-param.voxel_y = 0.323; % um
+param.voxel_x = 0.5; % um
+param.voxel_y = 0.5; % um
 param.voxel_z = 4.0;     % um
 
 param.angle   = [pi/2 0 0]; % radians
