@@ -12,7 +12,6 @@ else
     keyboard
 end
 
-voxel_size = [0.323 0.323 4/8]; % um
 ddlfm_path = 'bead/20180328/registration/';
 opath = [ppath '/' ddlfm_path];
 
@@ -33,8 +32,10 @@ fname = sprintf('%sscan_repeat_bead_before_after_%s.log',savePath, timestamp);
 diary(fname)
 tic
 
+tmp_f = 'tmp.mat';
+
 %% Gather data from files
-if 0>1
+if ~exist([savePath tmp_f],'file')
     % % row col z
     % % y x z
     % % dim 1 2 3
@@ -51,9 +52,9 @@ if 0>1
         out{i} = read_log (fname);
         out{i}
     end    
-    save([savePath 'tmp.mat']);
+    save([savePath tmp_f]);
 else
-    load([savePath 'tmp.mat'],'out','d');
+    load([savePath tmp_f],'out','d');
 end
 
 %% plot
@@ -84,13 +85,63 @@ sets = {'before_10'
     'after_8'
     'after_6'};
 
-plot_raw(out, savePath, colors, symbols, d, sets);
-plot_good(out, savePath, colors, symbols, d, sets);
-% xs
+datamat = zeros(numel(out),6);
+for i=1:numel(out)
+    datamat(i,:) = [out{i}.offsetF(1) out{i}.offsetF(2) out{i}.offsetF(3)...
+    out{i}.rot(1) out{i}.rot(2) out{i}.rot(3)];
+end
+myylim = [max(datamat)
+    min(datamat)];
+myylim = [-100 -100 -100 -90 -90 -90;
+    100 100 100 270 90 90];
+
+plot_raw(out, savePath, colors, symbols, d, sets, myylim, timestamp);
+plot_good(out, savePath, colors, symbols, d, sets, myylim, timestamp);
+plot_off23(out, savePath, colors, symbols, d, sets, myylim, timestamp);
 
 diary off;
 
 %% Functions
+
+%% plot offset dim 2 vs dim 3
+function plot_off23 (out, ppath, colors, symbols, d, sets, myylim, timestamp)
+off23 = [];
+good = [1 2 4 5];
+for i=1:numel(out)
+    [color,ind] = getColor(d(i).name, colors);
+    if isempty(find(ind==good))
+        continue;
+    end
+    off23 = [off23;
+    out{i}.offsetF(2)*0.5/0.323 out{i}.offsetF(3) ];
+end
+
+f = figure;
+hold on;
+x = off23(:,1);
+y = off23(:,2);
+plot(x,y,'o');
+xlabel('offset dim 2 scaled by 0.5/0.323 [um]');
+ylabel('offset dim 3 [um]');
+Fit = polyfit(x,y,1); % x = x data, y = y data, 1 = order of the polynomial.
+xrange = [-60 0];
+yfit = polyval(Fit,xrange);
+plot(xrange,yfit);
+xlim(xrange);
+ylim(xrange);
+plot(xrange,xrange,'--');
+hold off;
+
+str = sprintf('%s/offset_dim2_vs_dim3_%s.png', ppath, timestamp);
+title(str,'Interpreter','none');
+ax1 = axes('Position',[0 0 1 1],'Visible','off');
+txt = sprintf('y-intercept = %2.2f',Fit(2));
+text(0.7,0.5,txt,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
+txt = sprintf('slope = %2.2f',Fit(1));
+text(0.7,0.4,txt,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
+print(f,str,'-dpng');
+
+end
 
 function out = getDataSetName (log_filename)
 content = log_filename;
@@ -105,26 +156,6 @@ content=mat_filename;
 expr = '[^\n]*__';
 match = regexp(content,expr,'match');
 out = [match{1}(1:end-2) '.mat'];
-end
-
-
-function spread = calcSpread (bl, beads, voxel_size)
-%spread = zeros(11,3);
-spread = {[],[],[],[]};
-
-% for each sample
-for i = 1:numel(bl)
-    a = size(beads{i});
-    n = a(1); % number of beads
-    b = size(bl{i});
-    % for each bead
-    for j = 1:n
-        repeats = bl{i}(j:n:b(1),:);
-        pixel_spread = max(repeats) - min(repeats);
-        um_spread = pixel_spread .* voxel_size;
-        spread{i} = [spread{i};um_spread];
-    end
-end
 end
 
 
@@ -230,8 +261,12 @@ for i=1:numel(out)
     %s = getSize(out{i}.final_MI_frac);
     s = 5;
     % plot
-    plot( ind, out{i}.offsetF(index), 'Marker', symbol, 'Color', color, 'MarkerSize',s);
-    %plot( ind, out{i}.offsetI(index), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
+    if index<3
+        plot( ind, out{i}.offsetF(index)*0.5/0.323, 'Marker', symbol, 'Color', color, 'MarkerSize',s);
+        %plot( ind, out{i}.offsetI(index), 'Marker', '.', 'Color', [1 0 0], 'MarkerSize',8);
+    else
+        plot( ind, out{i}.offsetF(index), 'Marker', symbol, 'Color', color, 'MarkerSize',s);
+    end
 end
 hold off;
 title = 'before = BLACK, after = RED';
@@ -264,7 +299,7 @@ end
 
 
 %%
-function plot_raw (out, ppath, colors, symbols, d, sets)
+function plot_raw (out, ppath, colors, symbols, d, sets, myylim, timestamp)
 
 %a = numel(out);
 f = figure;
@@ -308,6 +343,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,1));
 
 subplot(1,3,2);
 y = ylim;
@@ -316,6 +352,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,2));
 
 subplot(1,3,3);
 y = ylim;
@@ -324,6 +361,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,3));
 
 % ax1 = axes('Position',[0 0 1 1],'Visible','off');
 % axes(ax1);
@@ -337,7 +375,7 @@ for i=1:numel(sets)
     text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
 end
 
-str = [ppath '/distribution_offset.png'];
+str = sprintf('%s/distribution_offset_%s.png', ppath, timestamp);
 print(f,str,'-dpng');
 
 % rotation
@@ -380,6 +418,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,4));
 
 subplot(1,3,2);
 y = ylim;
@@ -388,6 +427,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,5));
 
 subplot(1,3,3);
 y = ylim;
@@ -396,6 +436,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,6));
 
 % ax1 = axes('Position',[0 0 1 1],'Visible','off');
 % axes(ax1);
@@ -409,13 +450,13 @@ for i=1:numel(sets)
     text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
 end
 
-str = [ppath '/distribution_rotation.png'];
+str = sprintf('%s/distribution_rotation_%s.png', ppath, timestamp);
 print(h,str,'-dpng');
 
 end
 
 %%
-function plot_good (out, ppath, colors, symbols, d, sets)
+function plot_good (out, ppath, colors, symbols, d, sets, myylim, timestamp)
 
 %a = numel(out);
 f = figure;
@@ -459,6 +500,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,1));
 
 subplot(1,3,2);
 y = ylim;
@@ -467,6 +509,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,2));
 
 subplot(1,3,3);
 y = ylim;
@@ -475,6 +518,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,3));
 
 % ax1 = axes('Position',[0 0 1 1],'Visible','off');
 % axes(ax1);
@@ -488,7 +532,7 @@ for i=1:numel(sets)
     text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
 end
 
-str = [ppath '/distribution_offset_good.png'];
+str = sprintf('%s/distribution_offset_good_%s.png', ppath, timestamp);
 print(f,str,'-dpng');
 
 % rotation
@@ -531,6 +575,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,4));
 
 subplot(1,3,2);
 y = ylim;
@@ -539,6 +584,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,5));
 
 subplot(1,3,3);
 y = ylim;
@@ -547,6 +593,7 @@ m = (del-ndel)/2;
 ylim([y(1)-m y(2)+m]);
 x = xlim;
 xlim([x(1)-1 x(2)]);
+ylim(myylim(:,6));
 
 % ax1 = axes('Position',[0 0 1 1],'Visible','off');
 % axes(ax1);
@@ -560,7 +607,7 @@ for i=1:numel(sets)
     text(0.165+(i-1)*0.0175,0.01,sets{i},'FontSize',9,'Color',[0 0 0],'Interpreter','none','Rotation',90);
 end
 
-str = [ppath '/distribution_rotation_good.png'];
+str = sprintf('%s/distribution_rotation_good_%s.png', ppath, timestamp);
 print(h,str,'-dpng');
 
 end
