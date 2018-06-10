@@ -454,6 +454,8 @@ if exist(f,'file') == 2
             XguessSAVE1 = uint16(A);
         elseif isa(A,'double')
             XguessSAVE1 = uint16(A);
+        elseif isa(A,'logical')
+            XguessSAVE1 = 2^16*uint16(A);
         else
             disp('Warning input data is not 16 bit.');
             keyboard
@@ -589,10 +591,11 @@ fprintf('\nnull distribution has N = %d\n',LL);
 % and so that rotation limit = pi
 a = max ([ size(LFM1) size(LFM2)]);
 offset_limit = 0.15 * a * param.voxel_y;
+tmpt = param.trans_amp;
 param.trans_amp = offset_limit;
 %tmp = param.rot_amp;
 gain = pi;
-tmp = param.rot_amp;
+tmpr = param.rot_amp;
 if param.confocal
     param.rot_amp = [1 1 1];
 else
@@ -671,7 +674,8 @@ fprintf('\nCount    Mutual_Information                Offset [um]               
         %         profile viewer
     end
 %end
-param.rot_amp = tmp;
+param.rot_amp = tmpr;
+param.trans_amp = tmpt;
 
 % add to existing null distribution if any
 fprintf('\nnull distribution has N = %d, was N = %d\n',length(nullMIvec),LL);
@@ -745,7 +749,8 @@ end
 function p = estimateP (param, canonical, LFM1, LFM2, new, T, i, gain)
 init_MI = mutual_information (LFM1, new, LFM2, param);
 Pvec = [];
-N = 100;
+%N = 100;
+N = 10 / param.Pmelt;
 j = N;
 while j>0
     % perturb pos
@@ -852,7 +857,7 @@ param.transvec = [param.trans];
 param.offsetvec = [param.offset];
 param.rotvec = [param.rot];
 param.Pvec = [];
-param.trans_amp = 3.5; %um, half diameter of neuron
+%param.trans_amp = 3.5; %um, half diameter of neuron
 % calc rotational gain
 a = size(LFM2);
 half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
@@ -1510,6 +1515,8 @@ new_d3_log10(find(isinf(new_d3_log10))) = 0;
 u_index = find(u_acor == max(u_acor));
 v_index = find(v_acor == max(v_acor));
 w_index = find(w_acor == max(w_acor));
+[~, index] = min(abs(w_index - numel(w_acor)/2));
+w_index = w_index(index);
 
 offsets = [u_lag(u_index)*param.voxel_y...
     v_lag(v_index)*param.voxel_x...

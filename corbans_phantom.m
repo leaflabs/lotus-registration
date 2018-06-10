@@ -175,7 +175,7 @@ b = max(abc_LFM1);
 fprintf('max of indices (x, y, z) = [%d %d %d]\n',b(1),b(2),b(3));
 
 %out = zeros(a);
-out = zeros(b);
+out = zeros(b,class(LFM1));
 
 for i=1:L
     out(abc_LFM1(i,1),abc_LFM1(i,2),abc_LFM1(i,3)) = LFM1(i);
