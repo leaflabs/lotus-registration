@@ -180,7 +180,7 @@ out = zeros(b,class(LFM1));
 for i=1:L
     out(abc_LFM1(i,1),abc_LFM1(i,2),abc_LFM1(i,3)) = LFM1(i);
 end
-out(1,1,1) = 0.5;
+%out(1,1,1) = 0.5;
 %ind = sub2ind(size(LFM1),abc_LFM1(:,1),abc_LFM1(:,2),abc_LFM1(:,3));
 %i1 = LFM1(ind);
 %out = uint16( single(i1) );
