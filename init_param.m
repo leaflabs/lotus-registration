@@ -22,11 +22,14 @@ param.rot_amp = [1 0.1 0.1];
 % dim1 min, dim1 max, dim2 min, dim2 max, dim3 min, dim3 max,
 param.clip = [100,100,100,100,0,0];
 
+param.frozen1 = 100;
+param.frozen2 = 100;
 %param.anneal = 'linear';
 param.anneal = 'exp';
 param.Pmelt = 0.2; % fraction, max val = 1
-param.Pepsilon = 0.02; % fraction, error allowed for finding T that matches Pmelt
-param.T0 = 1e11;
+param.Pepsilon = 0.05; % fraction, error allowed for finding T that matches Pmelt
+param.T0 = 1e10;
+param.Tmin = 1e6;
 param.TC0 = 10000;
 param.Nnull = 2000;
 param.confocal = false;

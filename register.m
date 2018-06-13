@@ -86,7 +86,7 @@ end
 %% calculate thresholds
 param = calculate_thresholds (LFM1, LFM2, param,'cdf_voxel_intensities');
 
-keyboard
+%keyboard
 
 %% voxel positions
 param.index1 = find(LFM1>param.threshold1);
@@ -117,7 +117,7 @@ param.rot = param.angle;
 new = translate (rotated, param.centroid);
 param.trans = param.centroid;
 
-keyboard
+%keyboard
 
 % estimate offsets
 offsets = estimate_offsets(LFM1, LFM2, new, param);
@@ -131,26 +131,26 @@ fprintf('\nestimated offsets = [%f %f %f]\n',offsets(1),offsets(2),offsets(3));
 new = translate (new, offsets);
 param.trans = param.trans + offsets;
 
-keyboard
+%keyboard
 
 %% plot data
 if param.plot
     param = save_1d_max_projections(LFM1, LFM2, new, param,...
         '1d_max_projections_presim');
-    drawnow
-    keyboard
+    %drawnow
+    %keyboard
     save_2d_max_projections(LFM1, LFM2, new, param, 0,...
         '2d_max_projections_presim');
-    drawnow
-    keyboard
+    %drawnow
+    %keyboard
     save_2d_max_projections_compact(LFM1, LFM2, new, param, 0,...
         '2d_max_projections_compact_presim');
-    drawnow
-    keyboard
+    %drawnow
+    %keyboard
     save_2d_contour_plots(LFM1, LFM2, pos1, pos2, new, param,...
         'contour_plots_presim');
     drawnow
-    keyboard
+    %keyboard
 end
 
 %% null distribution
@@ -161,7 +161,7 @@ param.cdf = cdf;
 param.centers = centers;
 param.nullMIvec = nullMIvec;
 
-keyboard
+%keyboard
 %% print MI of volumes pre- and post-coarse registration
 % pre-coarse
 if strcmp(param.myfunc_MI,'multiply')
@@ -196,7 +196,7 @@ else
     keyboard
 end
 
-keyboard
+%keyboard
 
 %% simulated annealing
 [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param);
@@ -204,7 +204,7 @@ if param.plot
     save_stats(param);
 end
 
-keyboard
+%keyboard
 
 %% combine registered volumes
 if param.savevol
@@ -217,20 +217,20 @@ end
 if param.plot
     param = save_1d_max_projections(LFM1, LFM2, new, param,...
         '1d_max_projections_postsim');
-    drawnow
-    keyboard
+    %drawnow
+    %keyboard
     save_2d_max_projections(LFM1, LFM2, comb, param, 1, ...
         '2d_max_projections_postsim');
-    drawnow
-    keyboard
+    %drawnow
+    %keyboard
     save_2d_max_projections_compact(LFM1, LFM2, comb, param, 1, ...
         '2d_max_projections_compact_postsim');
-    drawnow
-    keyboard
+    %drawnow
+    %keyboard
     save_2d_contour_plots(LFM1, LFM2, pos1, pos2, new, param, ...
         'contour_plots_postsim');
     drawnow
-    keyboard
+    %keyboard
 end
 
 %% save final parameters
@@ -312,7 +312,7 @@ if param.plot & ~param.justCalcMI
     text(0.4,0.3,mystr2,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
     text(0.4,0.5,mystr1,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
     
-    keyboard
+    %keyboard
     
     str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
     save_plot(f,str);
@@ -810,11 +810,27 @@ Pvec = [];
 %N = 100;
 N = 10 / param.Pmelt;
 j = N;
+hot = 1;
 while j>0
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
     [d,r] = perturb(param,gain);
+    if hot<4
+        r = zeros(1,3);
+        t = r;
+        t(hot) = d(hot);
+        d = t;
+    else
+        d = zeros(1,3);
+        t = d;
+        t(hot-3) = r(hot-3);
+        r = t;
+    end
+    hot = hot+1;
+    if hot>6
+        hot = 1;
+    end
     %str0 = sprintf('d = [%7.3g0 %7.3g0 %7.3g0], r = [%7.3g0 %7.3g0 %7.3g0]',d(1),d(2),d(3),r(1),r(2),r(3));
     % apply transformation
     % rotate an amount r PLUS param.rot
@@ -878,7 +894,7 @@ T = param.T0;
 i = 0;
 while 1 > 0
     i=i+1;
-    p = estimateP (param, canonical, LFM1, LFM2, new, T, i, gain);
+    p = estimateP (param, canonical, LFM1, LFM2, new, T, gain);
     fprintf('\nfraction accepted = %0.5f, T = %1.0e\n',p,T);
     if p < param.Pmelt
         T = T * 10;
@@ -892,8 +908,8 @@ hT = T;
 lT = T/10;
 mT = (hT+lT)/2;
 i = 0;
-mP = estimateP (param, canonical, LFM1, LFM2, new, mT, i, gain);
-Pdiff = abs(mP-param.Pmelt);
+mP = estimateP (param, canonical, LFM1, LFM2, new, mT, gain);
+Pdiff = abs(mP-param.Pmelt)/param.Pmelt;
 fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f,Pdiff = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff);
 while Pdiff > param.Pepsilon
     i=i+1;
@@ -974,13 +990,19 @@ disp('Count      Perturbation     Transformation      Overlap     Probability,De
 %%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DDLFM
 i = 1;
 pass = 0;
+hot = 1;
+phase = 2;
 while 1 > 0
-    if pass>1000
-        fprintf('(\n\n1000 passes in a row. The model is frozen.\n\n');
+    if phase==2 && pass>param.frozen2
+        fprintf('(\n\n%d passes in a row. The model is frozen.\n\n',param.frozen2);
         break;
     end
+    if phase==1 && pass>param.frozen1
+        fprintf('(\n\n%d passes in a row. Switching to fine search.\n\n',param.frozen1);
+        phase = 2;
+        pass = 0;
+    end
     i = i+1;
-    %T = T - param.Trate;
     if strcmp(param.anneal,'exp')
         T = T * param.Trate;
     elseif  strcmp(param.anneal,'linear')
@@ -989,7 +1011,11 @@ while 1 > 0
         disp('WTF!');
         keyboard;
     end
-    if i > Tchanges
+%     if i > Tchanges
+%         param.Tvec = [param.Tvec T];
+%         break;
+%     end
+    if T < param.Tmin
         param.Tvec = [param.Tvec T];
         break;
     end
@@ -997,6 +1023,23 @@ while 1 > 0
     % randomly pick a translation vector and rotation vector
     % to be added to current location
     [d,r] = perturb(param,gain);
+    if phase == 2
+        if hot<4
+            r = zeros(1,3);
+            t = r;
+            t(hot) = d(hot);
+            d = t;
+        else
+            d = zeros(1,3);
+            t = d;
+            t(hot-3) = r(hot-3);
+            r = t;
+        end
+        hot = hot+1;
+        if hot>6
+            hot = 1;
+        end
+    end
     str0 = sprintf('d = [%7.3f %7.3f %7.3f], r = [%7.5f %7.5f %7.5f]',d(1),d(2),d(3),r(1),r(2),r(3));
     % apply transformation
     % rotate an amount r PLUS param.rot
@@ -1011,8 +1054,6 @@ while 1 > 0
     % measure mutual_information
     if strcmp(param.myfunc_MI,'multiply')
         MI = mutual_information (LFM1, new, LFM2, param);
-        %         elseif strcmp(param.myfunc_MI,'multiply_sqrt')
-        %             MI = mutual_information_sqrt (LFM1, new, LFM2, param);
     else
         disp('WTF!');
         keyboard;
@@ -1023,7 +1064,6 @@ while 1 > 0
         % keep
         str3 = 'Accept - MI increased';
         param.MIvec = [param.MIvec MI];
-        %param.MItvec = [param.MItvec MIt];
         last_MI = MI;
         pass = 0;
     else
@@ -1037,9 +1077,12 @@ while 1 > 0
             % accept decrease in MI mutual information
             str3 = sprintf('Accept %.3g < %.3g',rnd,p);
             param.MIvec = [param.MIvec MI];
-            %param.MItvec = [param.MItvec MIt];
             last_MI = MI;
-            pass = 0;
+            if delmi==0
+                pass = pass + 1;
+            else
+                pass = 0;
+            end
         else
             % reject move
             str3 = sprintf('Reject %.3g > %.3g',rnd,p);
@@ -1047,19 +1090,16 @@ while 1 > 0
             param.trans = param.trans - d;
             tmp = param.MIvec(end);
             param.MIvec = [param.MIvec tmp];
-            %tmpt = param.MItvec(end);
-            %param.MItvec = [param.MItvec tmpt];
             pass = pass + 1;
         end
     end
-    %pos_changes = pos_changes-1;
-    str4 = sprintf('%d, T = %g',i,T);
-    str6 = sprintf('Final MI = %.3g',last_MI);
+    str4 = sprintf('%d, pass = %d, T = %g',i,pass, T);
+    str6 = sprintf('Final MI = %d',last_MI);
     str5 = print_param(param);
     val7 = param.trans - param.centroid;
     str7 = sprintf('final offset = [%6.6g0 %6.6g0 %6.6g0]',val7(1),val7(2),val7(3));
     w = find(param.centers>last_MI,1); % keep only first instance
-    if last_MI > param.bestMI
+    if last_MI >= param.bestMI
         val = double(last_MI)/double(param.bestMI);
         str8 = sprintf('MI frac = %.5g, siman exceeds null',val);
         param.cdfvec = [param.cdfvec val] ;
@@ -1070,30 +1110,12 @@ while 1 > 0
         disp('WTF?');
         keyboard
     end
-    %dif = last_MI - param.bestMI;
-    % last_MI > max(param.nullMIvec) =>dif>0
-    % last_MI < max(param.nullMIvec) =>dif<0
-    %         if dif > 0
-    %             str9 = sprintf('siman exceeds null by %3.2f%%',100*abs(dif)/max(param.nullMIvec));
-    %         else
-    %             str9 = sprintf('null exceeds siman by %3.2f%%',100*abs(dif)/last_MI);
-    %         end
     fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8);
-    %fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9);
-    %param.Pvec = [param.Pvec p];
     param.Tvec = [param.Tvec T];
     param.transvec = [param.transvec; param.trans];
     param.offsetvec = [param.offsetvec; val7];
     param.rotvec = [param.rotvec; param.rot];
     param.Dvec = [param.Dvec; d];
-    %         profile off
-    %          profile viewer
-    %          keyboard
-    %profile viewer;
-    %keyboard
-    %T = lowerT(T,param);
-    %Tchanges = Tchanges-1;
-    %p = p * param.prate;
 end
 rotated = rotate (canonical,param.rot);
 new = translate (rotated, param.trans);
