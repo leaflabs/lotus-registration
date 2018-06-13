@@ -19,6 +19,8 @@ if ~param.justCalcMI
     tic
 end
 
+param
+
 %% load volumes
 f = [param.inputFilePath1 param.inputFileName{1}];
 fprintf('\nLoading volume %s\n\n',f);
@@ -27,6 +29,8 @@ f = [param.inputFilePath2 param.inputFileName{1}];
 fprintf('\nLoading volume %s\n\n',f);
 LFM2 = loadData(f, param);
 param.voxel_z = param.voxel_z / param.interp;
+
+%keyboard
 
 %% if just transforming confocal data
 if param.rapid & param.confocal
@@ -77,8 +81,12 @@ if ~isempty(find(param.clip>0))
         1+param.clip(5):a(3)-param.clip(6));
 end
 
+%keyboard
+
 %% calculate thresholds
 param = calculate_thresholds (LFM1, LFM2, param,'cdf_voxel_intensities');
+
+keyboard
 
 %% voxel positions
 param.index1 = find(LFM1>param.threshold1);
@@ -109,6 +117,8 @@ param.rot = param.angle;
 new = translate (rotated, param.centroid);
 param.trans = param.centroid;
 
+keyboard
+
 % estimate offsets
 offsets = estimate_offsets(LFM1, LFM2, new, param);
 for i=1:3
@@ -121,17 +131,26 @@ fprintf('\nestimated offsets = [%f %f %f]\n',offsets(1),offsets(2),offsets(3));
 new = translate (new, offsets);
 param.trans = param.trans + offsets;
 
+keyboard
+
 %% plot data
 if param.plot
     param = save_1d_max_projections(LFM1, LFM2, new, param,...
         '1d_max_projections_presim');
+    drawnow
+    keyboard
     save_2d_max_projections(LFM1, LFM2, new, param, 0,...
         '2d_max_projections_presim');
+    drawnow
+    keyboard
     save_2d_max_projections_compact(LFM1, LFM2, new, param, 0,...
         '2d_max_projections_compact_presim');
+    drawnow
+    keyboard
     save_2d_contour_plots(LFM1, LFM2, pos1, pos2, new, param,...
         'contour_plots_presim');
     drawnow
+    keyboard
 end
 
 %% null distribution
@@ -142,6 +161,7 @@ param.cdf = cdf;
 param.centers = centers;
 param.nullMIvec = nullMIvec;
 
+keyboard
 %% print MI of volumes pre- and post-coarse registration
 % pre-coarse
 if strcmp(param.myfunc_MI,'multiply')
@@ -176,12 +196,15 @@ else
     keyboard
 end
 
+keyboard
+
 %% simulated annealing
 [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param);
 if param.plot
     save_stats(param);
 end
 
+keyboard
 
 %% combine registered volumes
 if param.savevol
@@ -194,13 +217,20 @@ end
 if param.plot
     param = save_1d_max_projections(LFM1, LFM2, new, param,...
         '1d_max_projections_postsim');
+    drawnow
+    keyboard
     save_2d_max_projections(LFM1, LFM2, comb, param, 1, ...
         '2d_max_projections_postsim');
+    drawnow
+    keyboard
     save_2d_max_projections_compact(LFM1, LFM2, comb, param, 1, ...
         '2d_max_projections_compact_postsim');
+    drawnow
+    keyboard
     save_2d_contour_plots(LFM1, LFM2, pos1, pos2, new, param, ...
         'contour_plots_postsim');
     drawnow
+    keyboard
 end
 
 %% save final parameters
@@ -281,6 +311,8 @@ if param.plot & ~param.justCalcMI
     mystr2 = [num2str(param.N) ' bins in distribution'];
     text(0.4,0.3,mystr2,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
     text(0.4,0.5,mystr1,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
+    
+    keyboard
     
     str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
     save_plot(f,str);
@@ -455,7 +487,7 @@ if exist(f,'file') == 2
         elseif isa(A,'double')
             XguessSAVE1 = uint16(A);
         elseif isa(A,'logical')
-            XguessSAVE1 = 2^16*uint16(A);
+            XguessSAVE1 = (2^16-1)*uint16(A);
         else
             disp('Warning input data is not 16 bit.');
             keyboard
@@ -486,23 +518,49 @@ end
 end
 
 function out = interpolate (LFM, param)
-% initialize container of new size
-s = size(LFM);
-out = zeros(s(1),s(2),param.interp*s(3),'uint16');
-boundary = param.interp/2 + 1;
-for i=1:param.interp*s(3)
-    if i < boundary
-        out(:,:,i) = LFM(:,:,1);
-    elseif i > (param.interp*s(3)-(boundary-1))
-        out(:,:,i) = LFM(:,:,end);
-    else
-        a = round((i-1)/param.interp);
-        b = a+1;
-        N = 2*param.interp;
-        fb = 1+2*mod(i-(param.interp-1),param.interp);
-        fa = N-fb;
-        out(:,:,i) = fa/N*LFM(:,:,a) + fb/N*LFM(:,:,b);
+% assume param.interp = 1 or even
+if ~(param.interp==1 || mod(param.interp,2)==0)
+    fprintf('Error. param.interp is assumed to 1 or an even number (2,4,6,etc)\n.');
+    fprintf('param.interp = %d\n',param.interp);
+    exit
+end
+if param.interp>1
+    % initialize container of new size
+    s = size(LFM);
+    out = zeros(s(1),s(2),param.interp*s(3),'uint16');
+    boundary = param.interp/2 + 2;
+    a = 1;
+    b = 0;
+    j = 1;
+    A = LFM(:,:,j);
+    B = LFM(:,:,j+1);
+    del = 1/param.interp;
+    N = param.interp*s(3)+1;
+    last_v = a*A+b*B;
+    for i=1:N
+        if i < boundary
+            if i>1
+                out(:,:,i-1) = LFM(:,:,1);
+            end
+        elseif i > (N-(boundary-1))
+            out(:,:,i-1) = LFM(:,:,end);
+        else
+            v = a*A+b*B;
+            out(:,:,i-1) = (last_v + v)/2;
+            last_v = v;
+            a = a-del;
+            b = b+del;
+            if a==0
+                a=1;
+                b=0;
+                j=j+1;
+                A = LFM(:,:,j);
+                B = LFM(:,:,j+1);
+            end
+        end
     end
+else
+    out = LFM;
 end
 end
 
@@ -840,9 +898,17 @@ fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f,Pdiff = 
 while Pdiff > param.Pepsilon
     i=i+1;
     if mP < param.Pmelt
+        % increase temp
         lT = mT;
+        if abs(lT-hT)<1e8
+            hT = lT*10;
+        end
     else
+        % lower temp
         hT = mT;
+        if abs(lT-hT)<1e8
+            lT = hT/10;
+        end
     end
     mT = (hT+lT)/2;
     mP = estimateP (param, canonical, LFM1, LFM2, new, mT, i, gain);
@@ -1513,7 +1579,11 @@ new_d3_log10(find(isinf(new_d3_log10))) = 0;
 [w_acor, w_lag]  = xcorr( LFM1_d3_log10,   new_d3_log10 );
 
 u_index = find(u_acor == max(u_acor));
+[~, index] = min(abs(u_index - numel(u_acor)/2));
+u_index = u_index(index);
 v_index = find(v_acor == max(v_acor));
+[~, index] = min(abs(v_index - numel(v_acor)/2));
+v_index = v_index(index);
 w_index = find(w_acor == max(w_acor));
 [~, index] = min(abs(w_index - numel(w_acor)/2));
 w_index = w_index(index);
