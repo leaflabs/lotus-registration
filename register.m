@@ -33,7 +33,7 @@ param.voxel_z = param.voxel_z / param.interp;
 %keyboard
 
 %% if just transforming confocal data
-if param.rapid & param.confocal
+if param.rapid && param.confocal
     tmp = LFM1;
     LFM1 = LFM2;
     LFM2 = ones(size(LFM2),'uint16');
@@ -46,7 +46,7 @@ end
 %  then combine registered volumes
 if param.rapid
     % must specify: param.centroid, param.trans, param.rot
-    out = combineVols_iter_dim3 (LFM1, LFM2, param);
+    combineVols_iter_dim3 (LFM1, LFM2, param);
     %MI = mutual_information (LFM1, out, LFM2, param)
     param
     elapsedTime = toc
@@ -804,7 +804,7 @@ str=sprintf('%s%s_null_cdf.png',param.savePath,param.timestamp);
 save_plot(f, str);
 end
 
-function p = estimateP (param, canonical, LFM1, LFM2, new, T, i, gain)
+function p = estimateP (param, canonical, LFM1, LFM2, new, T, gain)
 init_MI = mutual_information (LFM1, new, LFM2, param);
 Pvec = [];
 %N = 100;
@@ -815,7 +815,7 @@ while j>0
     % randomly pick a translation vector and rotation vector
     % to be added to current location
     [d,r] = perturb(param,gain);
-    str0 = sprintf('d = [%7.3g0 %7.3g0 %7.3g0], r = [%7.3g0 %7.3g0 %7.3g0]',d(1),d(2),d(3),r(1),r(2),r(3));
+    %str0 = sprintf('d = [%7.3g0 %7.3g0 %7.3g0], r = [%7.3g0 %7.3g0 %7.3g0]',d(1),d(2),d(3),r(1),r(2),r(3));
     % apply transformation
     % rotate an amount r PLUS param.rot
     % thus param.rot tracks the current rotation
@@ -823,7 +823,7 @@ while j>0
     % translate rotated by an amount param.trans+d
     % thus param.trans tracks the current position
     new = translate (rotated, param.trans+d);
-    str1 = print_param(param);
+    %str1 = print_param(param);
     % measure mutual_information
     if strcmp(param.myfunc_MI,'multiply')
         MI = mutual_information (LFM1, new, LFM2, param);
@@ -832,8 +832,8 @@ while j>0
         keyboard;
     end
     delmi = MI - init_MI;
-    str2 = sprintf('test MI = %7.3g, delmi = %7.3g',MI,delmi);
-    str3 = 'MI increased';
+    %str2 = sprintf('test MI = %7.3g, delmi = %7.3g',MI,delmi);
+    %str3 = 'MI increased';
     if delmi < 0.0
         j=j-1;
         p = exp(delmi/T);
@@ -841,15 +841,15 @@ while j>0
         
         if rnd < p
             % accept decrease in MI mutual information
-            str3 = sprintf('Accept %.3g < %.3g',rnd,p);
+            %str3 = sprintf('Accept %.3g < %.3g',rnd,p);
             Pvec = [Pvec 1];
         else
             % reject move
             Pvec = [Pvec 0];
-            str3 = sprintf('Reject %.3g > %.3g',rnd,p);
+            %str3 = sprintf('Reject %.3g > %.3g',rnd,p);
         end
     end
-    str4 = sprintf('%d %d, T = %1.0e',i,j,T);
+    %str4 = sprintf('%d %d, T = %1.0e',i,j,T);
     %fprintf('%7s%75s  %84s  %40s  %22s\n',str4,str0,str1,str2,str3);
 end
 p = sum(Pvec)/N;
@@ -859,12 +859,12 @@ end
 function T = find_melting_T (LFM1, new, LFM2, canonical, param, gain)
 %param.rot_amp = [param.rot_amp(1) 0 0];
 % calculate MI
-if strcmp(param.myfunc_MI,'multiply')
-    MI = mutual_information (LFM1, new, LFM2, param);
-else
-    disp('WTF!');
-    keyboard;
-end
+% if strcmp(param.myfunc_MI,'multiply')
+%     MI = mutual_information (LFM1, new, LFM2, param);
+% else
+%     disp('WTF!');
+%     keyboard;
+% end
 %init_MI = MI;
 % set initial T
 % Start with T sufficiently high to "melt" the system
@@ -874,15 +874,15 @@ T = param.T0;
 % while system not frozen and more temperature changes are allowed
 % profile on;
 %%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DDLFM
-lP = 0;
+%lP = 0;
 i = 0;
 while 1 > 0
     i=i+1;
     p = estimateP (param, canonical, LFM1, LFM2, new, T, i, gain);
     fprintf('\nfraction accepted = %0.5f, T = %1.0e\n',p,T);
-    if p < param.Pmelt;
+    if p < param.Pmelt
         T = T * 10;
-        lP = p;
+        %lP = p;
         fprintf('new T = %1.0e\n\n',T);
     else
         break;
@@ -911,7 +911,7 @@ while Pdiff > param.Pepsilon
         end
     end
     mT = (hT+lT)/2;
-    mP = estimateP (param, canonical, LFM1, LFM2, new, mT, i, gain);
+    mP = estimateP (param, canonical, LFM1, LFM2, new, mT, gain);
     Pdiff = abs(mP-param.Pmelt);
     fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f, Pdiff = %1.5f, Pepsilon = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff,param.Pepsilon);
 end
@@ -1070,7 +1070,7 @@ while 1 > 0
         disp('WTF?');
         keyboard
     end
-    dif = last_MI - param.bestMI;
+    %dif = last_MI - param.bestMI;
     % last_MI > max(param.nullMIvec) =>dif>0
     % last_MI < max(param.nullMIvec) =>dif<0
     %         if dif > 0
@@ -1454,19 +1454,19 @@ r = [r1 r2 r3];
 end
 
 
-function out =  lowerT(T,param)
-delT = -param.Trate*T;
-out = T+delT;
-end
+% function out =  lowerT(T,param)
+% delT = -param.Trate*T;
+% out = T+delT;
+% end
 
 
-function param = set_prate (MI, param)
-% aim for 0.95 aceptance at T0
-%param.T0 = -1/log(param.init_p);
-%param.TC0 = round(log10(param.final_p) / log10(param.Trate))
-%param.T0 = -1/log(0.95)/MI;
-param.prate = 10^( ( log10(param.final_p)-log10(param.init_p) ) / param.TC0);
-end
+% function param = set_prate (MI, param)
+% % aim for 0.95 aceptance at T0
+% %param.T0 = -1/log(param.init_p);
+% %param.TC0 = round(log10(param.final_p) / log10(param.Trate))
+% %param.T0 = -1/log(0.95)/MI;
+% param.prate = 10^( ( log10(param.final_p)-log10(param.init_p) ) / param.TC0);
+% end
 
 
 
