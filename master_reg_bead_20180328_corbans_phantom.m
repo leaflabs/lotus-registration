@@ -8,9 +8,9 @@ param = init_param();
 [~,hostname] = system('hostname')
 param.hostname = strtrim(hostname);
 
-setup_par
+%setup_par
 
-if ~isempty(strfind(param.hostname, 'Justins-Mac'))
+if ~isempty(strfind(param.hostname, 'Justins-Mac')) || ~isempty(strfind(param.hostname, 'dhcp-18-189-20-128.dyn.mit.edu'))
 	param.ppath = '/Users/justin/Desktop/DDLFM';
 	addpath([param.ppath '/lotus-registration']);
 	param.ipath = param.ppath;
@@ -50,53 +50,110 @@ param.Pmelt = 0.005;
 param.trans_amp = 1;
 param.rot_amp = [1 1 1];
 
-param
+% %% new set
 
-% param.inputFileName = {'axis_phantom_100_20180610_082149_rot_0_0_0_trans_0_0_50.mat'};
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_0_0_trans_0_0_0.mat'};
+
+% param.angle   = [0*pi/180 0 0]; % radians
 % register(param)
 % close all;
 % 
-% param.inputFileName = {'axis_phantom_100_20180610_082149_rot_0_0_0_trans_0_50_0.mat'};
+% param.angle   = [15*pi/180 0 0]; % radians
 % register(param)
 % close all;
 % 
-% param.inputFileName = {'axis_phantom_100_20180610_082149_rot_0_0_0_trans_50_0_0.mat'};
+% param.angle   = [30*pi/180 0 0]; % radians
 % register(param)
 % close all;
 % 
-% param.inputFileName = {'axis_phantom_100_20180610_082149_rot_0_0_0_trans_50_50_0.mat'};
+% param.angle   = [45*pi/180 0 0]; % radians
 % register(param)
 % close all;
 % 
-% param.inputFileName = {'axis_phantom_100_20180610_082149_rot_0_0_0_trans_50_50_50.mat'};
+% param.angle   = [60*pi/180 0 0]; % radians
 % register(param)
 % close all;
 % 
-% param.inputFileName = {'axis_phantom_100_20180610_082149_rot_0_0_90_trans_0_0_0.mat'};
+% param.angle   = [75*pi/180 0 0]; % radians
 % register(param)
 % close all;
 
-param.inputFileName = {'axis_phantom_100_20180610_082149_rot_0_90_0_trans_0_0_0.mat'};
+% param.angle   = [90*pi/180 0 0]; % radians
+% register(param)
+% close all;
+% 
+% param.angle   = [105*pi/180 0 0]; % radians
+% register(param)
+% close all;
+
+% param.angle   = [120*pi/180 0 0]; % radians
+% register(param)
+% close all;
+
+% param.angle   = [135*pi/180 0 0]; % radians
+% register(param)
+% close all;
+
+%% original set
+
+angle_0 = 85; % degrees
+
+param.angle   = [0 0 angle_0/180*pi]; % radians
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_0_90_trans_0_0_0.mat'};
 register(param)
 close all;
 
-param.inputFileName = {'axis_phantom_100_20180610_082149_rot_90_0_0_trans_0_0_0.mat'};
+param.angle   = [0 angle_0/180*pi 0]; % radians
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_90_0_trans_0_0_0.mat'};
 register(param)
 close all;
 
-param.inputFileName = {'axis_phantom_100_20180610_082149_rot_90_0_90_trans_0_0_0.mat'};
+param.angle   = [angle_0/180*pi 0 0]; % radians
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_0_0_trans_0_0_0.mat'};
 register(param)
 close all;
 
-param.inputFileName = {'axis_phantom_100_20180610_082149_rot_90_90_0_trans_0_0_0.mat'};
+param.angle   = [angle_0/180*pi 0 angle_0/180*pi]; % radians
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_0_90_trans_0_0_0.mat'};
 register(param)
 close all;
 
-param.inputFileName = {'axis_phantom_100_20180610_082149_rot_-90_-90_-90_trans_0_0_0.mat'};
+param.angle   = [angle_0/180*pi angle_0/180*pi 0]; % radians
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_90_0_trans_0_0_0.mat'};
 register(param)
 close all;
 
-param.inputFileName = {'axis_phantom_100_20180610_082149_rot_90_90_90_trans_0_0_0.mat'};
+param.angle   = [-angle_0/180*pi -angle_0/180*pi -angle_0/180*pi]; % radians
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_-90_-90_-90_trans_0_0_0.mat'};
 register(param)
 close all;
+
+param.angle   = [angle_0/180*pi angle_0/180*pi angle_0/180*pi]; % radians
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_90_90_trans_0_0_0.mat'};
+register(param)
+close all;
+
+param.angle   = [0 0 0]; % radians
+
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_0_0_trans_0_0_50.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_0_0_trans_0_50_0.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_0_0_trans_50_0_0.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_0_0_trans_50_50_0.mat'};
+register(param)
+close all;
+
+param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_0_0_trans_50_50_50.mat'};
+register(param)
+close all;
+
+
 
