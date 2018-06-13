@@ -98,30 +98,32 @@ param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_0_0_trans_0_0_0.
 
 angle_0 = 85; % degrees
 
-param.angle   = [0 0 angle_0/180*pi]; % radians
-param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_0_90_trans_0_0_0.mat'};
-register(param)
-close all;
+param.frozen2 = 1000;
 
-param.angle   = [0 angle_0/180*pi 0]; % radians
-param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_90_0_trans_0_0_0.mat'};
-register(param)
-close all;
-
-param.angle   = [angle_0/180*pi 0 0]; % radians
-param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_0_0_trans_0_0_0.mat'};
-register(param)
-close all;
-
-param.angle   = [angle_0/180*pi 0 angle_0/180*pi]; % radians
-param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_0_90_trans_0_0_0.mat'};
-register(param)
-close all;
-
-param.angle   = [angle_0/180*pi angle_0/180*pi 0]; % radians
-param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_90_0_trans_0_0_0.mat'};
-register(param)
-close all;
+% param.angle   = [angle_0/180*pi angle_0/180*pi 0]; % radians
+% param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_90_0_trans_0_0_0.mat'};
+% register(param)
+% close all;
+% 
+% param.angle   = [0 angle_0/180*pi 0]; % radians
+% param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_90_0_trans_0_0_0.mat'};
+% register(param)
+% close all;
+% 
+% param.angle   = [0 0 angle_0/180*pi]; % radians
+% param.inputFileName = {'axis_phantom_100_20180612_201406_rot_0_0_90_trans_0_0_0.mat'};
+% register(param)
+% close all;
+% 
+% param.angle   = [angle_0/180*pi 0 0]; % radians
+% param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_0_0_trans_0_0_0.mat'};
+% register(param)
+% close all;
+% 
+% param.angle   = [angle_0/180*pi 0 angle_0/180*pi]; % radians
+% param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_0_90_trans_0_0_0.mat'};
+% register(param)
+% close all;
 
 param.angle   = [-angle_0/180*pi -angle_0/180*pi -angle_0/180*pi]; % radians
 param.inputFileName = {'axis_phantom_100_20180612_201406_rot_-90_-90_-90_trans_0_0_0.mat'};
@@ -132,6 +134,8 @@ param.angle   = [angle_0/180*pi angle_0/180*pi angle_0/180*pi]; % radians
 param.inputFileName = {'axis_phantom_100_20180612_201406_rot_90_90_90_trans_0_0_0.mat'};
 register(param)
 close all;
+
+keyboard
 
 param.angle   = [0 0 0]; % radians
 
