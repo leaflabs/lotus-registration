@@ -103,7 +103,7 @@ if param.justCalcMI
     tmp = translate (pos2, -param.centroid);
     tmp = rotate (tmp, param.rot);
     final_pos2 = translate (tmp, param.trans);
-    MI = mutual_information (LFM1, final_pos2, LFM2, param);
+    MI = mutual_information (LFM1, final_pos2, LFM2, param, 0);
     return;
 end
 
@@ -165,7 +165,7 @@ param.nullMIvec = nullMIvec;
 %% print MI of volumes pre- and post-coarse registration
 % pre-coarse
 if strcmp(param.myfunc_MI,'multiply')
-    MI = mutual_information (LFM1, pos2, LFM2, param);
+    MI = mutual_information (LFM1, pos2, LFM2, param, 0);
 else
     disp('WTF!');
     keyboard;
@@ -181,7 +181,7 @@ else
 end
 % post-coarse
 if strcmp(param.myfunc_MI,'multiply')
-    MI = mutual_information (LFM1, new, LFM2, param);
+    MI = mutual_information (LFM1, new, LFM2, param, 0);
 else
     disp('WTF!');
     keyboard;
@@ -274,12 +274,16 @@ end
 i = derive_threshold (cdf_LFM1, param);
 j = derive_threshold (cdf_LFM2, param);
 
-param.threshold1 = centers(i);
-param.threshold2 = centers(j);
+param.threshold1 = edges(i);
+param.threshold2 = edges(j);
+% param.threshold1 = centers(i);
+% param.threshold2 = centers(j);
 fprintf('threshold1 = %f\n',param.threshold1);
 fprintf('threshold2 = %f\n',param.threshold2);
-param.contour_int1 = centers(i);
-param.contour_int2 = centers(j);
+param.contour_int1 = param.threshold1;
+param.contour_int2 = param.threshold2;
+% param.contour_int1 = centers(i);
+% param.contour_int2 = centers(j);
 fprintf('contour_int1 = %f\n',param.contour_int1);
 fprintf('contour_int2 = %f\n\n\n',param.contour_int2);
 
@@ -298,10 +302,10 @@ if param.plot & ~param.justCalcMI
     %arbitrary_scale = 4;
     %xlim([0 centers(arbitrary_scale*max(i,j))]);
     xlim([0 1e4]);
-    mystr1 = [sprintf('%3.3f%% of voxels in LFM1 exceed %.0f in intensity\n',...
-        100*(1-cdf_LFM1(i)), param.threshold1 )...
-              sprintf('%3.3f%% of voxels in LFM2 exceed %.0f in intensity\n',...
-        100*(1-cdf_LFM2(j)), param.threshold2 )...
+    mystr1 = [sprintf('%3.3f%% of voxels in LFM1 exceed %.1f in intensity\n',...
+        100*(1-cdf_LFM1(i-1)), param.threshold1 )...
+              sprintf('%3.3f%% of voxels in LFM2 exceed %.1f in intensity\n',...
+        100*(1-cdf_LFM2(j-1)), param.threshold2 )...
         sprintf('\nLFM1 has %d voxels\n', numel(LFM1))...
         sprintf('LFM2 has %d voxels', numel(LFM2))...
         ];
@@ -487,7 +491,8 @@ if exist(f,'file') == 2
         elseif isa(A,'double')
             XguessSAVE1 = uint16(A);
         elseif isa(A,'logical')
-            XguessSAVE1 = (2^16-1)*uint16(A);
+            %XguessSAVE1 = (2^16-1)*uint16(A);
+            XguessSAVE1 = 2^8*uint16(A);
         else
             disp('Warning input data is not 16 bit.');
             keyboard
@@ -713,7 +718,7 @@ fprintf('\nCount    Mutual_Information                Offset [um]               
         %new = translate (rotated, param.centroid+d);
         % measure mutual_information
         if strcmp(param.myfunc_MI,'multiply')
-            MI = mutual_information (LFM1, new, LFM2, param);
+            MI = mutual_information (LFM1, new, LFM2, param, 0);
             %     elseif strcmp(param.myfunc_MI,'multiply_sqrt')
             %         MI = mutual_information_sqrt (LFM1, new, LFM2, param);
         else
@@ -805,7 +810,7 @@ save_plot(f, str);
 end
 
 function p = estimateP (param, canonical, LFM1, LFM2, new, T, gain)
-init_MI = mutual_information (LFM1, new, LFM2, param);
+init_MI = mutual_information (LFM1, new, LFM2, param, 0);
 Pvec = [];
 %N = 100;
 N = 10 / param.Pmelt;
@@ -842,7 +847,7 @@ while j>0
     %str1 = print_param(param);
     % measure mutual_information
     if strcmp(param.myfunc_MI,'multiply')
-        MI = mutual_information (LFM1, new, LFM2, param);
+        MI = mutual_information (LFM1, new, LFM2, param, 0);
     else
         disp('WTF!');
         keyboard;
@@ -947,7 +952,7 @@ radius = sqrt( sum( half_span .* half_span ) );
 gain = param.trans_amp / radius;
 % calculate MI
 if strcmp(param.myfunc_MI,'multiply')
-    MI = mutual_information (LFM1, new, LFM2, param);
+    MI = mutual_information (LFM1, new, LFM2, param, 0);
 else
     disp('WTF!');
     keyboard;
@@ -992,6 +997,7 @@ i = 1;
 pass = 0;
 hot = 1;
 phase = 2;
+deleteme = false;
 while 1 > 0
     if phase==2 && pass>param.frozen2
         fprintf('(\n\n%d passes in a row. The model is frozen.\n\n',param.frozen2);
@@ -1053,7 +1059,7 @@ while 1 > 0
     str1 = print_param(param);
     % measure mutual_information
     if strcmp(param.myfunc_MI,'multiply')
-        MI = mutual_information (LFM1, new, LFM2, param);
+        MI = mutual_information (LFM1, new, LFM2, param, 0);
     else
         disp('WTF!');
         keyboard;
@@ -1066,6 +1072,14 @@ while 1 > 0
         param.MIvec = [param.MIvec MI];
         last_MI = MI;
         pass = 0;
+%     elseif delmi == 0
+%         MI2 = mutual_information (LFM1, new, LFM2, param, 1);
+%         param.rot = param.rot - r;
+%         param.trans = param.trans - d;
+%         rotated1 = rotate (canonical,param.rot);
+%         new1 = translate (rotated1, param.trans);
+%         MI1 = mutual_information (LFM1, new1, LFM2, param,1);
+%         keyboard
     else
         %         # else accept D with probability P = exp(-E/kBT)
         %         # using (psuedo-)random number uniformly distributed in the interval (0,1)
@@ -1383,7 +1397,7 @@ out = sprintf('trans = [%6.6f %6.6f %6.6f], rot = [%7.6f %7.6f %7.6f]',a(1),a(2)
 end
 
 
-function mi = mutual_information (LFM1, new, LFM2, param)
+function mi = mutual_information (LFM1, new, LFM2, param, deleteme)
 scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
 new_pixels = ceil(new*scale);
 s = size(LFM1);
@@ -1394,6 +1408,10 @@ index = find( new_pixels(:,1)<=s(1) & new_pixels(:,2)<=s(2) & new_pixels(:,3)<=s
 i1 = LFM1(sub2ind(s,new_pixels(index,1),new_pixels(index,2),new_pixels(index,3)));
 i2 = LFM2(param.index2(index));
 mi = sum(double(i1).*double(i2));
+% if deleteme
+%     keyboard
+%     %save('before.mat','new','index','i1','i2','mi');
+% end
 end
 
 
@@ -2000,13 +2018,13 @@ axes(ax1);
 
 text(0.2,0.45,str,'FontSize',12,'Color',[0 0 0] ,'Interpreter','none');
 
-msg = sprintf('LFM1: contour at intensity level %4.0f',param.contour_int1);
+msg = sprintf('LFM1: contour at intensity level %4.2f',param.contour_int1);
 text(0.2,0.4,msg,'FontSize',12,'Color',colors{3},'Interpreter','none');
 
-msg = sprintf('LFM2: contour at intensity level %4.0f',param.contour_int2);
+msg = sprintf('LFM2: contour at intensity level %4.2f',param.contour_int2);
 text(0.2,0.35,msg,'FontSize',12,'Color',colors{2},'Interpreter','none');
 
-msg = sprintf('LFM2 coarse reg: contour at intensity level %4.0f',param.contour_int2);
+msg = sprintf('LFM2 coarse reg: contour at intensity level %4.2f',param.contour_int2);
 text(0.2,0.3,msg,'FontSize',12,'Color',colors{1},'Interpreter','none');
 
 text(0.2,0.25,'centroid of LFM2 coarse reg','FontSize',12,'Color',[0 1 0],'Interpreter','none');
@@ -2086,6 +2104,10 @@ if flag
     yz = squeeze(max(new,[],2));
     subplot(2,6,5);
     dr = ceil(log2(single(max(max(yz)))));
+    if dr == 0 || max(max(max(new)))==0
+        fprintf('Warning! dr =0.\n');
+        dr = 8;
+    end
     imagesc(yz,[0 2^dr]);
     xlabel('three [pixels]');
     ylabel('one [pixels]');
@@ -2097,6 +2119,10 @@ if flag
     xy = squeeze(max(new,[],3));
     subplot(2,6,6);
     dr = ceil(log2(single(max(max(xy)))));
+    if dr == 0 || max(max(max(new)))==0
+        fprintf('Warning! dr =0.\n');
+        dr = 8;
+    end
     imagesc(xy,[0 2^dr]);
     xlabel('two [pixels]');
     ylabel('one [pixels]');
@@ -2107,6 +2133,10 @@ if flag
     xz = squeeze(max(new,[],1))';
     subplot(2,6,12);
     dr = ceil(log2(single(max(max(xz)))));
+    if dr == 0 || max(max(max(new)))==0
+        fprintf('Warning! dr =0.\n');
+        dr = 8;
+    end
     imagesc(xz,[0 2^dr]);
     xlabel('two [pixels]');
     ylabel('three [pixels]');
