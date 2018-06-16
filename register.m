@@ -114,11 +114,16 @@ param.centroid = calc_centroid(LFM2,param);
 canonical = translate (pos2, -param.centroid);
 rotated = rotate (canonical,param.angle);
 param.rot = param.angle;
+if param.just_MI==false
 new = translate (rotated, param.centroid);
 param.trans = param.centroid;
+else
+    new = translate (rotated, param.trans);
+end
 
 %keyboard
 
+if param.just_MI==false
 % estimate offsets
 offsets = estimate_offsets(LFM1, LFM2, new, param);
 for i=1:3
@@ -130,6 +135,7 @@ param.offset = offsets;
 fprintf('\nestimated offsets = [%f %f %f]\n',offsets(1),offsets(2),offsets(3));
 new = translate (new, offsets);
 param.trans = param.trans + offsets;
+end
 
 %keyboard
 
@@ -195,8 +201,6 @@ else
     disp('WTF?');
     keyboard
 end
-
-%keyboard
 
 %% simulated annealing
 [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param);
@@ -957,15 +961,15 @@ else
     disp('WTF!');
     keyboard;
 end
-last_MI = MI;
+%last_MI = MI;
 param.MIvec = MI;
 % CDF
 param.cdfvec = [];
-w = find(param.centers>last_MI,1); % keep only first instance
+w = find(param.centers>param.MIvec(end),1); % keep only first instance
 if ~isempty(w)
     param.cdfvec = [param.cdfvec param.cdf(w)];
 else
-    val = double(last_MI)/double(param.bestMI);
+    val = double(param.MIvec(end))/double(param.bestMI);
     param.cdfvec = [param.cdfvec val] ;
 end
 % set initial T
@@ -996,6 +1000,8 @@ disp('Count      Perturbation     Transformation      Overlap     Probability,De
 i = 1;
 pass = 0;
 hot = 1;
+hotvec = [1:6];
+hotvec = hotvec(randperm(numel(hotvec)));
 phase = 2;
 deleteme = false;
 while 1 > 0
@@ -1022,28 +1028,31 @@ while 1 > 0
 %         break;
 %     end
     if T < param.Tmin
-        param.Tvec = [param.Tvec T];
-        break;
+        T = param.Tmin;
+%         param.Tvec = [param.Tvec T];
+%         break;
     end
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
     [d,r] = perturb(param,gain);
     if phase == 2
-        if hot<4
+        rhot = hotvec(hot);
+        if rhot<4
             r = zeros(1,3);
             t = r;
-            t(hot) = d(hot);
+            t(rhot) = d(rhot);
             d = t;
         else
             d = zeros(1,3);
             t = d;
-            t(hot-3) = r(hot-3);
+            t(rhot-3) = r(rhot-3);
             r = t;
         end
         hot = hot+1;
         if hot>6
             hot = 1;
+            hotvec = hotvec(randperm(numel(hotvec)));
         end
     end
     str0 = sprintf('d = [%7.3f %7.3f %7.3f], r = [%7.5f %7.5f %7.5f]',d(1),d(2),d(3),r(1),r(2),r(3));
@@ -1070,16 +1079,24 @@ while 1 > 0
         % keep
         str3 = 'Accept - MI increased';
         param.MIvec = [param.MIvec MI];
-        last_MI = MI;
         pass = 0;
-%     elseif delmi == 0
-%         MI2 = mutual_information (LFM1, new, LFM2, param, 1);
-%         param.rot = param.rot - r;
-%         param.trans = param.trans - d;
-%         rotated1 = rotate (canonical,param.rot);
-%         new1 = translate (rotated1, param.trans);
-%         MI1 = mutual_information (LFM1, new1, LFM2, param,1);
-%         keyboard
+    elseif delmi == 0
+        str3 = 'Reject - MI unchanged';
+        pass = pass + 1;
+        param.rot = param.rot - r;
+        param.trans = param.trans - d;
+        tmp = param.MIvec(end);
+        param.MIvec = [param.MIvec tmp];
+        %           str3 = 'Accept - MI unchanged';
+        %           pass = pass + 1;
+        %         MI2 = mutual_information (LFM1, new, LFM2, param, 1);
+        %         param.rot = param.rot - r;
+        %         param.trans = param.trans - d;
+        %         rotated1 = rotate (canonical,param.rot);
+        %         new1 = translate (rotated1, param.trans);
+        %         MI1 = mutual_information (LFM1, new1, LFM2, param,1);
+        %         keyboard
+        
     else
         %         # else accept D with probability P = exp(-E/kBT)
         %         # using (psuedo-)random number uniformly distributed in the interval (0,1)
@@ -1091,12 +1108,7 @@ while 1 > 0
             % accept decrease in MI mutual information
             str3 = sprintf('Accept %.3g < %.3g',rnd,p);
             param.MIvec = [param.MIvec MI];
-            last_MI = MI;
-            if delmi==0
-                pass = pass + 1;
-            else
-                pass = 0;
-            end
+            pass = 0;
         else
             % reject move
             str3 = sprintf('Reject %.3g > %.3g',rnd,p);
@@ -1108,13 +1120,13 @@ while 1 > 0
         end
     end
     str4 = sprintf('%d, pass = %d, T = %g',i,pass, T);
-    str6 = sprintf('Final MI = %d',last_MI);
+    str6 = sprintf('Final MI = %d',param.MIvec(end));
     str5 = print_param(param);
     val7 = param.trans - param.centroid;
     str7 = sprintf('final offset = [%6.6g0 %6.6g0 %6.6g0]',val7(1),val7(2),val7(3));
-    w = find(param.centers>last_MI,1); % keep only first instance
-    if last_MI >= param.bestMI
-        val = double(last_MI)/double(param.bestMI);
+    w = find(param.centers>param.MIvec(end),1); % keep only first instance
+    if param.MIvec(end) >= param.bestMI
+        val = double(param.MIvec(end))/double(param.bestMI);
         str8 = sprintf('MI frac = %.5g, siman exceeds null',val);
         param.cdfvec = [param.cdfvec val] ;
     elseif ~isempty(w)
@@ -1300,84 +1312,14 @@ end
 
 % plot rot
 h = figure;
-a = size(param.rotvec);
-
-subplot(1,3,1);
-
-x = 1:a(1);
-yrad = param.rotvec(:,1);
-scale = 180 / pi;
-ydeg = yrad * scale;
-
-yyaxis left;
-plot(x,yrad),'k';
-hold on;
-plot(1,param.rotvec(1,1),'ro');
-plot(a(1),param.bestr(1),'gs');
-hold off;
-
-xlabel('iteration');
-ylabel('rotation around dim 1 (radians)');
-xlim([1 a(1)]);
-y = ylim;
-ny = y*scale;
-
-yyaxis right;
-h2 = plot(x,ydeg,'k');
-ylim(ny);
-set(h2, 'Visible' ,'off');
-
-subplot(1,3,2);
-
-yrad = param.rotvec(:,2);
-scale = 180 / pi;
-ydeg = yrad * scale;
-
-yyaxis left;
-plot(x,yrad),'k';
-hold on;
-plot(1,param.rotvec(1,2),'ro');
-plot(a(1),param.bestr(2),'gs');
-hold off;
-
-xlabel('iteration');
-ylabel('rotation around dim 2 (radians)');
-xlim([1 a(1)]);
-y = ylim;
-ny = y*scale;
-
-yyaxis right;
-h2 = plot(x,ydeg,'k');
-ylim(ny);
-set(h2, 'Visible' ,'off');
-
-subplot(1,3,3);
-
-yrad = param.rotvec(:,3);
-scale = 180 / pi;
-ydeg = yrad * scale;
-
-yyaxis left;
-plot(x,yrad),'k';
-hold on;
-plot(1,param.rotvec(1,3),'ro');
-plot(a(1),param.bestr(3),'gs');
-hold off;
-
-xlabel('iteration');
-ylabel('rotation around dim 3 (radians)');
-xlim([1 a(1)]);
-y = ylim;
-ny = y*scale;
-
-yyaxis right;
-h2 = plot(x,ydeg,'k');
-ylim(ny);
-set(h2, 'Visible' ,'off');
+plot_rot(h,1,param);
+plot_rot(h,2,param);
+plot_rot(h,3,param);
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-str = 'trajectory of simulated annealing (RHS axis is degrees, green squares are best of null.)';
+%str = 'trajectory of simulated annealing (RHS axis is degrees, green squares are best of null.)';
+str = 'trajectory of simulated annealing (RHS axis is degrees)';
 text(0.1,0.98,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
 if 0>1
@@ -1390,6 +1332,38 @@ end
 
 end
 
+function plot_rot (h, i, param)
+figure(h);
+
+a = size(param.rotvec);
+x = 1:a(1);
+yrad = param.rotvec(:,i);
+
+subplot(1,3,i);
+yyaxis left;
+plot(x,yrad),'k';
+hold on;
+plot(1,param.rotvec(1,i),'ro');
+%plot(a(1),param.bestr(i),'gs');
+hold off;
+
+xlabel('iteration');
+ylabel(['rotation around dim ' num2str(i) ' (radians)']);
+xlim([1 a(1)]);
+y = ylim;
+
+scale = 180 / pi;
+%ydeg = yrad * scale;
+yyaxis right;
+%h2 = plot(x,ydeg,'k');
+ny = y*scale;
+ylim(ny);
+%set(h2, 'Visible' ,'off');
+end
+
+
+
+
 function out = print_param (param)
 a=param.trans;
 b=param.rot;
@@ -1398,20 +1372,21 @@ end
 
 
 function mi = mutual_information (LFM1, new, LFM2, param, deleteme)
-scale = [1/param.voxel_y 0 0 ; 0 1/param.voxel_x 0 ; 0 0 1/param.voxel_z];
-new_pixels = ceil(new*scale);
+scale = [1/param.voxel_y 1/param.voxel_x 1/param.voxel_z];
+new_pixels = ceil(new.*scale);
 s = size(LFM1);
 % find rows of new_pixels that overlap LFM1 and save as index
 index = find( new_pixels(:,1)<=s(1) & new_pixels(:,2)<=s(2) & new_pixels(:,3)<=s(3) ...
     & new_pixels(:,1)>0 & new_pixels(:,2)>0 & new_pixels(:,3)>0 );
 % in LFM1, lookup intensity value at 
 i1 = LFM1(sub2ind(s,new_pixels(index,1),new_pixels(index,2),new_pixels(index,3)));
+%i1 = LFM1(new_pixels(index,1),new_pixels(index,2),new_pixels(index,3));
 i2 = LFM2(param.index2(index));
 mi = sum(double(i1).*double(i2));
-% if deleteme
-%     keyboard
-%     %save('before.mat','new','index','i1','i2','mi');
-% end
+if deleteme
+    keyboard
+    %save('before.mat','new','index','i1','i2','mi');
+end
 end
 
 
@@ -1442,20 +1417,6 @@ function [out] = translate (pos, delta)
 D = ones(size(pos),'single').*delta;
 out = pos + D;
 end
-
-% function p = calc_boltzman_p (T, param)
-% val = -param.scale/T;
-% if val > 0.0
-%     p = 1.0;
-% else
-%     p = exp(val);
-% end
-% if p<0.0 || p>1.0
-%     disp('WTF?');
-%     keyboard
-% end
-% end
-
 
 function out = calc_centroid (LFM, param)
 s = size(LFM);
@@ -1492,23 +1453,6 @@ d = [d1 d2 d3];
 r = [r1 r2 r3];
 %r = [r1 0 0];
 end
-
-
-% function out =  lowerT(T,param)
-% delT = -param.Trate*T;
-% out = T+delT;
-% end
-
-
-% function param = set_prate (MI, param)
-% % aim for 0.95 aceptance at T0
-% %param.T0 = -1/log(param.init_p);
-% %param.TC0 = round(log10(param.final_p) / log10(param.Trate))
-% %param.T0 = -1/log(0.95)/MI;
-% param.prate = 10^( ( log10(param.final_p)-log10(param.init_p) ) / param.TC0);
-% end
-
-
 
 function print_fraction (index, LFM, str)
 i = 0;
