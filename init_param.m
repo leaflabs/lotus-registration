@@ -77,6 +77,7 @@ param.inputFileName = {
 param.xlim_1d = [0 0 0];
 
 param.parallel = false;
+param.just_MI = false;
 
 end
 
