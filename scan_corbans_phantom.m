@@ -1,6 +1,9 @@
 clear all;
 close all;
 
+voxel = 1; % um
+volume_size = 150; % voxels
+
 [~,hostname] = system('hostname')
 
 if ~isempty(strfind(hostname, 'Justins-Mac'))
@@ -13,7 +16,7 @@ else
 end
 
 %ddlfm_path = 'bead/20180328/registration/';
-ddlfm_path = 'Transformation-Phantoms-master/analysis/registration/';
+ddlfm_path = 'Transformation-Phantoms-master/analysis/registration/repeat_90_90_0_D/';
 opath = [ppath '/' ddlfm_path];
 
 savePath = [opath 'scan_results/'];
@@ -61,11 +64,13 @@ colcell = {'target_offset'
     'initial_offset'
     'estimated_offset'
     'final_offset'
-    'offset_error'
+    'offset_error_um'
+    'offset_error_voxel'
     'target_rot'
     'initial_rot'
     'final_rot'
-    'rot_error'};
+    'rot_error_deg'
+    'mean_rot_error_voxel'};
 
 padsize = 25;
 header = pad('index',7);
@@ -75,12 +80,15 @@ end
 fprintf('offset in units of micrometers. Angle in units of degrees.\n');
 fprintf('%s\n',header);
 
+mr = estimate_mean_radius(volume_size); % voxels
 
 for i=1:numel(out)
-    out{i}.offset_error = out{i}.final_offset-out{i}.target_offset;
+    out{i}.offset_error_um = out{i}.final_offset-out{i}.target_offset;
     out{i}.final_rot = out{i}.final_rot * 180/pi;
     out{i}.initial_rot = out{i}.initial_rot * 180/pi;
-    out{i}.rot_error = out{i}.final_rot-out{i}.target_rot;
+    out{i}.rot_error_deg = out{i}.final_rot-out{i}.target_rot;
+    out{i}.offset_error_voxel = out{i}.offset_error_um * voxel;
+    out{i}.mean_rot_error_voxel = mr * out{i}.rot_error_deg * pi/180;
     row = pad(num2str(i),7);
     for j=1:numel(colcell)
         eval(['tmp = out{i}.' colcell{j} ';'])
@@ -91,6 +99,18 @@ for i=1:numel(out)
 end
 
 diary off;
+
+%%
+function out = estimate_mean_radius (volume_size)
+N = round(volume_size/2);
+sum = 0;
+for r = 1:N
+    pop = (2*r+1)^3 - (2*r-1)^3;
+    sum = sum + r*pop;
+end
+out = sum / volume_size^3;
+end
+
 
 %%
 function out = read_log (f)
