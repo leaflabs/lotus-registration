@@ -202,6 +202,14 @@ else
     keyboard
 end
 
+if param.just_MI==true
+    fprintf('MI==%d\n',MI);
+    param
+    elapsedTime = toc
+    diary off;
+    return;
+end
+
 %% simulated annealing
 [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param);
 if param.plot
