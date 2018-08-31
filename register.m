@@ -719,7 +719,7 @@ fprintf('\nCount    Mutual_Information                Offset [um]               
         % perturb pos
         % randomly pick a translation vector and rotation vector
         % to be added to current location
-        [d,r] = perturb(param,gain);
+        [d,r] = perturb(param, gain, gain);
         % apply transformation
         % rotate an amount r PLUS param.rot
         % thus param.rot tracks the current rotation
@@ -832,7 +832,7 @@ while j>0
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
-    [d,r] = perturb(param,gain);
+    [d,r] = perturb(param, gain, gain);
     if hot<4
         r = zeros(1,3);
         t = r;
@@ -890,6 +890,10 @@ end
 
 
 function T = find_melting_T (LFM1, new, LFM2, canonical, param, gain)
+if param.T_fast
+    T = param.T0;
+    return;
+end
 %param.rot_amp = [param.rot_amp(1) 0 0];
 % calculate MI
 % if strcmp(param.myfunc_MI,'multiply')
@@ -926,8 +930,8 @@ lT = T/10;
 mT = (hT+lT)/2;
 i = 0;
 mP = estimateP (param, canonical, LFM1, LFM2, new, mT, gain);
-Pdiff = abs(mP-param.Pmelt)/param.Pmelt;
-fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f,Pdiff = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff);
+Pdiff = abs(mP-param.Pmelt);
+fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f,Pdiff = %1.5f, Pepsilon = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff,param.Pepsilon);
 while Pdiff > param.Pepsilon
     i=i+1;
     if mP < param.Pmelt
@@ -962,6 +966,7 @@ a = size(LFM2);
 half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
 radius = sqrt( sum( half_span .* half_span ) );
 gain = param.trans_amp / radius;
+gain0 = gain;
 % calculate MI
 if strcmp(param.myfunc_MI,'multiply')
     MI = mutual_information (LFM1, new, LFM2, param, 0);
@@ -1012,8 +1017,9 @@ hotvec = [1:6];
 hotvec = hotvec(randperm(numel(hotvec)));
 phase = 2;
 deleteme = false;
+last_pass = 0;
 while 1 > 0
-    if phase==2 && pass>param.frozen2
+    if phase==2 && (pass>param.frozen2 || i>param.frozen3 || gain < gain / param.gain_limit)
         fprintf('(\n\n%d passes in a row. The model is frozen.\n\n',param.frozen2);
         break;
     end
@@ -1040,10 +1046,17 @@ while 1 > 0
 %         param.Tvec = [param.Tvec T];
 %         break;
     end
+    if pass > (last_pass + param.last_pass_N)
+        gain = gain / param.gain_scale;
+        last_pass = pass;
+        str9 = sprintf('gain reduced from %f to %f', gain * param.gain_scale, gain);
+    else
+        str9 = '';
+    end
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
-    [d,r] = perturb(param,gain);
+    [d,r] = perturb(param,gain, gain0);
     if phase == 2
         rhot = hotvec(hot);
         if rhot<4
@@ -1088,6 +1101,7 @@ while 1 > 0
         str3 = 'Accept - MI increased';
         param.MIvec = [param.MIvec MI];
         pass = 0;
+        last_pass = 0;
     elseif delmi == 0
         str3 = 'Reject - MI unchanged';
         pass = pass + 1;
@@ -1117,6 +1131,7 @@ while 1 > 0
             str3 = sprintf('Accept %.3g < %.3g',rnd,p);
             param.MIvec = [param.MIvec MI];
             pass = 0;
+            last_pass = 0;
         else
             % reject move
             str3 = sprintf('Reject %.3g > %.3g',rnd,p);
@@ -1144,7 +1159,7 @@ while 1 > 0
         disp('WTF?');
         keyboard
     end
-    fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8);
+    fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9);
     param.Tvec = [param.Tvec T];
     param.transvec = [param.transvec; param.trans];
     param.offsetvec = [param.offsetvec; val7];
@@ -1260,7 +1275,7 @@ xlim([1 a(1)]);
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-str = 'trajectory of simulated annealing';
+str = 'Attempted translations';
 text(0.4,0.97,str,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
 
 if 0>1
@@ -1270,7 +1285,6 @@ else
     str=sprintf('%s_d.png',prefix);
     save_plot(h, str);
 end
-
 
 % plot offset
 h = figure;
@@ -1450,10 +1464,14 @@ end
 end
 
 
-function [d,r] = perturb (param, gain)
-d1 = random('unif',-1,1) * param.trans_amp;
-d2 = random('unif',-1,1) * param.trans_amp;
-d3 = random('unif',-1,1) * param.trans_amp;
+function [d,r] = perturb (param, gain, gain0)
+% but gain is not used for d
+% so introduce gain ratio to turn down d
+a = gain / gain0;
+d1 = random('unif',-1,1) * param.trans_amp * a;
+d2 = random('unif',-1,1) * param.trans_amp * a;
+d3 = random('unif',-1,1) * param.trans_amp * a;
+% how gain was originally used
 r1 = random('unif',-1,1) * param.rot_amp(1) * gain;
 r2 = random('unif',-1,1) * param.rot_amp(2) * gain;
 r3 = random('unif',-1,1) * param.rot_amp(3) * gain;
