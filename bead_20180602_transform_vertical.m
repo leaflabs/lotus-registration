@@ -27,7 +27,8 @@ tic
 
 param.voxel_x = 0.5; % um
 param.voxel_y = 0.5; % um
-param.voxel_z = 4.0;     % um
+voxel_z = 4.0;
+param.voxel_z = voxel_z;     % um
 
 p = [ppath '/vertical/Reconstructed/*.mat'];
 d = dir(p);
@@ -144,28 +145,20 @@ d(20).trans =  [259.6898 180.6363 192.5790];
 
 clip_microns = [param.clip(1) param.clip(3) param.clip(5)].*[param.voxel_y param.voxel_x param.voxel_z];
 
-% skip i==4
-
-for i=6:20
+for i=3:20
     f = [ppath '/vertical/Reconstructed/' d(i).name];
     fprintf('Loading %s...\n',f);
     load(f,'XguessSAVE1');
-    
-
-    param.centroid = [268.7500 201.2500 202] + clip_microns;
-    if 0 > 1
-        disp('CHECK THIS')
-        s = size(XguessSAVE1);
-        out = s/2.*[param.voxel_y param.voxel_x param.voxel_z];
-        keyboard
-    end
+    out = interpolate (XguessSAVE1,param);
+    clear XguessSAVE1;
+    param.voxel_z = voxel_z / param.interp;
+    s = size(out);
+    param.centroid = s/2.*[param.voxel_y param.voxel_x param.voxel_z];
+    % note equivalence to param.centroid = centroid of clipped volume + clip_microns;
     param.trans = d(i).trans + clip_microns;
     param.rot = d(i).rot;
     prefix = d(i).name;
-    mystr = sprintf('%s/%s_%s',savePath,prefix(1:end-4),timestamp);
-    out = interpolate (XguessSAVE1,param);
-    param.voxel_z = param.voxel_z / param.interp;
-    clear XguessSAVE1;
+    mystr = sprintf('%s/%s',savePath,prefix(1:end-4));
     param.i = i;
     param.d = d;
     transform(out, param, mystr);
@@ -177,66 +170,26 @@ diary off;
 function transform (A, param, mystr)
 a = size(A);
 fprintf('size of input volume = [%d %d %d]\n',a(1),a(2),a(3));
-SHIFT = 200;
-EXPAND = 300;
-%out = zeros(a);
-out = zeros(a+EXPAND,class(A));
+out = zeros(a,class(A));
 a = size(out);
 fprintf('size of output volume = [%d %d %d]\n',a(1),a(2),a(3));
-
-
 E = 100;
 F = numel(A)/E;
 for i=1:E
     fprintf('loop %d of %d\n',i,E);
     myrange = [1+(i-1)*F : i*F ]';
-    %pos = init_pos([1:numel(A)]', A, param);
     pos = init_pos(myrange, A, param);
-    %param.centroid = calc_centroid(A,param);
     tmp = translate (pos, -param.centroid);
     tmp = rotate (tmp, param.rot); % CHECK
-    %tmp = translate (tmp, param.centroid);
     pos = translate (tmp, param.trans);
-    B = render (pos, param, SHIFT);
-    if any(max(B)>a)
-        fprintf('Error! Rendered max (volume B) is outside of container out.\n');
-        zz = param.d;
-        fprintf('Rerun %s\n',zz(param.i).name);
-        return;
-    end
-    if any(min(B)<1)
-        fprintf('Error! Rendered min (volume B) is outside of container out.\n');
-        zz = param.d;
-        fprintf('Rerun %s\n',zz(param.i).name);
-        return;
-    end
-    %out(B) = A(myrange);
-    for j=1:length(myrange)
-        out(B(j,1),B(j,2),B(j,3)) = A(myrange(j));
-    end
-    %keyboard
+    [B, index] = render (pos, param, A);
+    out(B) = A(myrange(index));
 end
-
-
-
-
-%out(1,1,1) = 0.5;
-%ind = sub2ind(size(LFM1),abc_LFM1(:,1),abc_LFM1(:,2),abc_LFM1(:,3));
-%i1 = LFM1(ind);
-%out = uint16( single(i1) );
 % save as MAT file
 outFile = [mystr '.mat'];
-% outFile = sprintf('%s_rot_%d_%d_%d_trans_%d_%d_%d.mat',...
-%     mystr,...
-%     param.rot(1)*180/pi, param.rot(2)*180/pi, param.rot(3)*180/pi,...
-%     param.trans(1), param.trans(2), param.trans(3));
 fprintf('Saving volume to %s.\n',outFile);
 save(outFile,'out','-v7.3');
 % save as TIF file
-% outFile = sprintf('%s_rot_%d_%d_%d_trans_%d_%d_%d.tif',...
-%     mystr,...
-%     param.rot(1)*180/pi, param.rot(2)*180/pi, param.rot(3)*180/pi,...
-%     param.trans(1), param.trans(2), param.trans(3));
 outFile = [mystr '.tif'];
 fprintf('Saving volume to %s.\n',outFile);
 save_vol( out, outFile);
@@ -251,7 +204,7 @@ end
 end
 
 %%
-function out = render (chunk, param, SHIFT)
+function [out, index] = render (chunk, param, A)
 %
 % See function out = combine (LFM1, LFM2, chunk, linind, param)
 % chunk = x,y,z centroids of voxels in LFM2
@@ -260,15 +213,20 @@ L = length(chunk);
 scale = [1/param.voxel_y*ones(L,1) ...
     1/param.voxel_x*ones(L,1) ...
     1/param.voxel_z*ones(L,1)];
-out = ceil(chunk.*scale)+SHIFT;
-if length(out) ~= length(unique(out,'rows'))
-    disp('Uh oh');
-    fprintf('length(out) = %d, length(unique(out,rows)) = %d\n',length(out),length(unique(out,'rows')));
+voxels = ceil(chunk.*scale);
+
+s = size(A);
+% find rows of new_pixels that overlap LFM1 and save as index
+index = find( voxels(:,1)<=s(1) & voxels(:,2)<=s(2) & voxels(:,3)<=s(3) ...
+    & voxels(:,1)>0 & voxels(:,2)>0 & voxels(:,3)>0 );
+% in LFM1, lookup intensity value at
+out = sub2ind(s,voxels(index,1),voxels(index,2),voxels(index,3));
+if 0>1
+    if length(out) ~= length(unique(out,'rows'))
+        disp('Uh oh');
+        fprintf('length(out) = %d, length(unique(out,rows)) = %d\n',length(out),length(unique(out,'rows')));
+    end
 end
-b = max(out);
-fprintf('max of indices (x, y, z) = [%d %d %d]\n',b(1),b(2),b(3));
-b = min(out);
-fprintf('min of indices (x, y, z) = [%d %d %d]\n',b(1),b(2),b(3));
 end
 
 %%
