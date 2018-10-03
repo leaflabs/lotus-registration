@@ -24,12 +24,17 @@ param.clip = [100,100,100,100,0,0];
 
 param.frozen1 = 100;
 param.frozen2 = 100;
+param.frozen3 = 10000;
+param.last_pass_N = 100;
+param.gain_scale = 3/2;
+param.gain_limit = 1000;
 %param.anneal = 'linear';
 param.anneal = 'exp';
 param.Pmelt = 0.2; % fraction, max val = 1
 param.Pepsilon = 0.05; % fraction, error allowed for finding T that matches Pmelt
-param.T0 = 1e10;
-param.Tmin = 1e6;
+param.T0 = 1e9;
+param.T_fast = false;
+param.Tmin = 1e7;
 param.TC0 = 10000;
 param.Nnull = 2000;
 param.confocal = false;
@@ -77,6 +82,7 @@ param.inputFileName = {
 param.xlim_1d = [0 0 0];
 
 param.parallel = false;
+param.just_MI = false;
 
 end
 
