@@ -346,6 +346,15 @@ else
     % if not found
     i = find(cdf>param.pop_thresh,1); % keep only first instance
 end
+
+if i == 1
+  % i equaling 1 leads to a bug in later calls
+  % just use the next largest value in the cdf
+  % fixes a problem with large sparse images where < 10^-4
+  % fraction of the pixels are non-zero
+  i = 2
+end
+
 end
 
 
