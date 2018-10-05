@@ -9,22 +9,23 @@ a = size(LFM2);
 half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
 radius = sqrt( sum( half_span .* half_span ) );
 gain = param.trans_amp / radius;
+gain0 = gain;
 % calculate MI
 if strcmp(param.myfunc_MI,'multiply')
-    MI = mutual_information (LFM1, new, LFM2, param);
+    MI = mutual_information (LFM1, new, LFM2, param, 0);
 else
     disp('WTF!');
     keyboard;
 end
-last_MI = MI;
+%last_MI = MI;
 param.MIvec = MI;
 % CDF
 param.cdfvec = [];
-w = find(param.centers>last_MI,1); % keep only first instance
+w = find(param.centers>param.MIvec(end),1); % keep only first instance
 if ~isempty(w)
     param.cdfvec = [param.cdfvec param.cdf(w)];
 else
-    val = double(last_MI)/double(param.bestMI);
+    val = double(param.MIvec(end))/double(param.bestMI);
     param.cdfvec = [param.cdfvec val] ;
 end
 % set initial T
@@ -55,9 +56,13 @@ disp('Count      Perturbation     Transformation      Overlap     Probability,De
 i = 1;
 pass = 0;
 hot = 1;
+hotvec = [1:6];
+hotvec = hotvec(randperm(numel(hotvec)));
 phase = 2;
+deleteme = false;
+last_pass = 0;
 while 1 > 0
-    if phase==2 && pass>param.frozen2
+    if phase==2 && (pass>param.frozen2 || i>param.frozen3 || gain < gain / param.gain_limit)
         fprintf('(\n\n%d passes in a row. The model is frozen.\n\n',param.frozen2);
         break;
     end
@@ -80,28 +85,38 @@ while 1 > 0
 %         break;
 %     end
     if T < param.Tmin
-        param.Tvec = [param.Tvec T];
-        break;
+        T = param.Tmin;
+%         param.Tvec = [param.Tvec T];
+%         break;
+    end
+    if pass > (last_pass + param.last_pass_N)
+        gain = gain / param.gain_scale;
+        last_pass = pass;
+        str9 = sprintf('gain reduced from %f to %f', gain * param.gain_scale, gain);
+    else
+        str9 = '';
     end
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
-    [d,r] = perturb(param,gain);
+    [d,r] = perturb(param,gain, gain0);
     if phase == 2
-        if hot<4
+        rhot = hotvec(hot);
+        if rhot<4
             r = zeros(1,3);
             t = r;
-            t(hot) = d(hot);
+            t(rhot) = d(rhot);
             d = t;
         else
             d = zeros(1,3);
             t = d;
-            t(hot-3) = r(hot-3);
+            t(rhot-3) = r(rhot-3);
             r = t;
         end
         hot = hot+1;
         if hot>6
             hot = 1;
+            hotvec = hotvec(randperm(numel(hotvec)));
         end
     end
     str0 = sprintf('d = [%7.3f %7.3f %7.3f], r = [%7.5f %7.5f %7.5f]',d(1),d(2),d(3),r(1),r(2),r(3));
@@ -117,7 +132,7 @@ while 1 > 0
     str1 = print_param(param);
     % measure mutual_information
     if strcmp(param.myfunc_MI,'multiply')
-        MI = mutual_information (LFM1, new, LFM2, param);
+        MI = mutual_information (LFM1, new, LFM2, param, 0);
     else
         disp('WTF!');
         keyboard;
@@ -128,8 +143,25 @@ while 1 > 0
         % keep
         str3 = 'Accept - MI increased';
         param.MIvec = [param.MIvec MI];
-        last_MI = MI;
         pass = 0;
+        last_pass = 0;
+    elseif delmi == 0
+        str3 = 'Reject - MI unchanged';
+        pass = pass + 1;
+        param.rot = param.rot - r;
+        param.trans = param.trans - d;
+        tmp = param.MIvec(end);
+        param.MIvec = [param.MIvec tmp];
+        %           str3 = 'Accept - MI unchanged';
+        %           pass = pass + 1;
+        %         MI2 = mutual_information (LFM1, new, LFM2, param, 1);
+        %         param.rot = param.rot - r;
+        %         param.trans = param.trans - d;
+        %         rotated1 = rotate (canonical,param.rot);
+        %         new1 = translate (rotated1, param.trans);
+        %         MI1 = mutual_information (LFM1, new1, LFM2, param,1);
+        %         keyboard
+
     else
         %         # else accept D with probability P = exp(-E/kBT)
         %         # using (psuedo-)random number uniformly distributed in the interval (0,1)
@@ -141,12 +173,8 @@ while 1 > 0
             % accept decrease in MI mutual information
             str3 = sprintf('Accept %.3g < %.3g',rnd,p);
             param.MIvec = [param.MIvec MI];
-            last_MI = MI;
-            if delmi==0
-                pass = pass + 1;
-            else
-                pass = 0;
-            end
+            pass = 0;
+            last_pass = 0;
         else
             % reject move
             str3 = sprintf('Reject %.3g > %.3g',rnd,p);
@@ -158,13 +186,13 @@ while 1 > 0
         end
     end
     str4 = sprintf('%d, pass = %d, T = %g',i,pass, T);
-    str6 = sprintf('Final MI = %d',last_MI);
+    str6 = sprintf('Final MI = %d',param.MIvec(end));
     str5 = print_param(param);
     val7 = param.trans - param.centroid;
     str7 = sprintf('final offset = [%6.6g0 %6.6g0 %6.6g0]',val7(1),val7(2),val7(3));
-    w = find(param.centers>last_MI,1); % keep only first instance
-    if last_MI >= param.bestMI
-        val = double(last_MI)/double(param.bestMI);
+    w = find(param.centers>param.MIvec(end),1); % keep only first instance
+    if param.MIvec(end) >= param.bestMI
+        val = double(param.MIvec(end))/double(param.bestMI);
         str8 = sprintf('MI frac = %.5g, siman exceeds null',val);
         param.cdfvec = [param.cdfvec val] ;
     elseif ~isempty(w)
@@ -174,7 +202,7 @@ while 1 > 0
         disp('WTF?');
         keyboard
     end
-    fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8);
+    fprintf('%7s%75s  %84s  %40s  %22s  %84s  %20s %40s %20s %s\n',str4,str0,str1,str2,str3,str5,str6,str7,str8,str9);
     param.Tvec = [param.Tvec T];
     param.transvec = [param.transvec; param.trans];
     param.offsetvec = [param.offsetvec; val7];

@@ -214,13 +214,13 @@ axes(ax1);
 
 text(0.2,0.45,str,'FontSize',12,'Color',[0 0 0] ,'Interpreter','none');
 
-msg = sprintf('LFM1: contour at intensity level %4.0f',param.contour_int1);
+msg = sprintf('LFM1: contour at intensity level %4.2f',param.contour_int1);
 text(0.2,0.4,msg,'FontSize',12,'Color',colors{3},'Interpreter','none');
 
-msg = sprintf('LFM2: contour at intensity level %4.0f',param.contour_int2);
+msg = sprintf('LFM2: contour at intensity level %4.2f',param.contour_int2);
 text(0.2,0.35,msg,'FontSize',12,'Color',colors{2},'Interpreter','none');
 
-msg = sprintf('LFM2 coarse reg: contour at intensity level %4.0f',param.contour_int2);
+msg = sprintf('LFM2 coarse reg: contour at intensity level %4.2f',param.contour_int2);
 text(0.2,0.3,msg,'FontSize',12,'Color',colors{1},'Interpreter','none');
 
 text(0.2,0.25,'centroid of LFM2 coarse reg','FontSize',12,'Color',[0 1 0],'Interpreter','none');

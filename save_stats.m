@@ -98,7 +98,7 @@ xlim([1 a(1)]);
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-str = 'trajectory of simulated annealing';
+str = 'Attempted translations';
 text(0.4,0.97,str,'FontSize',12,'Color',[0 0 0],'Interpreter','none');
 
 if 0>1
@@ -108,7 +108,6 @@ else
     str=sprintf('%s_d.png',prefix);
     save_plot(h, str);
 end
-
 
 % plot offset
 h = figure;
@@ -158,84 +157,14 @@ end
 
 % plot rot
 h = figure;
-a = size(param.rotvec);
-
-subplot(1,3,1);
-
-x = 1:a(1);
-yrad = param.rotvec(:,1);
-scale = 180 / pi;
-ydeg = yrad * scale;
-
-yyaxis left;
-plot(x,yrad),'k';
-hold on;
-plot(1,param.rotvec(1,1),'ro');
-plot(a(1),param.bestr(1),'gs');
-hold off;
-
-xlabel('iteration');
-ylabel('rotation around dim 1 (radians)');
-xlim([1 a(1)]);
-y = ylim;
-ny = y*scale;
-
-yyaxis right;
-h2 = plot(x,ydeg,'k');
-ylim(ny);
-set(h2, 'Visible' ,'off');
-
-subplot(1,3,2);
-
-yrad = param.rotvec(:,2);
-scale = 180 / pi;
-ydeg = yrad * scale;
-
-yyaxis left;
-plot(x,yrad),'k';
-hold on;
-plot(1,param.rotvec(1,2),'ro');
-plot(a(1),param.bestr(2),'gs');
-hold off;
-
-xlabel('iteration');
-ylabel('rotation around dim 2 (radians)');
-xlim([1 a(1)]);
-y = ylim;
-ny = y*scale;
-
-yyaxis right;
-h2 = plot(x,ydeg,'k');
-ylim(ny);
-set(h2, 'Visible' ,'off');
-
-subplot(1,3,3);
-
-yrad = param.rotvec(:,3);
-scale = 180 / pi;
-ydeg = yrad * scale;
-
-yyaxis left;
-plot(x,yrad),'k';
-hold on;
-plot(1,param.rotvec(1,3),'ro');
-plot(a(1),param.bestr(3),'gs');
-hold off;
-
-xlabel('iteration');
-ylabel('rotation around dim 3 (radians)');
-xlim([1 a(1)]);
-y = ylim;
-ny = y*scale;
-
-yyaxis right;
-h2 = plot(x,ydeg,'k');
-ylim(ny);
-set(h2, 'Visible' ,'off');
+plot_rot(h,1,param);
+plot_rot(h,2,param);
+plot_rot(h,3,param);
 
 ax1 = axes('Position',[0 0 1 1],'Visible','off');
 axes(ax1);
-str = 'trajectory of simulated annealing (RHS axis is degrees, green squares are best of null.)';
+%str = 'trajectory of simulated annealing (RHS axis is degrees, green squares are best of null.)';
+str = 'trajectory of simulated annealing (RHS axis is degrees)';
 text(0.1,0.98,str,'FontSize',8,'Color',[0 0 0],'Interpreter','none');
 
 if 0>1

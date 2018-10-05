@@ -43,16 +43,16 @@ new_d3 = squeeze(max(twothree,[],1));
 % [u_acor, u_lag]  = xcorr( LFM1_d1,   new_d1 );
 % [v_acor, v_lag]  = xcorr( LFM1_d2,   new_d2 );
 % [w_acor, w_lag]  = xcorr( LFM1_d3,   new_d3 );
-% 
+%
 % u_index = find(u_acor == max(u_acor));
 % v_index = find(v_acor == max(v_acor));
 % w_index = find(w_acor == max(w_acor));
-% 
+%
 % offsets = [u_lag(u_index)*param.voxel_y...
 %     v_lag(v_index)*param.voxel_x...
 %     w_lag(w_index)*param.voxel_z...
 %     ];
-% 
+%
 % if param.plot
 %     f = figure;
 %     subplot(3,1,1);
@@ -68,7 +68,7 @@ new_d3 = squeeze(max(twothree,[],1));
 %     plot(w_lag,w_acor/max(w_acor));
 %     xlabel('lag in third dimension [pixels]');
 %     ylabel('correlation');
-%     
+%
 %     str=sprintf('%s%s_xcorr.png',param.savePath,param.timestamp);
 %     save_plot(f, str);
 % end
@@ -139,7 +139,7 @@ if param.plot
     str = sprintf('offset = %.0d pixels %.1f um',w_lag(w_index),w_lag(w_index)*param.voxel_z);
     text(100,0.2,str,'FontSize',8,'Color',[0 0 0] ,'Interpreter','none');
     ylim([0 1]);
-    
+
     str=sprintf('%s%s_xcorr.png',param.savePath,param.timestamp);
     save_plot(f, str);
 end

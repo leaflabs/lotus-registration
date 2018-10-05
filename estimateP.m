@@ -1,5 +1,5 @@
 function p = estimateP (param, canonical, LFM1, LFM2, new, T, gain)
-init_MI = mutual_information (LFM1, new, LFM2, param);
+init_MI = mutual_information (LFM1, new, LFM2, param, 0);
 Pvec = [];
 %N = 100;
 N = 10 / param.Pmelt;
@@ -9,7 +9,7 @@ while j>0
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
-    [d,r] = perturb(param,gain);
+    [d,r] = perturb(param, gain, gain);
     if hot<4
         r = zeros(1,3);
         t = r;
@@ -36,7 +36,7 @@ while j>0
     %str1 = print_param(param);
     % measure mutual_information
     if strcmp(param.myfunc_MI,'multiply')
-        MI = mutual_information (LFM1, new, LFM2, param);
+        MI = mutual_information (LFM1, new, LFM2, param, 0);
     else
         disp('WTF!');
         keyboard;
@@ -48,7 +48,7 @@ while j>0
         j=j-1;
         p = exp(delmi/T);
         rnd = rand(1);
-        
+
         if rnd < p
             % accept decrease in MI mutual information
             %str3 = sprintf('Accept %.3g < %.3g',rnd,p);

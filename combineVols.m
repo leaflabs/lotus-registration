@@ -33,7 +33,7 @@ for i = 1:M
     %disp('Rotate');
     tmp = rotate (tmp, param.rot); % CHECK
     %disp('Translate');
-    final_pos2 = translate (tmp, param.trans); 
+    final_pos2 = translate (tmp, param.trans);
     % for each voxel in LFM1, find positions in final_pos2 and combine and normalize
     %disp('combine');
     out(linind(1):linind(2)) = combine (LFM1, LFM2, final_pos2, linind, param);

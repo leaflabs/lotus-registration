@@ -26,12 +26,16 @@ end
 i = derive_threshold (cdf_LFM1, param);
 j = derive_threshold (cdf_LFM2, param);
 
-param.threshold1 = centers(i);
-param.threshold2 = centers(j);
+param.threshold1 = edges(i);
+param.threshold2 = edges(j);
+% param.threshold1 = centers(i);
+% param.threshold2 = centers(j);
 fprintf('threshold1 = %f\n',param.threshold1);
 fprintf('threshold2 = %f\n',param.threshold2);
-param.contour_int1 = centers(i);
-param.contour_int2 = centers(j);
+param.contour_int1 = param.threshold1;
+param.contour_int2 = param.threshold2;
+% param.contour_int1 = centers(i);
+% param.contour_int2 = centers(j);
 fprintf('contour_int1 = %f\n',param.contour_int1);
 fprintf('contour_int2 = %f\n\n\n',param.contour_int2);
 
@@ -50,22 +54,22 @@ if param.plot & ~param.justCalcMI
     %arbitrary_scale = 4;
     %xlim([0 centers(arbitrary_scale*max(i,j))]);
     xlim([0 1e4]);
-    mystr1 = [sprintf('%3.3f%% of voxels in LFM1 exceed %.0f in intensity\n',...
-        100*(1-cdf_LFM1(i)), param.threshold1 )...
-              sprintf('%3.3f%% of voxels in LFM2 exceed %.0f in intensity\n',...
-        100*(1-cdf_LFM2(j)), param.threshold2 )...
+    mystr1 = [sprintf('%3.3f%% of voxels in LFM1 exceed %.1f in intensity\n',...
+        100*(1-cdf_LFM1(i-1)), param.threshold1 )...
+              sprintf('%3.3f%% of voxels in LFM2 exceed %.1f in intensity\n',...
+        100*(1-cdf_LFM2(j-1)), param.threshold2 )...
         sprintf('\nLFM1 has %d voxels\n', numel(LFM1))...
         sprintf('LFM2 has %d voxels', numel(LFM2))...
         ];
-   
+
     ax1 = axes('Position',[0 0 1 1],'Visible','off');
     axes(ax1);
     mystr2 = [num2str(param.N) ' bins in distribution'];
     text(0.4,0.3,mystr2,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
     text(0.4,0.5,mystr1,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
-    
+
     %keyboard
-    
+
     str=sprintf('%s%s_%s.png',param.savePath,param.timestamp,str);
     save_plot(f,str);
 end

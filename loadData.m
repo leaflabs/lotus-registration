@@ -15,7 +15,8 @@ if exist(f,'file') == 2
         elseif isa(A,'double')
             XguessSAVE1 = uint16(A);
         elseif isa(A,'logical')
-            XguessSAVE1 = (2^16-1)*uint16(A);
+            %XguessSAVE1 = (2^16-1)*uint16(A);
+            XguessSAVE1 = 2^8*uint16(A);
         else
             disp('Warning input data is not 16 bit.');
             keyboard
@@ -42,5 +43,5 @@ if exist(f,'file') == 2
 else
     fprintf('File not found:\n%s\n\n',f);
     keyboard;
-end 
+end
 end

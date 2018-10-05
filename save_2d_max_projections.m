@@ -68,6 +68,10 @@ if flag
     yz = squeeze(max(new,[],2));
     subplot(2,6,5);
     dr = ceil(log2(single(max(max(yz)))));
+    if dr == 0 || max(max(max(new)))==0
+        fprintf('Warning! dr =0.\n');
+        dr = 8;
+    end
     imagesc(yz,[0 2^dr]);
     xlabel('three [pixels]');
     ylabel('one [pixels]');
@@ -75,20 +79,28 @@ if flag
     %colorbar();
     daspect([1,1,1]);
     set(gca,'XDir','reverse');
-    
+
     xy = squeeze(max(new,[],3));
     subplot(2,6,6);
     dr = ceil(log2(single(max(max(xy)))));
+    if dr == 0 || max(max(max(new)))==0
+        fprintf('Warning! dr =0.\n');
+        dr = 8;
+    end
     imagesc(xy,[0 2^dr]);
     xlabel('two [pixels]');
     ylabel('one [pixels]');
     title('DDLFM');
     %colorbar();
     daspect([1,1,1]);
-    
+
     xz = squeeze(max(new,[],1))';
     subplot(2,6,12);
     dr = ceil(log2(single(max(max(xz)))));
+    if dr == 0 || max(max(max(new)))==0
+        fprintf('Warning! dr =0.\n');
+        dr = 8;
+    end
     imagesc(xz,[0 2^dr]);
     xlabel('two [pixels]');
     ylabel('three [pixels]');

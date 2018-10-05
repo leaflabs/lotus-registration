@@ -70,7 +70,7 @@ fprintf('\nCount    Mutual_Information                Offset [um]               
         % perturb pos
         % randomly pick a translation vector and rotation vector
         % to be added to current location
-        [d,r] = perturb(param,gain);
+        [d,r] = perturb(param, gain, gain);
         % apply transformation
         % rotate an amount r PLUS param.rot
         % thus param.rot tracks the current rotation
@@ -81,7 +81,7 @@ fprintf('\nCount    Mutual_Information                Offset [um]               
         %new = translate (rotated, param.centroid+d);
         % measure mutual_information
         if strcmp(param.myfunc_MI,'multiply')
-            MI = mutual_information (LFM1, new, LFM2, param);
+            MI = mutual_information (LFM1, new, LFM2, param, 0);
             %     elseif strcmp(param.myfunc_MI,'multiply_sqrt')
             %         MI = mutual_information_sqrt (LFM1, new, LFM2, param);
         else

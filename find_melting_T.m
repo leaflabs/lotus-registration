@@ -1,4 +1,8 @@
 function T = find_melting_T (LFM1, new, LFM2, canonical, param, gain)
+if param.T_fast
+    T = param.T0;
+    return;
+end
 %param.rot_amp = [param.rot_amp(1) 0 0];
 % calculate MI
 % if strcmp(param.myfunc_MI,'multiply')
@@ -35,8 +39,8 @@ lT = T/10;
 mT = (hT+lT)/2;
 i = 0;
 mP = estimateP (param, canonical, LFM1, LFM2, new, mT, gain);
-Pdiff = abs(mP-param.Pmelt)/param.Pmelt;
-fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f,Pdiff = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff);
+Pdiff = abs(mP-param.Pmelt);
+fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f,Pdiff = %1.5f, Pepsilon = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff,param.Pepsilon);
 while Pdiff > param.Pepsilon
     i=i+1;
     if mP < param.Pmelt

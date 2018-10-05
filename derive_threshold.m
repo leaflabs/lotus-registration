@@ -8,4 +8,9 @@ else
     % if not found
     i = find(cdf>param.pop_thresh,1); % keep only first instance
 end
+
+if i == 1
+   i = 2;
+end
+
 end
