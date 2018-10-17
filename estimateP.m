@@ -44,7 +44,7 @@ while j>0
     delmi = MI - init_MI;
     %str2 = sprintf('test MI = %7.3g, delmi = %7.3g',MI,delmi);
     %str3 = 'MI increased';
-    if delmi < 0.0
+    if delmi <= 0.0
         j=j-1;
         p = exp(delmi/T);
         rnd = rand(1);

@@ -41,7 +41,9 @@ i = 0;
 mP = estimateP (param, canonical, LFM1, LFM2, new, mT, gain);
 Pdiff = abs(mP-param.Pmelt);
 fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f,Pdiff = %1.5f, Pepsilon = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff,param.Pepsilon);
-while Pdiff > param.Pepsilon
+loopCount = 0;
+while Pdiff > param.Pepsilon && loopCount < 1e4
+   loopCount = loopCount + 1;
     i=i+1;
     if mP < param.Pmelt
         % increase temp

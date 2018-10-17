@@ -248,6 +248,8 @@ end
 %% save final parameters
 %fname = sprintf('%s%s_parameters.mat',param.savePath,param.timestamp);
 %save(fname,'param');
+paramsOutputPath = fullfile(param.opath, 'register_params.mat');
+save(paramsOutputPath, '-struct', 'param');
 
 param
 elapsedTime = toc
