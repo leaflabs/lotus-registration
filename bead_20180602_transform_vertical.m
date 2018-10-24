@@ -285,7 +285,7 @@ if param.interp>1
     % initialize container of new size
     s = size(LFM);
     out = zeros(s(1),s(2),param.interp*s(3),class(LFM));
-    boundary = param.interp/2 + 2;
+    boundary = param.interp/2;
     a = 1;
     b = 0;
     j = 1;
@@ -295,19 +295,22 @@ if param.interp>1
     N = param.interp*s(3)+1;
     last_v = a*A+b*B;
     for i=1:N
-        if i < boundary
+        if i < boundary+2
             if i>1
                 out(:,:,i-1) = LFM(:,:,1);
+                %fprintf('out(:,:,%d) = LFM(:,:,1)\n',i-1);
             end
-        elseif i > (N-(boundary-1))
+        elseif i > (N-boundary)
             out(:,:,i-1) = LFM(:,:,end);
+            %fprintf('out(:,:,%d) = LFM(:,:,%d)\n',i-1,size(LFM,3));
         else
             v = a*A+b*B;
             out(:,:,i-1) = (last_v + v)/2;
+            %fprintf('out(:,:,%d) = %1.3f * LFM(:,:,%d) + %1.3f * LFM(:,:,%d)\n',i-1,a,j,b,j+1);
             last_v = v;
             a = a-del;
             b = b+del;
-            if a==0
+            if a==0 && (i<N-boundary)
                 a=1;
                 b=0;
                 j=j+1;
@@ -316,6 +319,7 @@ if param.interp>1
             end
         end
     end
+    %keyboard
 else
     out = LFM;
 end
