@@ -82,6 +82,7 @@ if ~isempty(find(param.clip>0))
 end
 
 %keyboard
+% fprintf('Total 
 
 %% calculate thresholds
 param = calculate_thresholds (LFM1, LFM2, param,'cdf_voxel_intensities');
@@ -188,6 +189,10 @@ end
 % post-coarse
 if strcmp(param.myfunc_MI,'multiply')
     MI = mutual_information (LFM1, new, LFM2, param, 0);
+    if MI == 0
+        disp('WTF?');
+        keyboard
+    end
 else
     disp('WTF!');
     keyboard;
@@ -209,6 +214,7 @@ if param.just_MI==true
     diary off;
     return;
 end
+
 
 %% simulated annealing
 [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param);
@@ -259,13 +265,21 @@ end
 %% functions
 
 function param = calculate_thresholds (LFM1, LFM2, param, str)
-% assume 16 bit
-edges = linspace(0,2^16,param.N);
+if 0>1
+    % assume 16 bit
+    dr = 16;
+else
+    % do NOT assume 16 bit
+    m1 = max(max(max(LFM1)));
+    m2 = max(max(max(LFM2)));
+    dr = ceil(log2(single(max(m1,m2))));
+end
+%edges = linspace(0,2^dr,round(dr/16*param.N));
+edges = [0:2^dr]-0.5;
 centers = (edges(1:end-1)+edges(2:end))/2;
 % this works. to check: sum(h_LFM1) == numel(LFM1)
 h_LFM1 = histcounts(LFM1,edges);
 h_LFM2 = histcounts(LFM2,edges);
-
 % normalize cdf to 1
 h_LFM1 = h_LFM1 / sum(sum(sum(h_LFM1)));
 h_LFM2 = h_LFM2 / sum(sum(sum(h_LFM2)));
@@ -286,10 +300,20 @@ end
 i = derive_threshold (cdf_LFM1, param);
 j = derive_threshold (cdf_LFM2, param);
 
-param.threshold1 = edges(i);
-param.threshold2 = edges(j);
+% if i==1
+%     param.threshold1 = 0.1;
+% else
+%     param.threshold1 = edges(i);
+% end
+% if j==1
+%     param.threshold2 = 0.1;
+% else
+%     param.threshold2 = edges(j);
+% end
 % param.threshold1 = centers(i);
 % param.threshold2 = centers(j);
+param.threshold1 = edges(i);
+param.threshold2 = edges(j);
 fprintf('threshold1 = %f\n',param.threshold1);
 fprintf('threshold2 = %f\n',param.threshold2);
 param.contour_int1 = param.threshold1;
@@ -298,7 +322,6 @@ param.contour_int2 = param.threshold2;
 % param.contour_int2 = centers(j);
 fprintf('contour_int1 = %f\n',param.contour_int1);
 fprintf('contour_int2 = %f\n\n\n',param.contour_int2);
-
 if param.plot & ~param.justCalcMI
     f = figure;
     plot(centers,cdf_LFM1,'b');
@@ -313,18 +336,18 @@ if param.plot & ~param.justCalcMI
     hold off;
     %arbitrary_scale = 4;
     %xlim([0 centers(arbitrary_scale*max(i,j))]);
-    xlim([0 1e4]);
+    xlim([0 10*centers(i)]);
     mystr1 = [sprintf('%3.3f%% of voxels in LFM1 exceed %.1f in intensity\n',...
-        100*(1-cdf_LFM1(i-1)), param.threshold1 )...
+        100*(1-cdf_LFM1(i)), param.threshold1 )...
               sprintf('%3.3f%% of voxels in LFM2 exceed %.1f in intensity\n',...
-        100*(1-cdf_LFM2(j-1)), param.threshold2 )...
+        100*(1-cdf_LFM2(j)), param.threshold2 )...
         sprintf('\nLFM1 has %d voxels\n', numel(LFM1))...
         sprintf('LFM2 has %d voxels', numel(LFM2))...
         ];
    
     ax1 = axes('Position',[0 0 1 1],'Visible','off');
     axes(ax1);
-    mystr2 = [num2str(param.N) ' bins in distribution'];
+    mystr2 = [num2str(round(dr/16*param.N)) ' bins in distribution'];
     text(0.4,0.3,mystr2,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
     text(0.4,0.5,mystr1,'FontSize',9,'Color',[0 0 0],'Interpreter','none');
     
@@ -346,6 +369,15 @@ else
     % if not found
     i = find(cdf>param.pop_thresh,1); % keep only first instance
 end
+
+% if i == 1
+%   % i equaling 1 leads to a bug in later calls
+%   % just use the next largest value in the cdf
+%   % fixes a problem with large sparse images where < 10^-4
+%   % fraction of the pixels are non-zero
+%   i = 2
+% end
+
 end
 
 
@@ -775,12 +807,12 @@ edges  = [centers-del centers(end)+del];
 % this works. to check: sum(h_LFM1) == numel(LFM1)
 h_MI = histcounts(nullMIvec,edges);
 % normalize cdf to 1
-h_MI = h_MI / sum(h_MI);
+nh_MI = h_MI / sum(h_MI);
 
 total = 0;
 cdf = [];
-for i=1:length(h_MI)
-    total = total + h_MI(i);
+for i=1:length(nh_MI)
+    total = total + nh_MI(i);
     cdf = [cdf total];
 end
 
@@ -798,12 +830,14 @@ end
 ylabel('count');
 title(['null distribution (bootstrapped from'...
     sprintf(' %d random registrations)',length(nullMIvec))]);
+set(gca,'yscale','log');
 
 str=sprintf('%s%s_null_distribution.png',param.savePath,param.timestamp);
 save_plot(f, str);
-
 f = figure;
-plot(centers,cdf);
+%plot(centers,cdf);
+%semilogx(centers,cdf);
+loglog(centers,cdf);
 if strcmp(param.myfunc_MI,'multiply')
     xlabel('mutual information = sum(LFM1*LFM2)');
 elseif strcmp(param.myfunc_MI,'multiply_sqrt')
@@ -813,7 +847,7 @@ else
     keyboard;
 end
 ylabel('normalized cumulative density function');
-ylim([0 1]);
+%ylim([0 1]);
 title(['null distribution (bootstrapped from'...
     sprintf(' %d random registrations)',length(nullMIvec))]);
 
@@ -823,16 +857,20 @@ end
 
 function p = estimateP (param, canonical, LFM1, LFM2, new, T, gain)
 init_MI = mutual_information (LFM1, new, LFM2, param, 0);
+% Pvec stores history of moves (1) and no moves (0)
 Pvec = [];
-%N = 100;
-N = 10 / param.Pmelt;
+N = 300;
+%N = 10 / param.Pmelt;
 j = N;
 hot = 1;
 while j>0
+    %fprintf('estimateP: %d of %d\n',j,N);
     % perturb pos
     % randomly pick a translation vector and rotation vector
     % to be added to current location
     [d,r] = perturb(param, gain, gain);
+    % hot is an index in range 1 to 6 that selects one dimension out of
+    % six (three for translation in dim 1,2,3 and three for rotation about dim 1,2,3)
     if hot<4
         r = zeros(1,3);
         t = r;
@@ -867,8 +905,8 @@ while j>0
     delmi = MI - init_MI;
     %str2 = sprintf('test MI = %7.3g, delmi = %7.3g',MI,delmi);
     %str3 = 'MI increased';
+    % if mutual information dropped
     if delmi < 0.0
-        j=j-1;
         p = exp(delmi/T);
         rnd = rand(1);
         
@@ -881,11 +919,28 @@ while j>0
             Pvec = [Pvec 0];
             %str3 = sprintf('Reject %.3g > %.3g',rnd,p);
         end
+%     else
+%         disp('delmi=>0');
+%         keyboard;
     end
+    j=j-1;
     %str4 = sprintf('%d %d, T = %1.0e',i,j,T);
     %fprintf('%7s%75s  %84s  %40s  %22s\n',str4,str0,str1,str2,str3);
 end
-p = sum(Pvec)/N;
+if numel(Pvec) == 0
+    str1 = 'Error. The goal of this function is to measure the frequency';
+    str2 = 'at which random moves that decrease mutual information';
+    str3 = '(ie worsen registration) are accepted randomly.';
+    str4 = sprintf('However, after %d moves, every move increased the MI!',N);
+    str5 = 'Basically, this function assumes a good coarse registration';
+    str6 = 'so that some moves do worsen the registration';
+    fprintf('%s\n%s\n%s\n%s\n%s\n%s\n',str1,str2,str3,str4,str5,str6);
+    keyboard
+    %exit;
+end
+fprintf('Of %d moves, %d increased MI, and of those %d were accepted',N,numel(Pvec),sum(Pvec));
+
+p = sum(Pvec)/numel(Pvec);
 end
 
 
@@ -915,6 +970,7 @@ T = param.T0;
 i = 0;
 while 1 > 0
     i=i+1;
+    fprintf('i = %d\n',i);
     p = estimateP (param, canonical, LFM1, LFM2, new, T, gain);
     fprintf('\nfraction accepted = %0.5f, T = %1.0e\n',p,T);
     if p < param.Pmelt
