@@ -122,20 +122,22 @@ else
     new = translate (rotated, param.trans);
 end
 
-%keyboard
-
 if param.just_MI==false
-% estimate offsets
-offsets = estimate_offsets(LFM1, LFM2, new, param);
-for i=1:3
-    if ~isempty(param.offset{i})
-        offsets(i) = param.offset{i};
+    if isempty(param.offset)
+        % estimate offsets
+        offsets = estimate_offsets(LFM1, LFM2, new, param);
+%         for i=1:3
+%             if ~isempty(param.offset[i])
+%                 offsets(i) = param.offset[i];
+%             end
+%         end
+        param.offset = offsets;
+    else
+        offsets = param.offset;
     end
-end
-param.offset = offsets;
-fprintf('\nestimated offsets = [%f %f %f]\n',offsets(1),offsets(2),offsets(3));
-new = translate (new, offsets);
-param.trans = param.trans + offsets;
+    fprintf('\nestimated offsets = [%f %f %f]\n',offsets(1),offsets(2),offsets(3));
+    new = translate (new, offsets);
+    param.trans = param.trans + offsets;
 end
 
 %keyboard
@@ -816,54 +818,61 @@ for i=1:length(nh_MI)
     cdf = [cdf total];
 end
 
-% plot PDF and CDF
-f = figure;
-histogram(nullMIvec,50);
-if strcmp(param.myfunc_MI,'multiply')
-    xlabel('mutual information = sum(LFM1*LFM2)');
-elseif strcmp(param.myfunc_MI,'multiply_sqrt')
-    xlabel('mutual information = sum(sqrt(LFM1*LFM2))');
-else
-    disp('WTF!');
-    keyboard;
+if param.plot
+    % plot PDF
+    f = figure;
+    histogram(nullMIvec,50);
+    if strcmp(param.myfunc_MI,'multiply')
+        xlabel('mutual information = sum(LFM1*LFM2)');
+    elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+        xlabel('mutual information = sum(sqrt(LFM1*LFM2))');
+    else
+        disp('WTF!');
+        keyboard;
+    end
+    ylabel('count');
+    title(['null distribution (bootstrapped from'...
+        sprintf(' %d random registrations)',length(nullMIvec))]);
+    set(gca,'yscale','log');
+    
+    str=sprintf('%s%s_null_distribution.png',param.savePath,param.timestamp);
+    save_plot(f, str);
+    
+    
+    f = figure;
+    %plot(centers,cdf);
+    %semilogx(centers,cdf);
+    if centers(1)>0
+        loglog(centers,cdf);
+    else
+        loglog([1e0 centers(2:end)],cdf);
+    end
+    if strcmp(param.myfunc_MI,'multiply')
+        xlabel('mutual information = sum(LFM1*LFM2)');
+    elseif strcmp(param.myfunc_MI,'multiply_sqrt')
+        xlabel('mutual information = sum(sqrt(LFM1*LFM2))');
+    else
+        disp('WTF!');
+        keyboard;
+    end
+    ylabel('normalized cumulative density function');
+    %ylim([0 1]);
+    title(['null distribution (bootstrapped from'...
+        sprintf(' %d random registrations)',length(nullMIvec))]);
+    
+    str=sprintf('%s%s_null_cdf.png',param.savePath,param.timestamp);
+    save_plot(f, str);
 end
-ylabel('count');
-title(['null distribution (bootstrapped from'...
-    sprintf(' %d random registrations)',length(nullMIvec))]);
-set(gca,'yscale','log');
-
-str=sprintf('%s%s_null_distribution.png',param.savePath,param.timestamp);
-save_plot(f, str);
-f = figure;
-%plot(centers,cdf);
-%semilogx(centers,cdf);
-loglog(centers,cdf);
-if strcmp(param.myfunc_MI,'multiply')
-    xlabel('mutual information = sum(LFM1*LFM2)');
-elseif strcmp(param.myfunc_MI,'multiply_sqrt')
-    xlabel('mutual information = sum(sqrt(LFM1*LFM2))');
-else
-    disp('WTF!');
-    keyboard;
-end
-ylabel('normalized cumulative density function');
-%ylim([0 1]);
-title(['null distribution (bootstrapped from'...
-    sprintf(' %d random registrations)',length(nullMIvec))]);
-
-str=sprintf('%s%s_null_cdf.png',param.savePath,param.timestamp);
-save_plot(f, str);
 end
 
 function p = estimateP (param, canonical, LFM1, LFM2, new, T, gain)
 init_MI = mutual_information (LFM1, new, LFM2, param, 0);
 % Pvec stores history of moves (1) and no moves (0)
 Pvec = [];
-N = 300;
 %N = 10 / param.Pmelt;
-j = N;
+j = param.max_moves;
 hot = 1;
-while j>0
+while j > 0 && numel(Pvec) < param.min_moves
     %fprintf('estimateP: %d of %d\n',j,N);
     % perturb pos
     % randomly pick a translation vector and rotation vector
@@ -938,7 +947,7 @@ if numel(Pvec) == 0
     keyboard
     %exit;
 end
-fprintf('Of %d moves, %d increased MI, and of those %d were accepted',N,numel(Pvec),sum(Pvec));
+fprintf('Of %d moves, %d decreased MI, and of those %d were accepted\n',param.max_moves-j,numel(Pvec),sum(Pvec));
 
 p = sum(Pvec)/numel(Pvec);
 end
@@ -949,66 +958,49 @@ if param.T_fast
     T = param.T0;
     return;
 end
-%param.rot_amp = [param.rot_amp(1) 0 0];
-% calculate MI
-% if strcmp(param.myfunc_MI,'multiply')
-%     MI = mutual_information (LFM1, new, LFM2, param);
-% else
-%     disp('WTF!');
-%     keyboard;
-% end
-%init_MI = MI;
-% set initial T
-% Start with T sufficiently high to "melt" the system
-% later to guarantee melting, if needed T will be increased until
-% P (accepting a decrease in MI) = 60%
-T = param.T0;
-% while system not frozen and more temperature changes are allowed
-% profile on;
-%%%% TODO -Add condition 'if no change in voxel overlap between LFM1 + DDLFM
-%lP = 0;
-i = 0;
-while 1 > 0
-    i=i+1;
-    fprintf('i = %d\n',i);
-    p = estimateP (param, canonical, LFM1, LFM2, new, T, gain);
-    fprintf('\nfraction accepted = %0.5f, T = %1.0e\n',p,T);
-    if p < param.Pmelt
-        T = T * 10;
-        %lP = p;
-        fprintf('new T = %1.0e\n\n',T);
-    else
-        break;
-    end
+p = [];
+for t = param.Trange
+    p = [p estimateP(param, canonical, LFM1, LFM2, new, t, gain) ];
 end
-hT = T;
-lT = T/10;
-mT = (hT+lT)/2;
-i = 0;
-mP = estimateP (param, canonical, LFM1, LFM2, new, mT, gain);
-Pdiff = abs(mP-param.Pmelt);
-fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f,Pdiff = %1.5f, Pepsilon = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff,param.Pepsilon);
-while Pdiff > param.Pepsilon
-    i=i+1;
-    if mP < param.Pmelt
-        % increase temp
-        lT = mT;
-        if abs(lT-hT)<1e8
-            hT = lT*10;
+
+if param.Pmelt < p(1) || param.Pmelt > p(end)
+    if param.Pmelt < p(1)
+        a = param.Trange;
+        fprintf('Warning. Temperature range [%f %f] corresponds to acceptance probabilities [%f %f].\n',a(1),a(end),p(1),p(end));
+        fprintf('Temperature range is too high to reach Pmelt = %f.\n',param.Pmelt);
+        tvec = [a(1)*a(1)/a(end)];
+        while tvec(end)*10 <= a(1)
+            tvec = [tvec tvec(end)*10];
         end
-    else
-        % lower temp
-        hT = mT;
-        if abs(lT-hT)<1e8
-            lT = hT/10;
+        fprintf('Trying a lower temperature range [%f %f].\n',tvec(1),tvec(end));
+        p = [];
+        for t = tvec
+            p = [p estimateP(param, canonical, LFM1, LFM2, new, t, gain) ];
+        end
+    elseif param.Pmelt > p(end)
+        a = param.Trange;
+        fprintf('Warning. Temperature range [%f %f] corresponds to acceptance probabilities [%f %f].\n',a(1),a(end),p(1),p(end));
+        fprintf('Temperature range is too low to reach Pmelt = %f.\n',param.Pmelt);
+        tvec = [a(end)*a(end)/a(1)];
+        while tvec(1) >= a(end)
+            tvec = [tvec(1)/10 tvec];
+        end
+        fprintf('Trying a higher temperature range [%f %f].\n',tvec(1),tvec(end));
+        p = [];
+        for t = tvec
+            p = [p estimateP(param, canonical, LFM1, LFM2, new, t, gain) ];
         end
     end
-    mT = (hT+lT)/2;
-    mP = estimateP (param, canonical, LFM1, LFM2, new, mT, gain);
-    Pdiff = abs(mP-param.Pmelt);
-    fprintf('[hT = %1.5e, mT = %1.5e, lT = %1.5e, mP = %1.5f, Pmelt = %1.5f, Pdiff = %1.5f, Pepsilon = %1.5f\n',hT,mT,lT,mP,param.Pmelt,Pdiff,param.Pepsilon);
+    if param.Pmelt < p(1) || param.Pmelt > p(end)
+        fprintf('Error. Temperature range [%f %f] corresponds to acceptance probabilities [%f %f].\n',a(1),a(end),p(1),p(end));
+        fprintf('Temperature range is still incorrect to reach Pmelt = %f.\n',param.Pmelt);
+        exit
+    end
 end
-T = mT;
+
+Fit = polyfit(log10(param.Trange),p,1);
+log10T = (param.Pmelt-Fit(2))/Fit(1);
+T = 10^log10T;
 end
 
 function [new, param] = simulated_annealing (LFM1, new, LFM2, canonical, param)
