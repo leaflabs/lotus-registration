@@ -122,20 +122,22 @@ else
     new = translate (rotated, param.trans);
 end
 
-%keyboard
-
 if param.just_MI==false
-% estimate offsets
-offsets = estimate_offsets(LFM1, LFM2, new, param);
-for i=1:3
-    if ~isempty(param.offset{i})
-        offsets(i) = param.offset{i};
+    if isempty(param.offset)
+        % estimate offsets
+        offsets = estimate_offsets(LFM1, LFM2, new, param);
+%         for i=1:3
+%             if ~isempty(param.offset[i])
+%                 offsets(i) = param.offset[i];
+%             end
+%         end
+        param.offset = offsets;
+    else
+        offsets = param.offset;
     end
-end
-param.offset = offsets;
-fprintf('\nestimated offsets = [%f %f %f]\n',offsets(1),offsets(2),offsets(3));
-new = translate (new, offsets);
-param.trans = param.trans + offsets;
+    fprintf('\nestimated offsets = [%f %f %f]\n',offsets(1),offsets(2),offsets(3));
+    new = translate (new, offsets);
+    param.trans = param.trans + offsets;
 end
 
 %keyboard

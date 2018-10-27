@@ -25,24 +25,31 @@ param.clip = [100,100,100,100,0,0];
 param.frozen1 = 100;
 param.frozen2 = 100;
 param.frozen3 = 10000;
-param.last_pass_N = 100;
+param.last_pass_N = param.frozen2/4;
 param.gain_scale = 3/2;
 param.gain_limit = 1000;
 %param.anneal = 'linear';
 param.anneal = 'exp';
-param.Pmelt = 0.2; % fraction, max val = 1
-param.Pepsilon = 0.05; % fraction, error allowed for finding T that matches Pmelt
-param.T0 = 1e9;
+
+% finding temperature that yields desired probability of accepting moves
+% that decrease MI
+param.Pmelt = 0.3; % fraction, max val = 1
+param.Pepsilon = param.Pmelt/10; % fraction, error allowed for finding T that matches Pmelt
+param.max_moves = 300; % maximum number of moves allowed for estimating probability
+param.min_moves = 100; % minimum number of moves required for estimating probability
+
+param.T0 = 1e7;
 param.T_fast = false;
-param.Tmin = 1e7;
+param.Tmin = 1e1;
 param.TC0 = 10000;
+param.Trange = [1e5 1e6 1e7 1e8 1e9];
 param.Nnull = 2000;
 param.confocal = false;
 
 param.psf   = [-1.0 -1.0 -1.0]; %um
 %param.offset = [-8 -30 0];
 %param.offset = [0 0 0];
-param.offset = {[], [], []};
+param.offset = [];
 param.trans = [0 0 0]; % um
 %param.angle   = [-1.2*pi/2 0 0]; % radians
 param.angle   = [-1.0*pi/2 0 0]; % radians
@@ -64,7 +71,7 @@ param.N = 10000;
 param.xlim_thresh = 0.9999; %HARDCODED
 %param.contour_thresh = 0.99;
 param.pop_thresh = 0.999; %HARDCODED
-param.dynamic_range_thresh = 10;
+param.dynamic_range_thresh = 2;
 
 param.rapid = false;
 param.justCalcMI = false;

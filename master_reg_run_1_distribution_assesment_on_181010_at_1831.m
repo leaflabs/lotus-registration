@@ -48,29 +48,6 @@ if 0 > 1
     param.T_fast = false;
     param.frozen2 = 100;
 elseif 0 > 1
-    %% My last run
-    %param.Pmelt = 0.01;
-    % MAY NEED TO SET Pdiff, since Pmelt is so small
-    %param.trans_amp = 2;
-    %param.rot_amp = [2 2 2];
-    %param.Tmin = 1e1;
-    %param.Nnull = 1000;
-    %param.T_fast = true;
-    %param.frozen2 = 10000;
-elseif 0 > 1
-    %% all 25 registrations Oct 22-23
-    param.Pmelt = 0.3;
-    param.Pdiff = 0.03;
-    param.trans_amp = 3.5;
-    param.rot_amp = [2 2 2];
-    param.Tmin = 1e1;
-    param.Nnull = 2000;
-    param.T_fast = true;
-    param.frozen2 = 100;
-    param.clip = zeros(1,6);
-    param.dynamic_range_thresh = 2;
-    param.T0 = 1e7;
-else
     %% all registrations Oct 23-24
     param.Pmelt = 0.3;
     param.Pdiff = 0.03;
@@ -86,11 +63,38 @@ else
     param.last_pass_N = 25;
     param.frozen3 = 6000;
     % last_pass_N should be less than frozen2, e.g. frozen2/2, I like 25
+else
+    %param.plot = false;
+    %param.Pmelt = 0.3;
+    %param.Pepsilon = 0.03;
+    %param.trans_amp = 3.5;
+    param.rot_amp = [2 2 2];
+    %param.Tmin = 1e1;
+    %param.Nnull = 20;
+    %param.T_fast = false;
+   % param.frozen2 = 100;
+    param.clip = zeros(1,6);
+    %param.dynamic_range_thresh = 2;
+    %param.T0 = 1e7;
+    %param.last_pass_N = 25;
+    param.frozen3 = 6000;
+    param.offset = [-13 -13 8];
+    param.angle   = [-1.0*pi/2 0.03 -0.07];
+    % last_pass_N should be less than frozen2, e.g. frozen2/2, I like 25
 end
 
 %for i=[12 15 24]
-%for i=[2 4 5 6 9]
-for i=1:25
+%for i=[2 5 9]
+
+% phantom 2, data contains only three beads? are two beads missing?
+% phantom 5, data contains only four beads? is one bead missing?
+% phantom 6, try annealing for 10000 iterations 
+% phantom 9, coarse trans in dim3 is way off
+% phantom 13, coarse trans in dim2 is way off
+% phantom 24, data contains only four beads? is one bead missing? 
+
+%for i=[2 5 6 9 13 24]
+for i=[7]
     partial_path = sprintf('/run_1_(distribution_assesment)_on_181010_at_1831/phantom_vol_%02d_process',i);
     param = prep_paths (param, partial_path);
     param
