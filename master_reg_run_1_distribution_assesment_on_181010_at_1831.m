@@ -63,7 +63,8 @@ elseif 0 > 1
     param.last_pass_N = 25;
     param.frozen3 = 6000;
     % last_pass_N should be less than frozen2, e.g. frozen2/2, I like 25
-else
+elseif 0 > 1
+    %% all registrations Oct 24-25
     %param.plot = false;
     %param.Pmelt = 0.3;
     %param.Pepsilon = 0.03;
@@ -81,25 +82,82 @@ else
     param.offset = [-13 -13 8];
     param.angle   = [-1.0*pi/2 0.03 -0.07];
     % last_pass_N should be less than frozen2, e.g. frozen2/2, I like 25
+    
+    for i=1:25
+        partial_path = sprintf('/run_1_(distribution_assesment)_on_181010_at_1831/phantom_vol_%02d_process',i);
+        param = prep_paths (param, partial_path);
+        param
+        register(param)
+        close all;
+    end
+    
+else
+    %% all registrations Oct 27-29
+    param.rot_amp = [2 2 2];
+    param.clip = zeros(1,6);
+    param.frozen3 = 6000;
+    param.Nnull = 20;
+    %param.offset = [-13 -13 8];
+    %param.angle   = [-1.0*pi/2 0.03 -0.07];
 end
 
-%for i=[12 15 24]
-%for i=[2 5 9]
+% data sets to repeat
+ivec = 1:13;
 
-% phantom 2, data contains only three beads? are two beads missing?
-% phantom 5, data contains only four beads? is one bead missing?
-% phantom 6, try annealing for 10000 iterations 
-% phantom 9, coarse trans in dim3 is way off
-% phantom 13, coarse trans in dim2 is way off
-% phantom 24, data contains only four beads? is one bead missing? 
+top_path = [param.ppath '/run_1_(distribution_assesment)_on_181010_at_1831'];
+d = dir([top_path '/**/*.log']);
 
-%for i=[2 5 6 9 13 24]
-for i=[7]
-    partial_path = sprintf('/run_1_(distribution_assesment)_on_181010_at_1831/phantom_vol_%02d_process',i);
-    param = prep_paths (param, partial_path);
-    param
-    register(param)
-    close all;
+% for up to 10 seeds of random number generator
+for j=1:3
+    [median_offset , median_rot] = get_median( d, j:3:numel(d) );
+    param.offset = median_offset;
+    param.angle  = median_rot;
+    rng(j);
+    % for chosen data sets
+    for i=ivec
+        fprintf('RNG seed = %d\n',j);
+        partial_path = sprintf('/run_1_(distribution_assesment)_on_181010_at_1831/phantom_vol_%02d_process',i);
+        param = prep_paths (param, partial_path);
+        param
+        register(param)
+        close all;
+    end
+end
+
+
+function [median_offset , median_rot] = get_median ( d, vec )
+offset = [];
+rot = [];
+for i=vec
+    fpath = [d(i).folder '/' d(i).name];
+    fprintf('Reading log file: %s\n',fpath);
+    out = read_log (fpath);
+    offset = [offset ; out.offsetF];
+    rot = [rot ; out.rot];
+end
+median_offset = median(offset);
+median_rot = median(rot);
+end
+
+%% read log file
+function out = read_log (f)
+out = [];
+
+content = fileread(f);
+
+eval(['out.trans = ' get_match('trans',content) ';']);
+%eval(['out.angle = ' get_match('angle',content) ';']);
+eval(['out.centroid = ' get_match('centroid',content) ';']);
+%eval(['out.offsetI = ' get_match('offset',content) ';']);
+out.offsetF = out.trans - out.centroid;
+eval(['out.rot = ' get_match('rot',content) ';']);
+end
+
+function out = get_match (str, content)
+expr = ['[^\n]* ' str ':[^\n]*'];
+match = regexp(content,expr,'match');
+s = regexp(match,'\[.*\]','match');
+out = s{end}{1};
 end
 
 function param = prep_paths (param, partial_path)
