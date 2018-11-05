@@ -104,20 +104,50 @@ end
 % data sets to repeat
 ivec = 1:13;
 
-top_path = [param.ppath '/run_1_(distribution_assesment)_on_181010_at_1831'];
-d = dir([top_path '/**/*.log']);
 
-% for up to 10 seeds of random number generator
-for j=1:3
-    [median_offset , median_rot] = get_median( d, j:3:numel(d) );
+
+if 0>1
+    top_path = [param.ppath '/run_1_(distribution_assesment)_on_181010_at_1831'];
+    d = dir([top_path '/**/*.log']);
+    % for up to 10 seeds of random number generator
+    for j=1:3
+        [median_offset , median_rot] = get_median( d, j:3:numel(d) );
+        param.offset = median_offset;
+        param.angle  = median_rot;
+        rng(j);
+        % for chosen data sets
+        for i=ivec
+            fprintf('RNG seed = %d\n',j);
+            partial_path = sprintf('/run_1_(distribution_assesment)_on_181010_at_1831/phantom_vol_%02d_process',i);
+            param = prep_paths (param, partial_path);
+            param
+            register(param)
+            close all;
+        end
+    end
+else
+    param.angle   = [pi/2 0 0]; % radians
+    if 1 > 2
+        % for chosen data sets
+        for i=ivec
+            fprintf('i = %d of %d, default coarse registration\n',i,numel(ivec));
+            partial_path = sprintf('/run_1_(distribution_assesment)_on_181010_at_1831/phantom_vol_%02d_process',i);
+            param = prep_paths_reverse (param, partial_path);
+            param
+            register(param)
+            close all;
+        end
+    end
+    top_path = [param.ppath '/run_1_(distribution_assesment)_on_181010_at_1831'];
+    d = dir([top_path '/**/*.log']);
+    [median_offset , median_rot] = get_median( d, 1:numel(d) );
     param.offset = median_offset;
     param.angle  = median_rot;
-    rng(j);
     % for chosen data sets
     for i=ivec
-        fprintf('RNG seed = %d\n',j);
+        fprintf('i = %d of %d, median coarse registration\n',i,numel(ivec));
         partial_path = sprintf('/run_1_(distribution_assesment)_on_181010_at_1831/phantom_vol_%02d_process',i);
-        param = prep_paths (param, partial_path);
+        param = prep_paths_reverse (param, partial_path);
         param
         register(param)
         close all;
@@ -165,6 +195,15 @@ param.ipath = [param.ppath partial_path];
 param.opath = param.ipath;
 param.inputFilePath1 = [param.ipath '/view_1_for_registration/'];
 param.inputFilePath2 = [param.ipath '/view_2_for_registration/'];
+param.savePath = [param.opath '/registration/'];
+param.inputFileName = {['recon_3d_im.mat']};
+end
+
+function param = prep_paths_reverse (param, partial_path)
+param.ipath = [param.ppath partial_path];
+param.opath = param.ipath;
+param.inputFilePath1 = [param.ipath '/view_2_for_registration/'];
+param.inputFilePath2 = [param.ipath '/view_1_for_registration/'];
 param.savePath = [param.opath '/registration/'];
 param.inputFileName = {['recon_3d_im.mat']};
 end

@@ -7,7 +7,8 @@ d = dir([top_path '/**/*.log']);
 % Each of 25 data sets was registered 6 times.
 % The first 3 times were with different seeds to random number generator.
 % The second 3 times were using median registration params from first 3 as coarse registration.
-stride = 6;
+stride = 2;
+seeds = 1;
 
 %% Gather data from files
 tmp_f = 'tmp.mat';
@@ -18,13 +19,13 @@ if ~exist(fname,'file')
     offsetmc = {};
     rotmc = {};
     % for each RNG seed, i
-    for i=1:3
+    for i=1:seeds
         % capture registration parameters using default coarse registration
         [off, r, centroid] = read_set( d, i:stride:numel(d) );
         offset{i} = off;
         rot{i} = r;
         % capture registration parameters using median params for coarse registration
-        [off , r] = read_set( d, i+3:stride:numel(d) );
+        [off , r] = read_set( d, i+seeds:stride:numel(d) );
         offsetmc{i} = off;
         rotmc{i} = r;
     end
@@ -34,66 +35,90 @@ else
 end
 
 %ground truth
-offset_gt = [-5 -10 15];
-rot_gt = [-87 2 -4]*pi/180;
+%offset_gt = [-5 -10 15];
+offset_gt = [14 16 5]; % um
+g = sprintf('%d ', offset_gt);
+offset_gt_str = sprintf('Assume gt = [%s] um', g); 
+%rot_gt = [87 2 -4]*pi/180;
+rot_gt_deg = [87 -4 -2]; % radians
+rot_gt_rad = rot_gt_deg * pi/180; % radians
+g = sprintf('%d ', rot_gt_deg);
+rot_gt_str = sprintf('Assume gt = [%s] deg', g);
 
 %% main
-fname = [top_path '/reg_params_across_seeds_default_coarse.png'];
-plot_seeds (offset, rot, 'default coarse registration', fname);
-fname = [top_path '/reg_params_across_seeds_median_coarse.png'];
-plot_seeds (offsetmc, rotmc, 'coarse registration using median params', fname);
+if seeds>1
+    fname = [top_path '/reg_params_across_seeds_default_coarse.png'];
+    plot_seeds (offset, rot, 'default coarse registration', fname);
+    fname = [top_path '/reg_params_across_seeds_median_coarse.png'];
+    plot_seeds (offsetmc, rotmc, 'use median param values for coarse registration', fname);
+else
+    fname = [top_path '/reg_params_across_data_sets_default_coarse.png'];
+    plot_raw (offset{1}, rot{1}, 'default coarse registration', fname);
+    fname = [top_path '/reg_params_across_data_sets_median_coarse.png'];
+    plot_raw (offsetmc{1}, rotmc{1}, 'use median param values for coarse registration', fname);
+end
 
+ 
 % calculate registration parameter error
 % for each RNG seed, i
 offset_err = {};
 offsetmc_err = {};
-rot_err = {};
-rot_mc_err = {};
-for i=1:3
-    offset_err{i} = offset{i}-offset_gt;
-    offsetmc_err{i} = offsetmc{i}-offset_gt;
-    rot_err{i} = rot{i}-rot_gt;
-    rotmc_err{i} = rotmc{i}-rot_gt;
-end
-
-print_tables (offset_err, offsetmc_err, rot_err, rotmc_err, top_path, centroid);
-
-% for each RNG seed, i
-for i=1:3
-    fname = [top_path sprintf('/offset_rot_error_%d.png',i)];
-    plot_error( offset{i}, offsetmc{i}, rot{i}, rotmc{i}, ...
-    offset_gt, rot_gt, fname, i );
-end
-
-%%
-function print_tables (offset, offsetmc, rot, rotmc, top_path, centroid)
-fprintf('\n%6s%25s%25s%25s%25s%25s%25s\n','seed','off_err_dim1[um]','off_err_dim2[um]','off_err_dim3[um]','rot_err_dim1[deg]','rot_err_dim2[deg]','rot_err_dim3[deg]');
-tabulate (offset, offsetmc, rot, rotmc);
+rot_err_rad = {};
+rotmc_err_rad = {};
+rot_err_um = {};
+rotmc_err_um = {};
 r = sqrt(sum(centroid.*centroid));
 fprintf('\nWorst-case moment arm = %3.1f um\n',r);
-rot_um = {};
-for i=1:3
-    rot_um{i} = rot{i}*pi/180*r;
-    rotmc_um{i} = rotmc{i}*pi/180*r;
+for i=1:seeds
+    offset_err{i}    = offset{i}   - offset_gt;
+    offsetmc_err{i}  = offsetmc{i} - offset_gt;
+    rot_err_rad{i}   = rot{i}      - rot_gt_rad;
+    rotmc_err_rad{i} = rotmc{i}    - rot_gt_rad;
+    rot_err_um{i}    = rot_err_rad{i}   * r;
+    rotmc_err_um{i}  = rotmc_err_rad{i} * r;
 end
-fprintf('\n%6s%25s%25s%25s%25s%25s%25s\n','seed','off_err_dim1[um]','off_err_dim2[um]','off_err_dim3[um]','rot_err_dim1[um]','rot_err_dim2[um]','rot_err_dim3[um]');
-tabulate (offset, offsetmc, rot_um, rotmc_um);
+
+print_tables (offset_err, offsetmc_err, rot_err_rad, rotmc_err_rad, rot_err_um, rotmc_err_um,seeds);
+
+% for each RNG seed, i
+for i=1:seeds
+    fname = [top_path sprintf('/offset_rot_error_%d.png',i)];
+    plot_error( offset_err{i}, offsetmc_err{i}, rot_err_rad{i}, rotmc_err_rad{i}, ...
+    rot_err_um{i}, rotmc_err_um{i}, r, fname, i, offset_gt_str, rot_gt_str );
 end
 
 
-function tabulate (offset, offsetmc, rot, rotmc)
+
+
+
+
+
+%%
+function print_tables (offset_err, offsetmc_err, rot_err_rad, rotmc_err_rad, rot_err_um, rotmc_err_um, seeds)
+fprintf('\n%6s%25s%25s%25s%25s%25s%25s\n','seed',...
+    'off_err_dim1[um]','off_err_dim2[um]','off_err_dim3[um]',...
+    'rot_err_dim1[deg]','rot_err_dim2[deg]','rot_err_dim3[deg]');
+tabulate (offset_err, offsetmc_err, rot_err_rad, rotmc_err_rad, seeds);
+fprintf('\n%6s%25s%25s%25s%25s%25s%25s\n','seed',...
+    'off_err_dim1[um]','off_err_dim2[um]','off_err_dim3[um]',...
+    'rot_err_dim1[um]','rot_err_dim2[um]','rot_err_dim3[um]');
+tabulate (offset_err, offsetmc_err, rot_err_um, rotmc_err_um, seeds);
+end
+
+
+function tabulate (offset_err, offsetmc_err, rot_err_rad, rotmc_err_rad, seeds)
 corr0 = '';
 corr1 = '';
-for seed=1:3
+for seed=1:seeds
     msg0 = sprintf('%6s',num2str(seed));
     msg1 = msg0;
     for dim=1:3
-        [str0, str1] = get_str( offset{seed}(:,dim), offsetmc{seed}(:,dim) );
+        [str0, str1] = get_str( offset_err{seed}(:,dim), offsetmc_err{seed}(:,dim) );
         msg0 = [msg0 sprintf('%25s',str0)];
         msg1 = [msg1 sprintf('%25s',str1)];
     end
     for dim=1:3
-        [str0, str1] = get_str( rot{seed}(:,dim)*180/pi, rotmc{seed}(:,dim)*180/pi );
+        [str0, str1] = get_str( rot_err_rad{seed}(:,dim)*180/pi, rotmc_err_rad{seed}(:,dim)*180/pi );
         msg0 = [msg0 sprintf('%25s',str0)];
         msg1 = [msg1 sprintf('%25s',str1)];
     end
@@ -158,42 +183,95 @@ title(mytitle);
 print(f,fname,'-dpng');
 end
 
+function plot_raw (offset, rot, mytitle, fname)
 
-function plot_error ( offset, offset_mc, rot, rot_mc, offset_gt, rot_gt, fname, seed )
+a = size(offset);
 
-offset_err = offset-offset_gt;
-offset_mc_err = offset_mc-offset_gt;
-rot_err = rot-rot_gt;
-rot_mc_err = rot_mc-rot_gt;
-
-a = size(offset_err);
 f = figure;
-
 subplot(1,2,1);
 hold on;
-plot(1*ones(1,a(1)),offset_err(:,1),'ko','LineWidth',2);
-plot(2*ones(1,a(1)),offset_err(:,2),'ko','LineWidth',2);
-plot(3*ones(1,a(1)),offset_err(:,3),'ko','LineWidth',2);
-plot(1*ones(1,a(1)),offset_mc_err(:,1),'ro','LineWidth',2);
-plot(2*ones(1,a(1)),offset_mc_err(:,2),'ro','LineWidth',2);
-plot(3*ones(1,a(1)),offset_mc_err(:,3),'ro','LineWidth',2);
+plot(1*ones(1,a(1)),offset(:,1),'ko','LineWidth',2);
+plot(2*ones(1,a(1)),offset(:,2),'ko','LineWidth',2);
+plot(3*ones(1,a(1)),offset(:,3),'ko','LineWidth',2);
 hold off;
 xlabel('translation dims');
-ylabel('error [um]');
-ylim([-20 20]);
+ylabel('offset [um]');
+xlim([0 4]);
 
 subplot(1,2,2);
 hold on;
-plot(4*ones(1,a(1)),rot_err(:,1)*180/pi,'ko','LineWidth',2);
-plot(5*ones(1,a(1)),rot_err(:,2)*180/pi,'ko','LineWidth',2);
-plot(6*ones(1,a(1)),rot_err(:,3)*180/pi,'ko','LineWidth',2);
-plot(4*ones(1,a(1)),rot_mc_err(:,1)*180/pi,'ro','LineWidth',2);
-plot(5*ones(1,a(1)),rot_mc_err(:,2)*180/pi,'ro','LineWidth',2);
-plot(6*ones(1,a(1)),rot_mc_err(:,3)*180/pi,'ro','LineWidth',2);
+plot(1*ones(1,a(1)),rot(:,1)*180/pi,'ko','LineWidth',2);
+plot(2*ones(1,a(1)),rot(:,2)*180/pi,'ko','LineWidth',2);
+plot(3*ones(1,a(1)),rot(:,3)*180/pi,'ko','LineWidth',2);
+hold off;
+xlabel('rotation dims');
+ylabel('angle [degrees]');
+xlim([0 4]);
+
+title(mytitle);
+
+print(f,fname,'-dpng');
+end
+
+
+function plot_error ( offset_err, offsetmc_err, ...
+    rot_err_rad, rotmc_err_rad, ...
+    rot_err_um, rotmc_err_um, ...
+    r, fname, seed, offset_gt_str, rot_gt_str )
+
+a = size(offset_err);
+f = figure;
+x = [0 4];
+
+subplot(1,3,1);
+hold on; 
+plot(1*ones(1,a(1)),offsetmc_err(:,1),'ko','LineWidth',2);
+plot(2*ones(1,a(1)),offsetmc_err(:,2),'ko','LineWidth',2);
+plot(3*ones(1,a(1)),offsetmc_err(:,3),'ko','LineWidth',2);
+% y = ylim;
+% plot(1*ones(1,a(1)),offset_err(:,1),'ko','LineWidth',2);
+% plot(2*ones(1,a(1)),offset_err(:,2),'ko','LineWidth',2);
+% plot(3*ones(1,a(1)),offset_err(:,3),'ko','LineWidth',2);
+hold off;
+xlabel('translation dims');
+ylabel('error [um]');
+%ylim(y);
+xlim(x);
+title(offset_gt_str);
+
+subplot(1,3,2);
+hold on;
+plot(1*ones(1,a(1)),rotmc_err_rad(:,1)*180/pi,'ko','LineWidth',2);
+plot(2*ones(1,a(1)),rotmc_err_rad(:,2)*180/pi,'ko','LineWidth',2);
+plot(3*ones(1,a(1)),rotmc_err_rad(:,3)*180/pi,'ko','LineWidth',2);
+% y = ylim;
+% plot(1*ones(1,a(1)),rot_err_rad(:,1)*180/pi,'ko','LineWidth',2);
+% plot(2*ones(1,a(1)),rot_err_rad(:,2)*180/pi,'ko','LineWidth',2);
+% plot(3*ones(1,a(1)),rot_err_rad(:,3)*180/pi,'ko','LineWidth',2);
 hold off;
 xlabel('rotation dims');
 ylabel('error [degrees]');
-title(sprintf('random number generator seed = %d',seed));
+%title(sprintf('random number generator seed = %d',seed));
+%ylim(y);
+xlim(x);
+title(rot_gt_str);
+
+subplot(1,3,3);
+hold on;
+plot(1*ones(1,a(1)),rotmc_err_um(:,1),'ko','LineWidth',2);
+plot(2*ones(1,a(1)),rotmc_err_um(:,2),'ko','LineWidth',2);
+plot(3*ones(1,a(1)),rotmc_err_um(:,3),'ko','LineWidth',2);
+% y = ylim;
+% plot(1*ones(1,a(1)),rot_err_um(:,1),'ko','LineWidth',2);
+% plot(2*ones(1,a(1)),rot_err_um(:,2),'ko','LineWidth',2);
+% plot(3*ones(1,a(1)),rot_err_um(:,3),'ko','LineWidth',2);
+hold off;
+xlabel('rotation dims');
+ylabel('error [um]');
+%ylim(y);
+xlim(x);
+title(sprintf('Worst-case moment arm = %4.0f um',r));
+
 
 print(f,fname,'-dpng');
 end
