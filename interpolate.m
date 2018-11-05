@@ -18,6 +18,7 @@ if param.interp>1
     del = 1/param.interp;
     N = param.interp*s(3)+1;
     last_v = a*A+b*B;
+    debug_count = 0;
     for i=1:N
         if i < boundary
             if i>1
@@ -27,6 +28,11 @@ if param.interp>1
             out(:,:,i-1) = LFM(:,:,end);
         else
             v = a*A+b*B;
+            fprintf('count = %d, a = %1.3f, b = %1.3f, a+b = %1.3f, j = %d, j+1 = %d, A = %d, B = %d, v = %d\n',debug_count,a,b,a+b,j,j+1,uint32(sum(sum(A))),uint32(sum(sum(B))),uint32(sum(sum(v))));
+            if debug_count==306
+                keyboard
+            end
+            debug_count = debug_count + 1;
             out(:,:,i-1) = (last_v + v)/2;
             last_v = v;
             a = a-del;

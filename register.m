@@ -24,10 +24,10 @@ param
 %% load volumes
 f = [param.inputFilePath1 param.inputFileName{1}];
 fprintf('\nLoading volume %s\n\n',f);
-LFM1 = loadData(f, param);
+LFM1 = loadData(f, param, 'LFM1');
 f = [param.inputFilePath2 param.inputFileName{1}];
 fprintf('\nLoading volume %s\n\n',f);
-LFM2 = loadData(f, param);
+LFM2 = loadData(f, param, 'LFM2');
 param.voxel_z = param.voxel_z / param.interp;
 
 %keyboard
@@ -124,6 +124,7 @@ end
 
 if param.just_MI==false
     if isempty(param.offset)
+        fprintf('\nEstimating offsets...\n');
         % estimate offsets
         offsets = estimate_offsets(LFM1, LFM2, new, param);
 %         for i=1:3
@@ -134,6 +135,7 @@ if param.just_MI==false
         param.offset = offsets;
     else
         offsets = param.offset;
+        fprintf('\nUsing stored offsets...\n');
     end
     fprintf('\nestimated offsets = [%f %f %f]\n',offsets(1),offsets(2),offsets(3));
     new = translate (new, offsets);
