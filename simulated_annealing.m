@@ -10,6 +10,11 @@ half_span = 0.5*[a(1)*param.voxel_y a(2)*param.voxel_x];
 radius = sqrt( sum( half_span .* half_span ) );
 gain = param.trans_amp / radius;
 gain0 = gain;
+% calculate minimum allowed rotation
+param.minmove_factor = 4;
+param.minrot_factor = 1; % Turns out rotation needs a different scale factor than translation
+param.mintranslation = [param.voxel_y param.voxel_x param.voxel_z]/param.minmove_factor;
+param.minrotation = min(param.mintranslation)*(param.minmove_factor/param.minrot_factor)/radius;
 % calculate MI
 if strcmp(param.myfunc_MI,'multiply')
     MI = mutual_information (LFM1, new, LFM2, param, 0);
@@ -105,11 +110,26 @@ while 1 > 0
         if rhot<4
             r = zeros(1,3);
             t = r;
+            % enforce min move size
+            if abs(d(rhot)) < param.mintranslation(rhot) 
+                if d(rhot) < 0
+                    d(rhot) = -param.mintranslation(rhot);
+                else
+                    d(rhot) = param.mintranslation(rhot);
+                end
+            end
             t(rhot) = d(rhot);
             d = t;
         else
             d = zeros(1,3);
             t = d;
+            if abs(r(rhot-3)) < param.minrotation
+                if r(rhot-3) < 0
+                    r(rhot-3) = -param.minrotation;
+                else
+                    r(rhot-3) = param.minrotation;
+                end
+            end
             t(rhot-3) = r(rhot-3);
             r = t;
         end
