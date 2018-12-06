@@ -6,17 +6,19 @@ fvec = {'04-Oct-2017 17_07_02_multiply.mat'};
 config.fpath = '/Users/justin/Desktop/DDLFM/fig2bc/mat_files/';
 config.xypath = config.fpath;
 config.outpath = '/Users/justin/Desktop/DDLFM/fig2bc/out/';
+
+%blacklist = [13 15 16 18 25 31 34 35 37 44 45 53 66 67];
+
+config.blacklist = [];
+
+config.fname = fvec{1};
 config.zspacing = 0.5;
 config.xyname = 'xycoords_side2.mat';
 config.crop_um = 20;
+bead_psf = axial_psf(config);
 
 bead_cell = {};
-for i=1:length(fvec)
-    config.fname = fvec{i};
-    bead_psf = axial_psf(config);
-    bead_cell = [bead_cell {bead_psf}];
-    keyboard
-end
+bead_cell = [bead_cell {bead_psf}];
 
 keyboard
 

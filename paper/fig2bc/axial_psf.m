@@ -8,153 +8,102 @@ disp('%%');
 disp(['%% ' datestr(datetime)]);
 disp('%%');
 
-%fname = '106_Recon3D_20170322-CROPPED_3x3_Nnum_15__27-Mar-2017_14:01:33.mat';
-%fpath = '/Users/justin/Desktop/lotus/lotus-data/';
-
-
-% a = who;
-% keyboard
-% for i=1:length(a)
-%     mystr = sprintf('config.%s = %s;',a{i},a{i});
-%     disp(mystr);
-%     eval(mystr)
-% end
-%config.fname = fname;
-%config.fpath = fpath;
-%config.fname = 'raw_side1.mat';
-%config.fpath = '/home/jkinney/Desktop/LFM volume registration/from_nikita/';
-%config.xyname = 'xycoords.mat';
-%config.xyname = xyname;
-%config.crop_z = crop_z;
-%config.xypath = '/home/jkinney/Desktop/LFM volume registration/psf/';
-%config.outpath = outpath;
-%config.PSFpath = '/home/jkinney/Desktop/lotus/lotus-recon/PSFmatrix/';
-%config.PSFname = 'PSFmatrix_Z_from_-300_to_300_zspacing_10_Nnum_15_OSR_3__24-Mar-2017_16:11:44.mat';
-
-%config.microlens_array_pitch = 500.0; % um
 config.pixel = 0.323; % um
-%config.mag = 50.0;
-%config.Nnum = 15;
-%config.zspacing = 4; % um
-%config.zspacing = zspacing; % um
-%config.maxIter = 8;
 config.zslices = 60;
 config.zrange = [-300, 300];
 % JPK
-%config.crop_um = crop_um; % um
-%config.crop_um = 60; % um
 config.crop_y_pixel = ceil(config.crop_um/config.pixel);
 config.crop_z_pixel = ceil(config.crop_um/config.zspacing);
 config.crop_z = config.crop_z_pixel;
 config.crop_row = config.crop_y_pixel;
 config.div = 4;
 %JPK
-%config.crop_row = 101; % KEEP ODD, size in pixels of cropped image 
-%config.crop_z = 11; % KEEP ODD, size in pixels of cropped image
 config.latBuf = 1;
 config.axialBuf = 1;
 config.threshold = 0.5;
 config.figpos = [230        -895        1440         823];
 
-%blacklist = [13 15 16 18 25 31 34 35 37 44 45 53 66 67];
-
-blacklist = [];
-
-tmp_f = [config.outpath 'temp.mat'];
-
-if ~exist(tmp_f,'file')
-    load([config.fpath config.fname]);
-    load([config.xypath config.xyname]);
-    xycoords = round(xycoords);
-    a = size(xycoords);
-    if length(xycoords)==0
-        diary off;
-        return;
-    end
-    % for each bead
-    index = [];
-    z = [];
-    bead_psf = [];
-    for i=1:a(1)
-        %i
-        if ~isempty(find(blacklist==i))
-            msg = sprintf('Skipping index %d since blacklisted.',i);
-            disp(msg);
-            continue;
-        end
-        % find z value of bead
-        row = xycoords(i,2);
-        col = xycoords(i,1);
-        z = [z get_z( row, col, XguessSAVE1 )];
-        if z(end) < 0
-            disp('Error! No z value found.');
-            continue
-        end
-        disp(sprintf('\n\n'));
-        msg = sprintf('bead %d found at row = %d, col = %d, z = %d',length(index),row,col,z(end));
-        disp(msg);
-        %
-        % slice volume
-        csec = squeeze(XguessSAVE1(:,col,:));
-        %
-        latBuf = 1;
-        axialBuf = 1;
-        % = crop_index = [minrow maxrow mincol maxcol]
-        crop_index = cropIndex(config, size(csec), row, z(end));
-        if crop_index<0
-            continue;
-        end
-        csec_cropped = cropImag(csec, crop_index);
-        % plot image
-        h = figure;
-        %set(gcf,'Position',config.figpos);
-        [dim, ztick_values, ztick_labels] = plot_slice_cropped ( config, h, ...
-            csec_cropped, size(csec), crop_index);
-%          [pixel,allLabels,dim,nz] = plot_slice_cropped ( config, h, ...
-%             csec_cropped, size(csec), crop_index);
-        lateralVals = plot_lat_psf_cropped(config, h, csec_cropped);
-        axialVals = plot_axial_psf_cropped(config, h, csec_cropped);
-        % display surface
-        %subplot(2,2,4);
-        %surf(csec);
-        %title(msg);
-        %
-        % calculate PSFs
-        latC = latPSF (config, h, lateralVals);
-        %axialC = axialPSF (config, h, axialVals,allLabels,dim,nz,size(csec_cropped),z(end));
-        axialC = axialPSF (config, h, axialVals, crop_index,...
-            dim,size(csec_cropped),z(end),0);
-        %
-        if latC(2)>0 & axialC(2)>0
-            bead_psf = [bead_psf;[latC(1) latC(2) axialC(1) axialC(2)]];
-            index = [index i];
-            % save figure
-            %str=sprintf('%s%s_bead%03d.pdf',fpath,fname(1:end-3),i);
-            %print(gcf,str,'-dpdf');
-            %disp(sprintf('# Output file = %s',str));
-        end
-        figure(h);
-        text(50.0,0.5,sprintf('bead %d',i),'FontSize',12);
-        %
-        str=sprintf('%s%s_bead%03d.png',config.outpath,config.fname(1:end-4),i);
-        f=getframe(gcf);
-        [X, map] = frame2im(f);
-        imwrite(X, str);
-        keyboard
-    end
-    save(tmp_f);
-else
-    load(tmp_f);
+load([config.fpath config.fname]);
+load([config.xypath config.xyname]);
+xycoords = round(xycoords);
+a = size(xycoords);
+if length(xycoords)==0
+    diary off;
+    return;
 end
-
-keyboard
+% for each bead
+index = [];
+z = [];
+bead_psf = [];
+for i=1:a(1)
+    %i
+    if ~isempty(find(config.blacklist==i))
+        msg = sprintf('Skipping index %d since blacklisted.',i);
+        disp(msg);
+        continue;
+    end
+    %
+    % find z value of bead
+    row = xycoords(i,2);
+    col = xycoords(i,1);
+    z = [z get_z( row, col, XguessSAVE1 )];
+    if z(end) < 0
+        disp('Error! No z value found.');
+        continue
+    end
+    disp(sprintf('\n\n'));
+    msg = sprintf('bead %d found at row = %d, col = %d, z = %d',length(index),row,col,z(end));
+    disp(msg);
+    %
+    % slice volume
+    csec = squeeze(XguessSAVE1(:,col,:));
+    %
+    latBuf = 1;
+    axialBuf = 1;
+    % = crop_index = [minrow maxrow mincol maxcol]
+    crop_index = cropIndex(config, size(csec), row, z(end));
+    if crop_index<0
+        continue;
+    end
+    csec_cropped = cropImag(csec, crop_index);
+    % plot image
+    h = figure;
+    [dim, ztick_values, ztick_labels] = plot_slice_cropped ( config, h, ...
+        csec_cropped, size(csec), crop_index);
+    lateralVals = plot_lat_psf_cropped(config, h, csec_cropped);
+    axialVals = plot_axial_psf_cropped(config, h, csec_cropped);
+    %
+    % calculate PSFs
+    latC = latPSF (config, h, lateralVals);
+    %axialC = axialPSF (config, h, axialVals,allLabels,dim,nz,size(csec_cropped),z(end));
+    axialC = axialPSF (config, h, axialVals, crop_index,...
+        dim,size(csec_cropped),z(end),0);
+    %
+    if latC(2)>0 & axialC(2)>0
+        bead_psf = [bead_psf;[latC(1) latC(2) axialC(1) axialC(2)]];
+        index = [index i];
+        % save figure
+        %str=sprintf('%s%s_bead%03d.pdf',fpath,fname(1:end-3),i);
+        %print(gcf,str,'-dpdf');
+        %disp(sprintf('# Output file = %s',str));
+    end
+    figure(h);
+    text(50.0,0.5,sprintf('bead %d',i),'FontSize',12);
+    %
+    str=sprintf('%s%s_bead%03d.png',config.outpath,config.fname(1:end-4),i);
+%     f=getframe(gcf);
+%     [X, map] = frame2im(f);
+%     imwrite(X, str);
+    print(h,str,'-dpng');
+end
 
 h = figure();
 plotAllPSFs(h, bead_psf, config.fpath);
 str=sprintf('%s%s_all_beads.png',config.outpath,config.fname(1:end-4));
-f=getframe(gcf);
-[X, map] = frame2im(f);
-imwrite(X, str);
+% f=getframe(gcf);
+% [X, map] = frame2im(f);
+% imwrite(X, str);
+print(h,str,'-dpng');
 disp(sprintf('# Output file = %s',str));
 
 diary off
