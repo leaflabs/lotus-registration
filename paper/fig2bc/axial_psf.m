@@ -8,7 +8,7 @@ disp('%%');
 disp(['%% ' datestr(datetime)]);
 disp('%%');
 
-config.pixel = 0.323; % um
+config.pixel = 0.5; % um
 config.zslices = 60;
 config.zrange = [-300, 300];
 % JPK
@@ -42,8 +42,7 @@ for i=1:a(1)
         disp(msg);
         continue;
     end
-    %
-    % find z value of bead
+    %%% find z value of bead
     row = xycoords(i,2);
     col = xycoords(i,1);
     z = [z get_z( row, col, XguessSAVE1 )];
@@ -52,58 +51,59 @@ for i=1:a(1)
         continue
     end
     disp(sprintf('\n\n'));
-    msg = sprintf('bead %d found at row = %d, col = %d, z = %d',length(index),row,col,z(end));
+    msg = sprintf('bead %d\ncentroid pixels [%d %d %d]',length(index),row,col,z(end));
     disp(msg);
-    %
-    % slice volume
-    csec = squeeze(XguessSAVE1(:,col,:));
-    %
-    latBuf = 1;
-    axialBuf = 1;
-    % = crop_index = [minrow maxrow mincol maxcol]
-    crop_index = cropIndex(config, size(csec), row, z(end));
-    if crop_index<0
+    %%% slice volume at dim2=col to create a dim13 slice 
+    slice13 = squeeze(XguessSAVE1(:,col,:));
+    % crop_index = [minrow maxrow mincol maxcol]
+    crop_index13 = cropIndex(config, size(slice13), row, z(end));
+    if crop_index13<0
         continue;
     end
-    csec_cropped = cropImag(csec, crop_index);
-    % plot image
-    h = figure;
+    cropped_slice13 = cropImag(slice13, crop_index13);
+    %%% slice volume at dim3=z to create a dim12 slice 
+    slice12 = squeeze(XguessSAVE1(:,:,z(end)));
+    % crop_index = [minrow maxrow mincol maxcol]
+    crop_index12 = cropIndex(config, size(slice12), row, col);
+    if crop_index12<0
+        continue;
+    end
+    cropped_slice12 = cropImag(slice12, crop_index12);
+    %%% plot image
+    f = figure;
+    h = subplot(1,3,1);
     [dim, ztick_values, ztick_labels] = plot_slice_cropped ( config, h, ...
-        csec_cropped, size(csec), crop_index);
-    lateralVals = plot_lat_psf_cropped(config, h, csec_cropped);
-    axialVals = plot_axial_psf_cropped(config, h, csec_cropped);
+        cropped_slice13, size(slice13), crop_index13, ...
+        ' z, i.e. depth (um)', ' y, i.e. height (um)');
+    h = subplot(1,3,2);
+    %lateralVals = plot_lat_psf_cropped(config, h, cropped_slice13);
+    lateralVals = plot_psf_cropped(config, h, cropped_slice13, 1, 'y (um)', config.latBuf);
+    h = subplot(1,3,3);
+    axialVals = plot_psf_cropped(config, h, cropped_slice13, 2, 'z (um)', config.axialBuf);
+    %axialVals = plot_axial_psf_cropped(config, h, cropped_slice13);
     %
+    keyboard
     % calculate PSFs
-    latC = latPSF (config, h, lateralVals);
-    %axialC = axialPSF (config, h, axialVals,allLabels,dim,nz,size(csec_cropped),z(end));
-    axialC = axialPSF (config, h, axialVals, crop_index,...
-        dim,size(csec_cropped),z(end),0);
+    latC = latPSF (config, f, lateralVals);
+    axialC = axialPSF (config, f, axialVals, crop_index,...
+        dim,size(cropped_slice13),z(end),0);
     %
     if latC(2)>0 & axialC(2)>0
         bead_psf = [bead_psf;[latC(1) latC(2) axialC(1) axialC(2)]];
         index = [index i];
-        % save figure
-        %str=sprintf('%s%s_bead%03d.pdf',fpath,fname(1:end-3),i);
-        %print(gcf,str,'-dpdf');
-        %disp(sprintf('# Output file = %s',str));
     end
-    figure(h);
+    figure(f);
     text(50.0,0.5,sprintf('bead %d',i),'FontSize',12);
     %
     str=sprintf('%s%s_bead%03d.png',config.outpath,config.fname(1:end-4),i);
-%     f=getframe(gcf);
-%     [X, map] = frame2im(f);
-%     imwrite(X, str);
-    print(h,str,'-dpng');
+    print(f,str,'-dpng');
+    keyboard
 end
 
-h = figure();
-plotAllPSFs(h, bead_psf, config.fpath);
+f = figure();
+plotAllPSFs(f, bead_psf, config.fpath);
 str=sprintf('%s%s_all_beads.png',config.outpath,config.fname(1:end-4));
-% f=getframe(gcf);
-% [X, map] = frame2im(f);
-% imwrite(X, str);
-print(h,str,'-dpng');
+print(f,str,'-dpng');
 disp(sprintf('# Output file = %s',str));
 
 diary off
@@ -420,10 +420,10 @@ end
 function csec_cropped = cropImag(csec, crop_index)
 csec_cropped = csec(crop_index(1):crop_index(2),crop_index(3):crop_index(4));
 a = size(csec);
-msg = sprintf('Orig slice is %d row by %d z',a(1),a(2));
+msg = sprintf('Orig slice is %d by %d',a(1),a(2));
 disp(msg);
 b = size(csec_cropped);
-msg = sprintf('Cropped slice is %d row by %d z',b(1),b(2));
+msg = sprintf('Cropped slice is %d by %d',b(1),b(2));
 disp(msg);
 end
 
@@ -457,20 +457,39 @@ end
 % end
 
 
-function axialVals = plot_axial_psf_cropped (config, handle, csec)
-subplot(2,2,3);
-a = max(csec);
-axialVals = single(a)/max(single(a(config.axialBuf:length(a)-config.axialBuf+1)));
-plot(axialVals,'*-');
-set(gca, 'YDir', 'reverse');
+% function axialVals = plot_axial_psf_cropped (config, handle, csec)
+% subplot(2,2,3);
+% a = max(csec);
+% axialVals = single(a)/max(single(a(config.axialBuf:length(a)-config.axialBuf+1)));
+% plot(axialVals,'*-');
+% set(gca, 'YDir', 'reverse');
+% %thisdim = get(gca,'Position');
+% %set(gca, 'Position', [thisdim(1) thisdim(2) dim(3) thisdim(4)]);
+% set(gca,'XTickLabel',{});
+% b = size(csec);
+% xlim([1 b(2)]);
+% ylabel('Normalized intensity');
+% ylim([0 1]);
+% end
+
+
+function psfVals = plot_psf_cropped (config, handle, csec, dim, str, Buf)
+subplot(handle);
+a = max(csec,[],dim);
+psfVals = single(a)/max(single(a(Buf:length(a)-Buf+1)));
+vec = [1:length(psfVals)]*config.pixel;
+plot(vec,psfVals,'*-');
+%set(gca, 'YDir', 'reverse');
 %thisdim = get(gca,'Position');
 %set(gca, 'Position', [thisdim(1) thisdim(2) dim(3) thisdim(4)]);
-set(gca,'XTickLabel',{});
-b = size(csec);
-xlim([1 b(2)]);
+%set(gca,'XTickLabel',{});
+%b = size(csec);
+%xlim([1 b(2)]);
 ylabel('Normalized intensity');
 ylim([0 1]);
+xlabel(str);
 end
+
 
 function lateralVals = plot_lat_psf_cropped ( config, handle, csec )
 a = max(csec');
@@ -548,114 +567,67 @@ end
 % title({ [config.PSFname] ; ['Nnum = ' num2str(config.Nnum) ', maxIter = ' num2str(config.maxIter)]},'fontsize',6);
 % end
 
-function [dim,z,Lzc] = plot_slice_cropped ( config, handle, ...
-    csec_cropped, a, crop_index )
-figure(handle);
-h = subplot(2,2,1);
-im = imagesc(csec_cropped,[0 2^8]);
-%colorbar();
-% h = subplot(2,2,3);
-% im = imagesc(csec_cropped,[0 2^8]);
-%colorbar();
-%
-% mark bead
-% BROKEN
-% hold on;
-% plot(z,row,'ow');
-% hold off;
-%
-% transform figure so that plot axes have same scale
-% to do so,
-% the target crop size is config.crop_um, e.g. 100 um
-% given crop_index calculate actual size in um
-% get size of plot (in whatever units)
-% scale plot so 1 um in x is same size on screen as 1 um in y
-%
+function [dim,dim2,L2c] = plot_slice_cropped ( config, handle, ...
+    csec_cropped, a, crop_index, xlbl, ylbl )
+%%% render slice as image
+subplot(handle);
+bits = ceil(log2(single(max(max(csec_cropped)))));
+cmap = gray(2^bits);
+colormap(cmap);
+im = imagesc(csec_cropped,[0 2^bits]);
+daspect([1,1,1]);
+%%% scale image according to pixel sizes
 b = size(csec_cropped);
-%pixel = config.microlens_array_pitch / single(config.Nnum) / config.mag;
-pixel = config.pixel;
-vertical_microns = single(b(1)) * pixel;
-depth_microns = (single(b(2))-1.0) * single(config.zspacing);
-% JPK
-%vertical_vox = a(1);
-%depth_vox = a(2);
-%
-disp(['image size = ' num2str(vertical_microns) ' um tall x ' num2str(depth_microns) ' um wide' ]);
-% pos = [left bottom width height]
-% here, width is depth, and height is vertical
-pos = get(h,'Position'); %  gives x left, y bottom, width, height
-newpos = pos;
-% scale width
-newpos(3) = pos(3) * vertical_microns / depth_microns;
-%newpos(3) = pos(3) * vertical_vox / depth_vox;
-set(h,'Position', newpos);
-%
-% relabel axes to microns
+% vertical_microns = single(b(1)) * config.pixel;
+% depth_microns = (single(b(2))-1.0) * single(config.zspacing);
+% scale = vertical_microns / depth_microns;
+% disp(['image size = ' num2str(vertical_microns) ' um tall x ' num2str(depth_microns) ' um wide' ]);
+% pos = get(h,'Position'); % pos = [left bottom width height]
+% newpos = pos;
+% %newpos(1) = 10;
+% newpos(3) = pos(3) * scale;
+% set(h,'Position', newpos);
+%%% relabel axes to microns
 % to do so,
 % specify XTick = tick locations in csec_cropped space
 % specify XTickLabel = labels for each tick
 %
 % relative to cropped image (i.e. origin in upper left corner)
-z = [1];
-Lz = [1];
-y = [1];
-Ly = [1];
+dim2 = [1];
+L2 = [1];
+dim1 = [1];
+L1 = [1];
 for i=1:config.div-1
-    z = [z round(b(2)/config.div*i)];
-    Lz = [Lz z(end)*config.zspacing];
-    y = [y round(b(1)/config.div*i)];
-    Ly = [Ly y(end)*config.pixel];
+    dim2 = [dim2 round(b(2)/config.div*i)];
+    L2 = [L2 dim2(end)*config.zspacing];
+    dim1 = [dim1 round(b(1)/config.div*i)];
+    L1 = [L1 dim1(end)*config.pixel];
 end
-z = [z b(2)];
-Lz = [Lz z(end)*config.zspacing];
-y = [y b(1)];
-Ly = [Ly y(end)*config.pixel];
+dim2 = [dim2 b(2)];
+L2 = [L2 dim2(end)*config.zspacing];
+dim1 = [dim1 b(1)];
+L1 = [L1 dim1(end)*config.pixel];
 % account for cropping
 % crop_ind = [minrow maxrow mincol maxcol]
-Lz = Lz + crop_index(3) * config.zspacing;
-Ly = Ly + crop_index(1) * config.pixel;
-
-
-Lzc = {};
-for i=1:length(Lz)
-    Lzc = [Lzc num2str(round(Lz(i)),'%.0f')];
+L2 = L2 + crop_index(3) * config.zspacing;
+L1 = L1 + crop_index(1) * config.pixel;
+%
+L2c = {};
+for i=1:length(L2)
+    L2c = [L2c num2str(round(L2(i)),'%.0f')];
 end
-Lyc = {};
-for i=1:length(Ly)
-    Lyc = [Lyc num2str(round(Ly(i)),'%.0f')];
+L1c = {};
+for i=1:length(L1)
+    L1c = [L1c num2str(round(L1(i)),'%.0f')];
 end
-
 ax=gca;
-ax.XTick = z;
-ax.XTickLabel = Lzc;
-ax.YTick = y;
-ax.YTickLabel = Lyc;
-%{num2str(L(1)),num2str(L(2)),num2str(L(3)),num2str(L(4)),num2str(L(5)) };
-
-% nz = config.zslices;
-% dz = config.zspacing;
-% allLabels = [-nz*dz:dz:nz*dz];
-%allLabels = [config.zrange(1):dz:config.zrange(2)];
-%step = 3;
-%tmp = [step:step:nz];
-%ax.XTick = [-fliplr(tmp) 0 tmp] + (nz+1)*ones(1,2*length(tmp)+1);
-% TODO FIX HARDCODING
-% ax.XTick = [1:11];
-% labelindex = [z-5:z+5];
-% if isempty(find(labelindex>0))
-%     disp('WTF?')
-%     keyboard
-% end
-% if z==65
-%     keyboard
-% end
-% labelindex = labelindex(find(labelindex>0));
-% ax.XTickLabel = {allLabels(labelindex)};
-xlabel(' z, i.e. depth (um)');
-%ax.YTickLabel = {round(ax.YTick*pixel)};
-ylabel(' y, i.e. height (um)');
+ax.XTick = dim2;
+ax.XTickLabel = L2c;
+ax.YTick = dim1;
+ax.YTickLabel = L1c;
+xlabel(xlbl);
+ylabel(ylbl);
 dim = get(gca, 'Position');
-% add title
 title({ [config.fname] },'fontsize',6,'interpreter','none');
 end
 
