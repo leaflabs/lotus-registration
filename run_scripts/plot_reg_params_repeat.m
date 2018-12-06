@@ -29,10 +29,14 @@ if ~exist(fname,'file')
         offsetmc{i} = off;
         rotmc{i} = r;
     end
-    save(fname,'offset','rot','offsetmc','rotmc','centroid');
+    [offset_median , rot_median] = get_median( d, 1:2:numel(d) );
+    [offsetmc_median , rotmc_median] = get_median( d, 2:2:numel(d) );
+    save(fname,'offset','rot','offsetmc','rotmc','centroid','offset_median','rot_median','offsetmc_median','rotmc_median');
 else
     load(fname);
 end
+
+%% main
 
 %ground truth
 %offset_gt = [-5 -10 15];
@@ -45,7 +49,8 @@ rot_gt_rad = rot_gt_deg * pi/180; % radians
 g = sprintf('%d ', rot_gt_deg);
 rot_gt_str = sprintf('Assume gt = [%s] deg', g);
 
-%% main
+
+
 if seeds>1
     fname = [top_path '/reg_params_across_seeds_default_coarse.png'];
     plot_seeds (offset, rot, 'default coarse registration', fname);
@@ -88,12 +93,54 @@ for i=1:seeds
 end
 
 
+% centroids
+rnd1_offset_err = offset_median - offset_gt;
+rnd2_offset_err = offsetmc_median - offset_gt;
+rnd1_rot_err_rad = rot_median - rot_gt_rad;
+rnd2_rot_err_rad = rotmc_median - rot_gt_rad;
+rnd1_rot_err_um = rnd1_rot_err_rad * r;
+rnd2_rot_err_um = rnd2_rot_err_rad * r;
+
+fprintf('\n\n');
+g = sprintf('%3.1f ', offset_gt);
+h = sprintf('%3.1f ', rot_gt_rad*180/pi);
+fprintf('                         Ground truth: offset = [%s] um,        rotation = [%s] deg\n', g, h);
+g = sprintf('%3.1f ', offset_median);
+h = sprintf('%3.1f ', rot_median*180/pi);
+fprintf('   Default coarse registration: median offset = [%s] um, median rotation = [%s] deg\n', g, h);
+g = sprintf('%3.1f ', rnd1_offset_err);
+h = sprintf('%3.1f ', rnd1_rot_err_rad*180/pi);
+i = sprintf('%3.1f ', rnd1_rot_err_um);
+fprintf('                                        error = [%s] um,           error = [%s] deg ~= [%s] um\n', g, h, i);
+g = sprintf('%3.1f ', offsetmc_median);
+h = sprintf('%3.1f ', rotmc_median*180/pi);
+fprintf('Median for coarse registration: median offset = [%s] um, median rotation = [%s] deg\n', g, h);
+g = sprintf('%3.1f ', rnd2_offset_err);
+h = sprintf('%3.1f ', rnd2_rot_err_rad*180/pi);
+i = sprintf('%3.1f ', rnd2_rot_err_um);
+fprintf('                                        error = [%s] um,           error = [%s] deg ~= [%s] um\n', g, h, i);
+fprintf('\n\n');
 
 
 
 
 
 %%
+function [median_offset , median_rot] = get_median ( d, vec )
+offset = [];
+rot = [];
+for i=vec
+    fpath = [d(i).folder '/' d(i).name];
+    fprintf('Reading log file: %s\n',fpath);
+    out = read_log (fpath);
+    offset = [offset ; out.offsetF];
+    rot = [rot ; out.rot];
+end
+median_offset = median(offset);
+median_rot = median(rot);
+end
+
+
 function print_tables (offset_err, offsetmc_err, rot_err_rad, rotmc_err_rad, rot_err_um, rotmc_err_um, seeds)
 fprintf('\n%6s%25s%25s%25s%25s%25s%25s\n','seed',...
     'off_err_dim1[um]','off_err_dim2[um]','off_err_dim3[um]',...
