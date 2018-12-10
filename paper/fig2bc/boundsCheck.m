@@ -5,8 +5,7 @@ if cond
     disp(msg);
     %out = bound;
     %msg = sprintf('%s pixel set to %d.', mystr, out);
-    msg = sprintf('Skipping bead.');
-    disp(msg);
+
     out = -1;
 else
     out = val;

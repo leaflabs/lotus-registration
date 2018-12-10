@@ -8,7 +8,17 @@ a = size(psfVals);
 if a(2)==1
     psfVals = psfVals';
 end
-[f, gof] = fit(vec_c',psfVals','gauss1');
+%
+try
+    [f, gof] = fit(vec_c',psfVals','gauss1');
+catch
+    fwhm = -1;
+    subplot(handle);
+    text(0,0.5,'Fit failed','FontSize',40,'Color',[0 0 0],'Interpreter','none');
+    str = sprintf('fwhm set to %2.1f um',fwhm);
+    text(0,0.3,str,'FontSize',40,'Color',[0 0 0],'Interpreter','none');
+    return;
+end
 %
 subplot(handle);
 p = plot(f,vec_c,psfVals);

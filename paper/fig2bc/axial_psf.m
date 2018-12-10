@@ -13,11 +13,11 @@ z = [];
 bead_psf = [];
 for i=1:a(1)
     %i
-    if ~isempty(find(config.blacklist==i))
-        msg = sprintf('Skipping index %d since blacklisted.',i);
-        disp(msg);
-        continue;
-    end
+%     if ~isempty(find(config.blacklist==i))
+%         msg = sprintf('Skipping index %d since blacklisted.',i);
+%         disp(msg);
+%         continue;
+%     end
     %%% find z value of bead
     row = xycoords(i,2);
     col = xycoords(i,1);
@@ -38,6 +38,9 @@ for i=1:a(1)
         row, config.crop_row, ...
         z(end), config.crop_z);
     if crop_index13<0
+        msg = sprintf('Skipping bead.');
+        disp(msg);
+        bead_psf = [bead_psf;[i -1 -1 -1 -1 -1 -1 -1 ]];
         continue;
     end
     cropped_slice13 = cropImag(slice13, crop_index13);
@@ -49,6 +52,9 @@ for i=1:a(1)
         row, config.crop_row, ...
         col, config.crop_row);
     if crop_index12<0
+        msg = sprintf('Skipping bead.');
+        disp(msg);
+        bead_psf = [bead_psf;[i -1 -1 -1 -1 -1 -1 -1 ]];
         continue;
     end
     cropped_slice12 = cropImag(slice12, crop_index12);
@@ -85,9 +91,14 @@ for i=1:a(1)
         row*config.pixel col*config.pixel z(end)*config.zspacing ...
         fwhm1a fwhm1b fwhm2 fwhm3]];
     %
-    str=sprintf('%s%s_bead%03d.png',config.outpath,config.fname(1:end-4),i);
+    ax1 = axes('Position',[0 0 1 1],'Visible','off');
+    axes(ax1);
+    str=sprintf('%s bead%03d',config.label,i);
+    text(0.05,0.3,str,'FontSize',40,'Color',[0.8 0.8 0.8],'Rotation',90,'Interpreter','none');
+    %
+    str=sprintf('%s%s%s_bead%03d.png',config.outpath,config.label,config.fname(1:end-4),i);
     print(f,str,'-dpng');
-    str=sprintf('%s%s_bead%03d.eps',config.outpath,config.fname(1:end-4),i);
+    str=sprintf('%s%s%s_bead%03d.eps',config.outpath,config.label,config.fname(1:end-4),i);
     print(f,str,'-depsc');
     close all;
 end
