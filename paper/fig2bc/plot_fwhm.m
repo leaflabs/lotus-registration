@@ -63,9 +63,9 @@ ylim([0 v+10]);
 ax=gca;
 ax.FontSize = 40;
 
-str=sprintf('%s%s%s_fwhm_summary.png',config.outpath,config.label,config.fname(1:end-4));
+str=sprintf('%sfwhm_summary.png',config.outpath);
 print(f,str,'-dpng');
-str=sprintf('%s%s%s_fwhm_summary.eps',config.outpath,config.label,config.fname(1:end-4));
+str=sprintf('%sfwhm_summary.eps',config.outpath);
 print(f,str,'-depsc');
 
 end
