@@ -120,5 +120,10 @@ print_fwhm_ratio( bead_struct.dlfm, config.whitelist_dlfm, 'DLFM');
 %       and is the mean different from 1 (based on null hypothesis you will be
 %       able to say something about how isotropic the resolution is). 
 
+
+%%% plots
+
+plot_fwhm( config, bead_struct );
+
 diary off
 
