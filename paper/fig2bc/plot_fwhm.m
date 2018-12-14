@@ -18,6 +18,8 @@ max_dim3 = max ([max(bead_struct.dlfm(wl_dlfm,8)) ...
     max(bead_struct.lfm1(wl_lfm1,8)) ...
     max(bead_struct.lfm2(wl_lfm2,8))] );
 
+max_dim23 = max([max_dim2 max_dim3]);
+
 mystr = {'DLFM','LFM1','LFM2'};
 
 f = figure();
@@ -38,7 +40,7 @@ axis equal;
 xlabel('fwhm in dim 3 or z (um)');
 ylabel('fwhm in dim 1 or y (um)');
 %
-xlim([0 max_dim3+10]);
+xlim([0 max_dim23+10]);
 ylim([0 max_dim1+10]);
 ax=gca;
 ax.FontSize = 40;
@@ -52,14 +54,14 @@ plot(bead_struct.lfm1(wl_lfm1,7),bead_struct.lfm1(wl_lfm1,6),...
 plot(bead_struct.lfm2(wl_lfm2,7),bead_struct.lfm2(wl_lfm2,6),...
 '>','MarkerSize',ms,'Color',c);
 plot([0 40],[0 40],'k--');
+hold off;
+legend(mystr);
 axis equal;
 xlabel('fwhm in dim 2 or x (um)');
 ylabel('fwhm in dim 1 or y (um)');
-hold off;
-legend(mystr);
-v = max(max_dim1,max_dim2);
-xlim([0 v+10]);
-ylim([0 v+10]);
+%
+xlim([0 max_dim23+10]);
+ylim([0 max_dim1+10]);
 ax=gca;
 ax.FontSize = 40;
 
